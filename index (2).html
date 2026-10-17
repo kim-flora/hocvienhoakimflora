@@ -2229,15 +2229,15 @@
 
                 <details style="margin-bottom:8px; border:1px solid var(--border); border-radius:8px; padding:8px; background:#fff;">
                     <summary style="cursor:pointer; font-size:12px; font-weight:800; color:#1e1b4b; display:flex; align-items:center; gap:8px;">
-                        <span style="flex:1;">Tra 42 màu: cảm xúc – ý nghĩa – màu hợp phối</span>
+                        <span style="flex:1;">Tra màu: cảm xúc – ý nghĩa – màu hợp phối</span>
                         <button type="button" class="meaning-edit-btn" onclick="event.preventDefault(); event.stopPropagation(); openMeaningEditor();">✏️ Chỉnh sửa</button>
                     </summary>
-                    <input type="text" class="search-bar" id="searchMeaningLibrary" placeholder="Tìm trong 42 màu cảm xúc – ý nghĩa..." oninput="renderMeaningLibrary()" style="margin-top:8px;">
+                    <input type="text" class="search-bar" id="searchMeaningLibrary" placeholder="Nhập tên màu để tìm (ví dụ: hồng)..." oninput="renderMeaningLibrary()" style="margin-top:8px;">
                     <div id="meaningEditorPanel" class="meaning-editor-panel" style="display:none;">
                         <div class="meaning-editor-head">
                             <div>
                                 <div class="meaning-editor-title">Chỉnh sửa / thêm màu</div>
-                                <div class="meaning-editor-subtitle">Chỉ áp dụng cho mục “Tra 42 màu: cảm xúc – ý nghĩa – màu hợp phối”.</div>
+                                <div class="meaning-editor-subtitle">Chỉ áp dụng cho mục “Tra màu: cảm xúc – ý nghĩa – màu hợp phối”.</div>
                             </div>
                             <button type="button" class="meaning-editor-close" onclick="closeMeaningEditor()">×</button>
                         </div>
@@ -9515,7 +9515,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             const q = (document.getElementById('searchMeaningLibrary')?.value || '').trim().toLowerCase();
             box.innerHTML = '';
             meaningLibraryData
-                .filter(x => !q || objectSearchText(x).includes(q))
+                .filter(x => !q || String(x.name || '').trim().toLocaleLowerCase('vi').startsWith(q))
                 .forEach(x => {
                     const div = document.createElement('div');
                     div.className = 'color-card';
