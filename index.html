@@ -2030,6 +2030,48 @@
       @media(max-width:760px){.btn-fruittray-knowledge{min-height:36px}.fruittray-intro{font-size:11.8px}.fruittray-quick-nav{padding:8px}.fruittray-jump-chip{font-size:10.5px}.fruittray-data-table{min-width:560px}}
     </style>
 
+
+    <style id="visualColorKnowledgeStyles">
+      .btn-visual-color-knowledge{border:0;border-radius:20px;padding:7px 12px;background:#f5f3ff;color:#6d28d9;font-size:12px;font-weight:800;cursor:pointer;box-shadow:inset 0 0 0 1px #ddd6fe}
+      .visual-color-page .knowledge-shell{border-color:#ddd6fe}
+      .visual-color-hero{background:linear-gradient(135deg,#eaf5ff 0%,#fff0f6 48%,#f4efff 100%)}
+      .visual-color-page .knowledge-kicker{color:#6d28d9}
+      .visual-color-page .knowledge-formula{color:#4c1d95;border-color:#ddd6fe;background:rgba(255,255,255,.9)}
+      .visual-color-back{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}
+      .visual-color-tabs{display:flex;gap:7px;padding:12px;overflow-x:auto;border-bottom:1px solid var(--border);background:#fff;-webkit-overflow-scrolling:touch}
+      .visual-color-tab{flex:0 0 auto;border:1px solid #ddd6fe;background:#fff;border-radius:999px;padding:9px 13px;color:#5b21b6;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
+      .visual-color-tab.active{background:#6d28d9;color:#fff;border-color:#6d28d9}
+      .visual-color-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;padding:12px;border-bottom:1px solid var(--border);align-items:center}
+      .visual-color-toolbar input{width:100%;min-height:42px;border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:16px;background:#f8fafc}
+      .visual-color-btn{border:0;border-radius:9px;padding:9px 12px;background:#6d28d9;color:#fff;font-size:12px;font-weight:800;cursor:pointer;min-height:40px}
+      .visual-color-btn.secondary{background:#ede9fe;color:#5b21b6}
+      .visual-color-btn.neutral{background:#f1f5f9;color:#334155}
+      .visual-color-grid{padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+      .visual-color-card{border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;background:#fff;min-width:0;box-shadow:0 3px 12px rgba(15,23,42,.04)}
+      .visual-color-image{height:180px;position:relative;overflow:hidden;background:#f8fafc;display:flex;align-items:center;justify-content:center}
+      .visual-color-image img{width:100%;height:100%;object-fit:cover;display:block}
+      .visual-color-image-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:9px;color:#334155;font-size:12px;font-weight:800;text-align:center;padding:15px;background:linear-gradient(135deg,var(--sw1,#dbeafe),var(--sw2,#fce7f3),var(--sw3,#ddd6fe))}
+      .visual-color-swatches{position:absolute;left:10px;right:10px;bottom:9px;display:flex;gap:5px}
+      .visual-color-swatch{height:22px;flex:1;border:1px solid rgba(255,255,255,.7);border-radius:5px;box-shadow:0 1px 4px #0002}
+      .visual-color-card-body{padding:12px;display:flex;flex-direction:column;gap:7px}
+      .visual-color-card h3{font-size:15px;color:#1e1b4b;line-height:1.3}
+      .visual-color-group{font-size:10px;font-weight:900;color:#6d28d9;letter-spacing:.04em;text-transform:uppercase}
+      .visual-color-hex{font-size:11px;color:#64748b;font-family:monospace;line-height:1.5}
+      .visual-color-desc{font-size:12px;color:#475569;line-height:1.55;white-space:pre-wrap}
+      .visual-color-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+      .visual-color-editor{display:none;margin:12px;padding:13px;border:1px solid #c4b5fd;border-radius:13px;background:#faf8ff}
+      .visual-color-editor.open{display:block}
+      .visual-color-editor h3{font-size:14px;color:#4c1d95;margin-bottom:10px}
+      .visual-color-form{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+      .visual-color-form label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;color:#475569;min-width:0}
+      .visual-color-form label.full{grid-column:1/-1}
+      .visual-color-form input,.visual-color-form textarea,.visual-color-form select{width:100%;border:1px solid #d8d4e8;border-radius:8px;padding:9px;background:#fff;font:inherit;font-size:13px;min-width:0}
+      .visual-color-form textarea{min-height:76px;resize:vertical}
+      .visual-color-editor-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;margin-top:10px}
+      .visual-color-status{font-size:11px;color:#64748b;margin-top:8px}
+      @media(max-width:640px){.btn-visual-color-knowledge{min-height:36px}.visual-color-toolbar{grid-template-columns:1fr}.visual-color-grid{grid-template-columns:1fr;padding:9px}.visual-color-image{height:200px}.visual-color-form{grid-template-columns:1fr}.visual-color-form label.full{grid-column:auto}.visual-color-toolbar .visual-color-btn{width:100%}}
+    </style>
+
 </head>
 <body>
 
@@ -2049,6 +2091,7 @@
         <h1>Kim Flora Studio</h1>
         <div class="header-actions">
             <button class="btn-color-knowledge" type="button" onclick="openColorKnowledge()">Phối màu &amp; Chọn màu</button>
+            <button class="btn-visual-color-knowledge" type="button" onclick="openVisualColorKnowledge()">5 nhóm màu hình ảnh</button>
             <button class="btn-display-knowledge" type="button" onclick="openDisplayKnowledge()">Trưng bày &amp; Chụp ảnh</button>
             <button class="btn-media-knowledge" type="button" onclick="openMediaKnowledge()">Chụp ảnh, chỉnh ảnh &amp; Video</button>
             <button class="btn-chatgpt-knowledge" type="button" onclick="openChatGPTKnowledge()">Hướng dẫn dùng ChatGPT</button>
@@ -9196,6 +9239,53 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
     </section>
 
 
+
+    <!-- TRANG RIÊNG: 5 NHÓM MÀU HÌNH ẢNH -->
+    <section id="visualColorKnowledgePage" class="knowledge-page visual-color-page" aria-hidden="true">
+      <div class="knowledge-shell">
+        <div class="knowledge-topbar">
+          <button class="knowledge-back visual-color-back" type="button" onclick="closeVisualColorKnowledge()">← Quay lại Kim Flora Studio</button>
+          <div class="knowledge-top-actions">
+            <button type="button" onclick="exportVisualColorLibrary()">Xuất dữ liệu</button>
+            <button type="button" onclick="document.getElementById('visualColorImportFile').click()">Nhập dữ liệu</button>
+            <input id="visualColorImportFile" type="file" accept="application/json,.json" style="display:none" onchange="importVisualColorLibrary(event)">
+          </div>
+        </div>
+        <header class="knowledge-hero visual-color-hero">
+          <div class="knowledge-kicker">KIM FLORA · VISUAL COLOR LIBRARY</div>
+          <h2>5 nhóm màu hình ảnh</h2>
+          <p>Thư viện phong cách màu dành cho hình ảnh sản phẩm, bó hoa, nón lá đính hoa, phụ kiện cưới và video AI. Chọn một nhóm để khám phá phong cách, bảng màu HEX và cảm xúc hình ảnh. Có thể tự chỉnh sửa nội dung, thay ảnh hoặc bổ sung phong cách mới.</p>
+          <div class="knowledge-formula">BẢNG MÀU HEX → ÁNH SÁNG → BỐI CẢNH → CẢM XÚC → ỨNG DỤNG KIM FLORA</div>
+        </header>
+        <nav class="visual-color-tabs" id="visualColorTabs" aria-label="5 nhóm màu hình ảnh"></nav>
+        <div class="visual-color-toolbar">
+          <input id="visualColorSearch" type="search" placeholder="Tìm phong cách, màu HEX, cảm xúc..." oninput="renderVisualColorCards()">
+          <button class="visual-color-btn" type="button" onclick="openVisualColorEditor()">＋ Thêm nội dung / hình ảnh</button>
+          <button class="visual-color-btn secondary" type="button" onclick="resetVisualColorLibrary()">Khôi phục mặc định</button>
+        </div>
+        <div id="visualColorEditor" class="visual-color-editor">
+          <h3 id="visualColorEditorTitle">Thêm phong cách màu mới</h3>
+          <div class="visual-color-form">
+            <label>Nhóm màu<select id="vceGroup"><option value="Dreamcore & thế giới kỳ ảo">Dreamcore & thế giới kỳ ảo</option><option value="Điện ảnh & màu phim">Điện ảnh & màu phim</option><option value="Pastel & nghệ thuật">Pastel & nghệ thuật</option><option value="Cao cấp & thời trang">Cao cấp & thời trang</option><option value="Thiên nhiên & giả tưởng">Thiên nhiên & giả tưởng</option></select></label>
+            <label>Tên phong cách<input id="vceName" placeholder="Ví dụ: Dreamcore Pastel"></label>
+            <label class="full">Mã HEX (ngăn cách bằng dấu phẩy)<input id="vceHex" placeholder="#294B78, #9CC9D1, #F2C3D2"></label>
+            <label class="full">Mô tả / cảm xúc<textarea id="vceDescription" placeholder="Không khí, cảm xúc, đặc điểm hình ảnh..."></textarea></label>
+            <label class="full">Ứng dụng cho Kim Flora<textarea id="vceUsage" placeholder="Bó hoa, nón lá, phụ kiện cưới, video..."></textarea></label>
+            <label class="full">URL hình ảnh<input id="vceImageUrl" type="url" placeholder="https://.../hinh-anh.jpg"></label>
+            <label class="full">Hoặc tải ảnh từ thiết bị<input id="vceImageFile" type="file" accept="image/*" onchange="previewVisualColorImage(event)"></label>
+            <div class="full" id="vceImagePreview" style="display:none"><img id="vcePreviewImg" alt="Xem trước ảnh" style="max-width:100%;max-height:220px;border-radius:9px;object-fit:contain;background:#fff"></div>
+          </div>
+          <div class="visual-color-editor-actions">
+            <button class="visual-color-btn neutral" type="button" onclick="closeVisualColorEditor()">Hủy</button>
+            <button class="visual-color-btn" type="button" onclick="saveVisualColorItem()">💾 Lưu nội dung</button>
+          </div>
+          <div id="visualColorEditorStatus" class="visual-color-status">Nội dung được lưu trong trình duyệt hiện tại.</div>
+        </div>
+        <div id="visualColorCardGrid" class="visual-color-grid"></div>
+        <div style="padding:0 12px 14px;color:#64748b;font-size:11px;line-height:1.5">Lưu ý: thay đổi được lưu trên trình duyệt bằng bộ nhớ cục bộ. Dùng “Xuất dữ liệu” để sao lưu hoặc chuyển thư viện sang thiết bị khác. Ảnh tải lên dung lượng lớn có thể vượt giới hạn lưu trữ của trình duyệt; nên dùng ảnh nén hoặc URL ảnh ổn định.</div>
+      </div>
+    </section>
+
     <script>
         const SECRET_PIN = "1306";
 
@@ -11024,7 +11114,112 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
         });
 
 
+
+        // ===== THƯ VIỆN 5 NHÓM MÀU HÌNH ẢNH — CÓ THỂ CHỈNH SỬA =====
+        const VISUAL_COLOR_STORAGE_KEY = 'kimflora_visual_color_library_v1';
+        const VISUAL_COLOR_GROUPS = [
+          'Dreamcore & thế giới kỳ ảo','Điện ảnh & màu phim','Pastel & nghệ thuật','Cao cấp & thời trang','Thiên nhiên & giả tưởng'
+        ];
+        const VISUAL_COLOR_DEFAULTS = [
+          {id:'vc01',group:VISUAL_COLOR_GROUPS[0],name:'Dreamcore Pastel',hex:['#294B78','#9CC9D1','#F2C3D2','#E8EDF4','#F1B6A5'],description:'Trăng khổng lồ, mây hồng, bầu trời xanh sâu và kiến trúc xanh ngọc. Siêu thực nhưng bề mặt hoa và chất liệu vẫn chân thật.',usage:'Clip bó hoa trong mơ, nón lá đính hoa, bộ sưu tập sản phẩm có bối cảnh kỳ ảo.',image:''},
+          {id:'vc02',group:VISUAL_COLOR_GROUPS[0],name:'Fairycore',hex:['#B8CDB5','#F4CADB','#C7B6E5','#F5F0E6'],description:'Vườn tiên, sương mỏng, hoa dịu và ánh sáng li ti. Cảm giác tự nhiên, nữ tính, huyền diệu.',usage:'Hoa cưới, hoa vải, phụ kiện tóc và cảnh vườn cổ tích.',image:''},
+          {id:'vc03',group:VISUAL_COLOR_GROUPS[0],name:'Ethereal Moonlight',hex:['#202E52','#DDE5F0','#A9A3C7','#8CA8BE'],description:'Ánh trăng bạc, bóng đổ xanh lạnh, sương mờ và không khí huyền bí.',usage:'Bó hoa trắng-lavender, ảnh sản phẩm ban đêm, video ánh trăng.',image:''},
+          {id:'vc04',group:VISUAL_COLOR_GROUPS[0],name:'Candy Cloud Fantasy',hex:['#F4AFC8','#F6C1A5','#A9D5EE','#FFF0F5'],description:'Mây bông, màu kẹo pastel, hình khối phóng đại và không khí vui tươi.',usage:'Bó hoa hồng đào, nội dung mạng xã hội, bộ sưu tập trẻ trung.' ,image:''},
+          {id:'vc05',group:VISUAL_COLOR_GROUPS[1],name:'Teal & Amber',hex:['#27666B','#C58A4B','#252A2A','#E8D7BD'],description:'Tương phản xanh lạnh và vàng ấm, tạo chiều sâu điện ảnh, nổi bật kết cấu vật liệu.',usage:'Video quy trình làm hoa, bàn thủ công, cảnh gỗ và ánh sáng cửa sổ.',image:''},
+          {id:'vc06',group:VISUAL_COLOR_GROUPS[1],name:'Vintage Earthy',hex:['#49372B','#B88958','#29352C','#D9C7AE'],description:'Nâu gỗ, vàng nâu và xanh rêu trầm; hoài cổ, mộc mạc, giàu chất liệu.',usage:'Clip thủ công, nón lá, tre gỗ, đóng gói và quy trình chế tác.',image:''},
+          {id:'vc07',group:VISUAL_COLOR_GROUPS[1],name:'Romantic Film',hex:['#C995A6','#F0E6D8','#82666A','#B8A6A0'],description:'Hồng bụi, kem và nâu hồng với độ tương phản mềm, gợi cảm giác lãng mạn hoài niệm.',usage:'Bó hoa tặng người thương, video kể chuyện và ảnh lifestyle.',image:''},
+          {id:'vc08',group:VISUAL_COLOR_GROUPS[1],name:'Dark Cinematic',hex:['#19191D','#762F43','#D6B783','#4B3B3F'],description:'Nền tối, đỏ rượu và ánh champagne; tương phản mạnh, sang trọng, kịch tính.',usage:'Hoa đỏ trầm, hộp hoa cao cấp, bộ ảnh sản phẩm sang trọng.',image:''},
+          {id:'vc09',group:VISUAL_COLOR_GROUPS[2],name:'Korean Soft Pastel',hex:['#F2D6DD','#F5EFE5','#A8B8A0','#D8C8D2'],description:'Màu sữa dịu, xanh sage và ánh sáng mềm; tối giản, trong trẻo, dễ gần.',usage:'Bó hoa bán hằng ngày, hoa sáp, ảnh sản phẩm nền sáng.',image:''},
+          {id:'vc10',group:VISUAL_COLOR_GROUPS[2],name:'Chinese Contemporary',hex:['#B83A45','#E7A2A7','#F1E4D0','#6B3445'],description:'Đỏ son và hồng đào làm điểm nhấn trên nền kem; bố cục có chủ đích, hiện đại và giàu biểu tượng.',usage:'Hoa lễ, tráp cưới, bó hoa điểm nhấn và thiết kế nghệ thuật.',image:''},
+          {id:'vc11',group:VISUAL_COLOR_GROUPS[2],name:'Lavender Haze',hex:['#CBB4F9','#F6D9FC','#F9B4F9','#E8E1F4'],description:'Tím lavender, tím hồng sữa và hồng tím; mơ màng, nữ tính, nhẹ nhàng.',usage:'Hoa cưới, hoa vải, nơ vải và phụ kiện áo dài.',image:''},
+          {id:'vc12',group:VISUAL_COLOR_GROUPS[2],name:'Spring Garden Pastel',hex:['#B9D8C2','#F2E2A5','#F2C3D2','#FAF6EE'],description:'Xanh bạc hà, vàng bơ và hồng phấn; tươi mới, dịu mắt và giàu sức sống.',usage:'Bó hoa mùa xuân, giỏ hoa, hoa sinh nhật và quà tặng.',image:''},
+          {id:'vc13',group:VISUAL_COLOR_GROUPS[3],name:'Quiet Luxury',hex:['#F2EBDD','#B5A394','#51443D','#D6C9B8'],description:'Bảng màu trung tính, ít màu, tập trung vào tỷ lệ, đường nét và chất liệu cao cấp.',usage:'Hoa cưới thanh lịch, hoa lụa cao cấp, bao bì tối giản.',image:''},
+          {id:'vc14',group:VISUAL_COLOR_GROUPS[3],name:'Avant-garde Editorial',hex:['#2456A6','#D83A88','#F0F1F4','#27233D'],description:'Màu tương phản mạnh, hình khối táo bạo và bố cục thời trang có tính thử nghiệm.',usage:'Bộ ảnh nghệ thuật, bó hoa tạo hình, chiến dịch thương hiệu.',image:''},
+          {id:'vc15',group:VISUAL_COLOR_GROUPS[3],name:'Rococo Romantic',hex:['#E9B7C7','#C8A66B','#F4EADD','#B77F93'],description:'Hồng phấn, vàng cổ và kem ngà; lãng mạn cổ điển, trang trí tinh xảo nhưng cần tiết chế.',usage:'Hoa cưới, nón lá đính hoa, phụ kiện cô dâu và concept cổ điển.',image:''},
+          {id:'vc16',group:VISUAL_COLOR_GROUPS[3],name:'Jewel Tones',hex:['#176B60','#7A2946','#C8A45D','#F0E5D2'],description:'Xanh ngọc lục bảo, đỏ rượu và vàng kim; sâu, quý phái và giàu độ bão hòa.',usage:'Hoa cao cấp, tráp cưới, hộp hoa và quà tặng sang trọng.',image:''},
+          {id:'vc17',group:VISUAL_COLOR_GROUPS[4],name:'Botanical Mist',hex:['#A8B8A0','#657B68','#EDE6D8','#C6D1C2'],description:'Xanh sage, xanh rêu và kem tự nhiên; cảm giác tĩnh lặng, hữu cơ, sương nhẹ.',usage:'Hoa lá tự nhiên, giỏ hoa, ảnh thủ công và bối cảnh sân vườn.',image:''},
+          {id:'vc18',group:VISUAL_COLOR_GROUPS[4],name:'Aquatic Dream',hex:['#247F91','#8FD6D0','#F2A9A1','#E4F5F4'],description:'Xanh đại dương và ngọc lam với điểm hồng san hô; mát, trong và mềm như dưới nước.',usage:'Bó hoa xanh-trắng, concept mùa hè, video có chuyển động mơ màng.',image:''},
+          {id:'vc19',group:VISUAL_COLOR_GROUPS[4],name:'Celestial Fantasy',hex:['#202B63','#7164B5','#E7A9D1','#C7D7F2'],description:'Xanh vũ trụ, tím thiên hà và hồng sao; bầu trời đầy sao, ánh sáng huyền ảo.',usage:'Bó hoa đêm, ảnh sản phẩm fantasy, video hoa dưới ngân hà.',image:''},
+          {id:'vc20',group:VISUAL_COLOR_GROUPS[4],name:'Magical Realism',hex:['#294B78','#9CC9D1','#F2C3D2','#F1B6A5'],description:'Không gian đời thường pha chi tiết siêu thực như trăng khổng lồ hoặc hoa quá khổ, nhưng chất liệu sản phẩm vẫn chân thật.',usage:'Phong cách hình ảnh chủ lực cho series Dreamcore của Kim Flora.',image:''}
+        ];
+        let visualColorItems = [];
+        let visualColorActiveGroup = VISUAL_COLOR_GROUPS[0];
+        let visualColorEditingId = null;
+        let visualColorPendingImage = '';
+        function visualColorCloneDefaults(){ return VISUAL_COLOR_DEFAULTS.map(item=>({...item,hex:[...item.hex]})); }
+        function loadVisualColorLibrary(){
+          try { const saved=localStorage.getItem(VISUAL_COLOR_STORAGE_KEY); visualColorItems=saved?JSON.parse(saved):visualColorCloneDefaults(); if(!Array.isArray(visualColorItems))visualColorItems=visualColorCloneDefaults(); }
+          catch(e){ visualColorItems=visualColorCloneDefaults(); }
+          renderVisualColorTabs(); renderVisualColorCards();
+        }
+        function persistVisualColorLibrary(){
+          try { localStorage.setItem(VISUAL_COLOR_STORAGE_KEY,JSON.stringify(visualColorItems)); return true; }
+          catch(e){ alert('Không lưu được. Ảnh có thể quá lớn hoặc bộ nhớ trình duyệt đã đầy. Hãy dùng ảnh nén hoặc URL ảnh.'); return false; }
+        }
+        function openVisualColorKnowledge(){
+          document.body.classList.add('knowledge-mode');
+          ['compositionKnowledgePage','colorKnowledgePage','displayKnowledgePage','mediaKnowledgePage','careKnowledgePage','deliveryKnowledgePage','chatgptKnowledgePage','fruitTrayKnowledgePage'].forEach(id=>{const el=document.getElementById(id);if(el){el.classList.remove('active');el.setAttribute('aria-hidden','true');}});
+          const page=document.getElementById('visualColorKnowledgePage'); page.classList.add('active'); page.setAttribute('aria-hidden','false');
+          loadVisualColorLibrary(); window.scrollTo({top:0,behavior:'auto'});
+        }
+        function closeVisualColorKnowledge(){const page=document.getElementById('visualColorKnowledgePage');page.classList.remove('active');page.setAttribute('aria-hidden','true');document.body.classList.remove('knowledge-mode');window.scrollTo({top:0,behavior:'auto'});}
+        function renderVisualColorTabs(){
+          const root=document.getElementById('visualColorTabs'); if(!root)return; root.innerHTML='';
+          VISUAL_COLOR_GROUPS.forEach((group,index)=>{const btn=document.createElement('button');btn.type='button';btn.className='visual-color-tab'+(group===visualColorActiveGroup?' active':'');btn.textContent=`${String(index+1).padStart(2,'0')} · ${group}`;btn.onclick=()=>{visualColorActiveGroup=group;renderVisualColorTabs();renderVisualColorCards();};root.appendChild(btn);});
+        }
+        function visualColorEscape(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+        function renderVisualColorCards(){
+          const root=document.getElementById('visualColorCardGrid');if(!root)return; const q=(document.getElementById('visualColorSearch')?.value||'').trim().toLowerCase();
+          const items=visualColorItems.filter(item=>(item.group===visualColorActiveGroup)&&(!q||[item.name,item.group,item.description,item.usage,(item.hex||[]).join(' ')].join(' ').toLowerCase().includes(q)));
+          root.innerHTML='';
+          if(!items.length){root.innerHTML='<div style="grid-column:1/-1;padding:22px;text-align:center;color:#64748b">Chưa có nội dung phù hợp. Bạn có thể thêm phong cách mới.</div>';return;}
+          items.forEach(item=>{
+            const card=document.createElement('article');card.className='visual-color-card';
+            const image=item.image?`<img src="${visualColorEscape(item.image)}" alt="${visualColorEscape(item.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`:'';
+            const colors=(item.hex||[]).map(hex=>`<span class="visual-color-swatch" title="${visualColorEscape(hex)}" style="background:${/^#[0-9a-fA-F]{6}$/.test(hex)?hex:'#ddd'}"></span>`).join('');
+            card.innerHTML=`<div class="visual-color-image" style="--sw1:${visualColorEscape((item.hex||[])[0]||'#dbeafe')};--sw2:${visualColorEscape((item.hex||[])[1]||'#fce7f3')};--sw3:${visualColorEscape((item.hex||[])[2]||'#ddd6fe')}">${image}<div class="visual-color-image-placeholder" style="${item.image?'display:none':''}"><span style="font-size:28px">✿</span><span>${visualColorEscape(item.name)}</span><span style="font-weight:500">Thêm ảnh tham chiếu bằng nút Chỉnh sửa</span></div><div class="visual-color-swatches">${colors}</div></div><div class="visual-color-card-body"><div class="visual-color-group">${visualColorEscape(item.group)}</div><h3>${visualColorEscape(item.name)}</h3><div class="visual-color-hex">${visualColorEscape((item.hex||[]).join(' · '))}</div><div class="visual-color-desc">${visualColorEscape(item.description||'')}</div><div class="visual-color-desc"><strong>Ứng dụng:</strong> ${visualColorEscape(item.usage||'Chưa bổ sung')}</div><div class="visual-color-actions"><button class="visual-color-btn secondary" type="button" data-edit="${visualColorEscape(item.id)}">✏️ Chỉnh sửa nội dung / ảnh</button><button class="visual-color-btn neutral" type="button" data-copy="${visualColorEscape(item.id)}">Sao chép HEX</button><button class="visual-color-btn neutral" type="button" data-delete="${visualColorEscape(item.id)}">Xóa</button></div></div>`;
+            card.querySelector('[data-edit]').onclick=()=>editVisualColorItem(item.id);
+            card.querySelector('[data-copy]').onclick=()=>{const text=(item.hex||[]).join(', ');if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(()=>alert('Đã sao chép mã HEX.')).catch(()=>prompt('Sao chép mã HEX:',text));else prompt('Sao chép mã HEX:',text);};
+            card.querySelector('[data-delete]').onclick=()=>deleteVisualColorItem(item.id);
+            root.appendChild(card);
+          });
+        }
+        function showVisualColorEditor(item){
+          visualColorEditingId=item?.id||null;visualColorPendingImage=item?.image||'';
+          document.getElementById('visualColorEditorTitle').textContent=item?'Chỉnh sửa phong cách màu':'Thêm phong cách màu mới';
+          document.getElementById('vceGroup').value=item?.group||visualColorActiveGroup;
+          document.getElementById('vceName').value=item?.name||'';
+          document.getElementById('vceHex').value=(item?.hex||[]).join(', ');
+          document.getElementById('vceDescription').value=item?.description||'';
+          document.getElementById('vceUsage').value=item?.usage||'';
+          document.getElementById('vceImageUrl').value=item?.image&&!item.image.startsWith('data:')?item.image:'';
+          document.getElementById('vceImageFile').value='';
+          const preview=document.getElementById('vceImagePreview');const img=document.getElementById('vcePreviewImg');
+          if(visualColorPendingImage){img.src=visualColorPendingImage;preview.style.display='block';}else{img.removeAttribute('src');preview.style.display='none';}
+          document.getElementById('visualColorEditorStatus').textContent='Ảnh có thể dùng URL trực tiếp hoặc tải lên từ thiết bị.';
+          document.getElementById('visualColorEditor').classList.add('open');document.getElementById('visualColorEditor').scrollIntoView({behavior:'smooth',block:'start'});
+        }
+        function editVisualColorItem(id){const item=visualColorItems.find(x=>x.id===id);if(item)showVisualColorEditor(item);}
+        function openVisualColorEditor(){openVisualColorEditorForm();}
+        function openVisualColorEditorForm(){ visualColorEditingId=null;visualColorPendingImage='';document.getElementById('visualColorEditorTitle').textContent='Thêm phong cách màu mới';document.getElementById('vceGroup').value=visualColorActiveGroup;document.getElementById('vceName').value='';document.getElementById('vceHex').value='';document.getElementById('vceDescription').value='';document.getElementById('vceUsage').value='';document.getElementById('vceImageUrl').value='';document.getElementById('vceImageFile').value='';document.getElementById('vceImagePreview').style.display='none';document.getElementById('visualColorEditorStatus').textContent='Ảnh có thể dùng URL trực tiếp hoặc tải lên từ thiết bị.';document.getElementById('visualColorEditor').classList.add('open');document.getElementById('visualColorEditor').scrollIntoView({behavior:'smooth',block:'start'});}
+        function closeVisualColorEditor(){document.getElementById('visualColorEditor').classList.remove('open');}
+        function previewVisualColorImage(event){const file=event.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){alert('Vui lòng chọn tệp hình ảnh.');return;}if(file.size>2*1024*1024){alert('Ảnh lớn hơn 2 MB. Nên nén ảnh trước khi tải để tránh đầy bộ nhớ trình duyệt.');event.target.value='';return;}const reader=new FileReader();reader.onload=()=>{visualColorPendingImage=String(reader.result||'');document.getElementById('vcePreviewImg').src=visualColorPendingImage;document.getElementById('vceImagePreview').style.display='block';document.getElementById('vceImageUrl').value='';};reader.readAsDataURL(file);}
+        function saveVisualColorItem(){
+          const name=document.getElementById('vceName').value.trim();if(!name){alert('Vui lòng nhập tên phong cách màu.');return;}
+          const group=document.getElementById('vceGroup').value;const hex=document.getElementById('vceHex').value.split(/[，,\s]+/).map(x=>x.trim()).filter(Boolean);
+          const invalid=hex.filter(x=>!/^#[0-9a-fA-F]{6}$/.test(x));if(invalid.length){alert('Mã HEX chưa hợp lệ: '+invalid.join(', ')+'. Hãy nhập dạng #RRGGBB.');return;}
+          const url=document.getElementById('vceImageUrl').value.trim();const image=url||visualColorPendingImage||'';if(url&&!/^https?:\/\//i.test(url)){alert('URL ảnh cần bắt đầu bằng https:// hoặc http://');return;}
+          const item={id:visualColorEditingId||('vc'+Date.now()),group,name,hex,description:document.getElementById('vceDescription').value.trim(),usage:document.getElementById('vceUsage').value.trim(),image};
+          if(visualColorEditingId){const i=visualColorItems.findIndex(x=>x.id===visualColorEditingId);if(i>=0)visualColorItems[i]=item;else visualColorItems.push(item);}else visualColorItems.push(item);
+          if(!persistVisualColorLibrary())return;visualColorActiveGroup=group;document.getElementById('visualColorSearch').value='';renderVisualColorTabs();renderVisualColorCards();closeVisualColorEditor();
+        }
+        function deleteVisualColorItem(id){const item=visualColorItems.find(x=>x.id===id);if(!item||!confirm(`Xóa phong cách “${item.name}”?`))return;visualColorItems=visualColorItems.filter(x=>x.id!==id);if(persistVisualColorLibrary())renderVisualColorCards();}
+        function resetVisualColorLibrary(){if(!confirm('Khôi phục 20 phong cách mặc định? Nội dung chỉnh sửa trong thư viện này sẽ bị thay thế.'))return;visualColorItems=visualColorCloneDefaults();persistVisualColorLibrary();visualColorActiveGroup=VISUAL_COLOR_GROUPS[0];document.getElementById('visualColorSearch').value='';closeVisualColorEditor();renderVisualColorTabs();renderVisualColorCards();}
+        function exportVisualColorLibrary(){const blob=new Blob([JSON.stringify(visualColorItems,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='kim-flora-5-nhom-mau-hinh-anh.json';a.click();URL.revokeObjectURL(url);}
+        function importVisualColorLibrary(event){const file=event.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!Array.isArray(data)||!data.every(x=>x&&x.name&&x.group&&Array.isArray(x.hex)))throw new Error('invalid');visualColorItems=data;if(persistVisualColorLibrary()){visualColorActiveGroup=VISUAL_COLOR_GROUPS.includes(data[0]?.group)?data[0].group:VISUAL_COLOR_GROUPS[0];renderVisualColorTabs();renderVisualColorCards();alert('Đã nhập thư viện màu.');}}catch(e){alert('Tệp JSON không đúng định dạng thư viện Kim Flora.');}event.target.value='';};reader.readAsText(file);}
+
         // Khởi động
+        try { loadVisualColorLibrary(); } catch(e) {}
         drawWheel();
         renderRolesList();
         if (typeof kfAdobeSyncFromExistingHex === 'function') {
