@@ -2295,58 +2295,47 @@
                 </div>
                 <div id="colorCountBadge" class="badge-target" style="margin-bottom:8px;">Đang tải dữ liệu 192 màu…</div>
 
-                <details style="margin-bottom:8px; border:1px solid var(--border); border-radius:8px; padding:8px; background:#fff;">
-                    <summary style="cursor:pointer; font-size:12px; font-weight:800; color:#1e1b4b; display:flex; align-items:center; gap:8px;">
-                        <span style="flex:1;">Tra màu: cảm xúc – ý nghĩa – màu hợp phối</span>
-                        <button type="button" class="meaning-edit-btn" onclick="event.preventDefault(); event.stopPropagation(); openMeaningEditor();">✏️ Chỉnh sửa</button>
-                    </summary>
-                    <input type="text" class="search-bar" id="searchMeaningLibrary" placeholder="Nhập tên màu để tìm (ví dụ: hồng)..." oninput="renderMeaningLibrary()" style="margin-top:8px;">
-                    <div id="meaningEditorPanel" class="meaning-editor-panel" style="display:none;">
-                        <div class="meaning-editor-head">
-                            <div>
-                                <div class="meaning-editor-title">Chỉnh sửa / thêm màu</div>
-                                <div class="meaning-editor-subtitle">Chỉ áp dụng cho mục “Tra màu: cảm xúc – ý nghĩa – màu hợp phối”.</div>
-                            </div>
-                            <button type="button" class="meaning-editor-close" onclick="closeMeaningEditor()">×</button>
-                        </div>
-                        <div class="meaning-editor-actions">
-                            <button type="button" class="meaning-action-btn primary" onclick="prepareMeaningNew()">＋ Nhập màu mới</button>
-                            <button type="button" class="meaning-action-btn neutral" onclick="exportMeaningLibraryBackup()">Xuất sao lưu dữ liệu màu</button>
-                            <button type="button" class="meaning-action-btn neutral" onclick="document.getElementById('meaningImportFile').click()">Nhập dữ liệu đã sao lưu</button>
-                            <input id="meaningImportFile" type="file" accept="application/json,.json" style="display:none" onchange="importMeaningLibraryBackup(this.files&&this.files[0],this)">
-                            <select id="meaningEditorSelect" onchange="loadMeaningEditorItem(this.value)">
-                                <option value="">— Chọn màu cần chỉnh sửa —</option>
-                            </select>
-                        </div>
-                        <div class="meaning-editor-grid">
-                            <label>Nhóm màu<input id="meaningEditGroup" type="text"></label>
-                            <label>Tên màu<input id="meaningEditName" type="text"></label>
-                            <label>Mã HEX<input id="meaningEditHex" type="text" placeholder="#FFFFFF"></label>
-                            <label>RGB<input id="meaningEditRgb" type="text" placeholder="Tự tính từ HEX nếu để trống"></label>
-                            <label>Nhiệt độ<input id="meaningEditTemp" type="text"></label>
-                            <label>Độ sáng<input id="meaningEditLight" type="text"></label>
-                            <label>Độ bão hòa<input id="meaningEditSaturation" type="text" placeholder="Ví dụ: Thấp / 35%"></label>
-                            <label class="full">Cảm nhận thị giác<textarea id="meaningEditVisual" placeholder="Mịn, mềm, sáng, nhẹ nhàng..."></textarea></label>
-                            <label>Cảm xúc<input id="meaningEditEmotion" type="text"></label>
-                            <label>Ý nghĩa<input id="meaningEditMeaning" type="text"></label>
-                            <label>Màu hợp phối<input id="meaningEditMatch" type="text"></label>
-                            <label class="full">Hiệu quả khi phối<textarea id="meaningEditEffect"></textarea></label>
-                            <label>Dịp / hoàn cảnh<textarea id="meaningEditOccasion"></textarea></label>
-                            <label>Dùng trong hoa & tráp<textarea id="meaningEditFloral"></textarea></label>
-                            <label class="full">Ứng dụng cụ thể<textarea id="meaningEditApplication" placeholder="Loại hoa, bó hoa, giỏ hoa, hộp hoa, giấy, nơ..."></textarea></label>
-                            <label class="full">Lưu ý hài hòa<textarea id="meaningEditNote"></textarea></label>
-                        </div>
-                        <p class="meaning-editor-subtitle" style="margin:6px 0;">Nội dung đầy đủ được lưu trong bộ nhớ trình duyệt này và đồng bộ vào Bản Đồ 192 Màu cùng nhóm màu tự thêm trong thư viện Pantone. Dùng chức năng sao lưu/nhập dữ liệu để chuyển sang thiết bị khác.</p>
-                        <div class="meaning-editor-footer">
-                            <span id="meaningEditorStatus"></span>
-                            <div>
-                                <button type="button" class="meaning-action-btn neutral" onclick="closeMeaningEditor()">Hủy</button>
-                                <button type="button" class="meaning-action-btn success" onclick="saveMeaningEditorItem()">💾 Lưu nội dung</button>
-                            </div>
+                <section style="margin-bottom:10px;border:1px solid #c7d2fe;border-radius:10px;padding:10px;background:#fff;">
+                    <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:8px;">
+                        <strong style="font-size:13px;color:#1e1b4b;">Tra màu: cảm xúc – ý nghĩa – màu hợp phối</strong>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button type="button" class="meaning-edit-btn" onclick="kfOpenUnifiedColorEditor()">✏️ Chỉnh sửa màu</button>
+                            <button type="button" class="meaning-edit-btn" onclick="kfPrepareUnifiedNew()">＋ Thêm màu mới</button>
+                            <button type="button" class="meaning-edit-btn" onclick="kfExportUnifiedColors()">Xuất sao lưu</button>
+                            <button type="button" class="meaning-edit-btn" onclick="document.getElementById('kfUnifiedImport').click()">Nhập sao lưu</button>
+                            <input id="kfUnifiedImport" type="file" accept="application/json,.json" style="display:none" onchange="kfImportUnifiedColors(this.files&&this.files[0],this)">
                         </div>
                     </div>
-                    <div class="cards-list" id="meaningLibraryContainer" style="max-height:360px;"></div>
-                </details>
+                    <p style="font-size:11px;color:#64748b;line-height:1.45;margin-bottom:8px;">Tra cứu và chỉnh sửa trực tiếp trong cùng bảng 192 màu. Mỗi hồ sơ gồm đầy đủ tiêu chí và 3 công thức phối màu gợi ý. Dữ liệu chỉnh sửa được lưu trên trình duyệt hiện tại; hãy xuất sao lưu để chuyển thiết bị.</p>
+                    <div id="kfUnifiedColorEditor" style="display:none;border:1px solid #c7d2fe;border-radius:9px;padding:10px;background:#f8faff;margin-bottom:9px;">
+                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px;"><strong id="kfUnifiedEditorTitle">Chỉnh sửa hồ sơ màu</strong><button type="button" onclick="kfCloseUnifiedColorEditor()">Đóng</button></div>
+                        <div class="meaning-editor-grid">
+                            <label class="full">Chọn màu trong bảng<input id="kfUESelect" list="kfUEColorOptions" placeholder="Nhập mã hoặc tên màu để chọn"></label>
+                            <datalist id="kfUEColorOptions"></datalist>
+                            <label>Nhóm màu<input id="kfUEGroup"></label><label>Tên màu<input id="kfUEName"></label>
+                            <label>Mã HEX<input id="kfUEHex" placeholder="#FFFFFF"></label><label>RGB<input id="kfUERgb"></label>
+                            <label>Nhiệt độ<input id="kfUETemp"></label><label>Độ sáng<input id="kfUELight"></label>
+                            <label>Độ bão hòa<input id="kfUESaturation"></label><label>Cảm xúc<input id="kfUEEmotion"></label>
+                            <label>Ý nghĩa<input id="kfUEMeaning"></label><label>Màu hợp phối<input id="kfUEMatch"></label>
+                            <label class="full">Cảm nhận thị giác<textarea id="kfUEVisual"></textarea></label>
+                            <label class="full">Hiệu quả khi phối<textarea id="kfUEEffect"></textarea></label>
+                            <label>Dịp / hoàn cảnh<textarea id="kfUEOccasion"></textarea></label><label>Dùng trong hoa & tráp<textarea id="kfUEFloral"></textarea></label>
+                            <label class="full">Ứng dụng cụ thể<textarea id="kfUEApplication"></textarea></label>
+                            <label class="full">Lưu ý hài hòa<textarea id="kfUENote"></textarea></label>
+                        </div>
+                        <div style="margin:10px 0 5px;font-size:12px;font-weight:900;color:#1e1b4b;">3 CÔNG THỨC GỢI Ý PHỐI LÀM CHUẨN</div>
+                        <div class="meaning-editor-grid">
+                            <label>Tên công thức 1<input id="kfUEF1Name"></label><label>Tỷ lệ % (3 số, ví dụ 60,30,10)<input id="kfUEF1Ratio" value="60,30,10"></label>
+                            <label>Màu 1 HEX<input id="kfUEF1Hex1"></label><label>Tên màu 1<input id="kfUEF1Label1"></label><label>Màu 2 HEX<input id="kfUEF1Hex2"></label><label>Tên màu 2<input id="kfUEF1Label2"></label><label>Màu 3 HEX<input id="kfUEF1Hex3"></label><label>Tên màu 3<input id="kfUEF1Label3"></label><label class="full">Hiệu quả công thức 1<textarea id="kfUEF1Style"></textarea></label>
+                            <label>Tên công thức 2<input id="kfUEF2Name"></label><label>Tỷ lệ %<input id="kfUEF2Ratio" value="55,35,10"></label>
+                            <label>Màu 1 HEX<input id="kfUEF2Hex1"></label><label>Tên màu 1<input id="kfUEF2Label1"></label><label>Màu 2 HEX<input id="kfUEF2Hex2"></label><label>Tên màu 2<input id="kfUEF2Label2"></label><label>Màu 3 HEX<input id="kfUEF2Hex3"></label><label>Tên màu 3<input id="kfUEF2Label3"></label><label class="full">Hiệu quả công thức 2<textarea id="kfUEF2Style"></textarea></label>
+                            <label>Tên công thức 3<input id="kfUEF3Name"></label><label>Tỷ lệ %<input id="kfUEF3Ratio" value="55,25,20"></label>
+                            <label>Màu 1 HEX<input id="kfUEF3Hex1"></label><label>Tên màu 1<input id="kfUEF3Label1"></label><label>Màu 2 HEX<input id="kfUEF3Hex2"></label><label>Tên màu 2<input id="kfUEF3Label2"></label><label>Màu 3 HEX<input id="kfUEF3Hex3"></label><label>Tên màu 3<input id="kfUEF3Label3"></label><label class="full">Hiệu quả công thức 3<textarea id="kfUEF3Style"></textarea></label>
+                        </div>
+                        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;"><button type="button" class="meaning-action-btn success" onclick="kfSaveUnifiedColor()">💾 Lưu hồ sơ màu</button><button type="button" class="meaning-action-btn neutral" onclick="kfCloseUnifiedColorEditor()">Hủy</button></div>
+                        <div id="kfUnifiedEditorStatus" style="font-size:11px;margin-top:7px;color:#475569;"></div>
+                    </div>
+                </section>
 
                 <details style="margin-bottom:8px; border:1px solid var(--border); border-radius:8px; padding:8px; background:#fff;">
                     <summary style="cursor:pointer; font-size:12px; font-weight:800; color:#1e1b4b;">Hướng dẫn đọc màu & tra theo cảm giác</summary>
@@ -10246,6 +10235,81 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             list.dataset.loaded = '1';
         }
 
+
+        // ===== BẢNG TRA MÀU HỢP NHẤT: CHỈNH SỬA TRỰC TIẾP 192 MÀU =====
+        const KF_UNIFIED_COLOR_STORAGE_KEY = 'kimflora_unified_color_profiles_v1';
+        let kfUnifiedEditingId = null;
+        function kfUnifiedOverrides(){ try{return JSON.parse(localStorage.getItem(KF_UNIFIED_COLOR_STORAGE_KEY)||'{}')}catch(e){return {}} }
+        function kfUnifiedPersist(){ try{localStorage.setItem(KF_UNIFIED_COLOR_STORAGE_KEY,JSON.stringify(Object.fromEntries(colorMapData.map(x=>[String(x.id),x]))));return true}catch(e){return false} }
+        function kfUnifiedApplySaved(){
+            const saved=kfUnifiedOverrides();
+            Object.entries(saved).forEach(([id,row])=>{const i=colorMapData.findIndex(x=>String(x.id)===String(id));if(i>=0)colorMapData[i]=Object.assign(colorMapData[i],row);else if(row&&row.source==='custom')colorMapData.push(row)});
+        }
+        function kfUEVal(id){return document.getElementById(id)?.value?.trim()||''}
+        function kfUESet(id,v){const e=document.getElementById(id);if(e)e.value=v??''}
+        function kfOpenUnifiedColorEditor(id){
+            const panel=document.getElementById('kfUnifiedColorEditor');if(!panel)return;
+            panel.style.display='block';
+            const dl=document.getElementById('kfUEColorOptions');
+            if(dl)dl.innerHTML=colorMapData.map(x=>`<option value="${escHtml(x.id+' · '+x.name)}"></option>`).join('');
+            const item=colorMapData.find(x=>String(x.id)===String(id))||null;
+            kfUnifiedEditingId=item?String(item.id):null;
+            document.getElementById('kfUnifiedEditorTitle').textContent=item?'Chỉnh sửa hồ sơ màu':'Chỉnh sửa / thêm hồ sơ màu';
+            const lib=item?.library||{};
+            const fields={kfUESelect:item?(item.id+' · '+item.name):'',kfUEGroup:item?.group||lib['Nhóm màu']||item?.family||'',kfUEName:item?.name||'',kfUEHex:item?.hex||'',kfUERgb:item?.rgb||lib.RGB||'',kfUETemp:item?.temperature||item?.temp||'',kfUELight:item?.brightnessLabel||item?.lightness||'',kfUESaturation:item?.saturationLabel||item?.saturation||'',kfUEVisual:item?.visual||lib['Cảm nhận thị giác']||item?.undertone||'',kfUEEmotion:item?.emotion||lib['Cảm xúc gợi ra']||item?.feeling||'',kfUEMeaning:item?.meaning||lib['Ý nghĩa thường gặp']||item?.feeling2||'',kfUEMatch:item?.match||lib['Màu hợp phối cùng']||'',kfUEEffect:item?.effect||lib['Hiệu quả khi phối']||'',kfUEOccasion:item?.occasion||lib['Mục đích / hoàn cảnh']||'',kfUEFloral:item?.floral||lib['Gợi ý dùng trong hoa và tráp']||'',kfUEApplication:item?.application||lib['Ứng dụng']||'',kfUENote:item?.note||lib['Lưu ý để phối hài hòa']||''};
+            Object.entries(fields).forEach(([k,v])=>kfUESet(k,v));
+            const forms=item?.formulas||[];
+            for(let n=1;n<=3;n++){
+                const f=forms[n-1]||{name:'',ratio:[60,30,10],colors:[{hex:item?.hex||'#FFFFFF',label:item?.name||'Màu chủ'},{hex:'#F5F0E6',label:'Kem ngà'},{hex:'#A3B18A',label:'Xanh sage'}],style:''};
+                kfUESet(`kfUEF${n}Name`,f.name);kfUESet(`kfUEF${n}Ratio`,(f.ratio||[60,30,10]).join(','));
+                for(let j=1;j<=3;j++){kfUESet(`kfUEF${n}Hex${j}`,f.colors?.[j-1]?.hex||'');kfUESet(`kfUEF${n}Label${j}`,f.colors?.[j-1]?.label||'')}
+                kfUESet(`kfUEF${n}Style`,f.style||'');
+            }
+            document.getElementById('kfUnifiedEditorStatus').textContent=item?`Đang sửa ${item.id} · ${item.name}`:'Nhập hồ sơ mới; các tiêu chí chưa biết có thể bổ sung sau.';
+            panel.scrollIntoView({behavior:'smooth',block:'start'});
+        }
+        function kfPrepareUnifiedNew(){kfOpenUnifiedColorEditor(null);kfUnifiedEditingId=null;kfUESet('kfUESelect','');['kfUEGroup','kfUEName','kfUEHex','kfUERgb','kfUETemp','kfUELight','kfUESaturation','kfUEVisual','kfUEEmotion','kfUEMeaning','kfUEMatch','kfUEEffect','kfUEOccasion','kfUEFloral','kfUEApplication','kfUENote'].forEach(k=>kfUESet(k,''));}
+        function kfCloseUnifiedColorEditor(){const p=document.getElementById('kfUnifiedColorEditor');if(p)p.style.display='none'}
+        function kfSaveUnifiedColor(){
+            const name=kfUEVal('kfUEName'),hex=kfUEVal('kfUEHex').toUpperCase();
+            if(!name){alert('Vui lòng nhập Tên màu.');return}
+            if(!/^#[0-9A-F]{6}$/.test(hex)){alert('Mã HEX phải có dạng #FFFFFF.');return}
+            const rgbObj=kfHexToRgb(hex), rgb=kfUEVal('kfUERgb')||`${rgbObj.r}, ${rgbObj.g}, ${rgbObj.b}`;
+            const formulas=[];
+            for(let n=1;n<=3;n++){
+                const ratio=kfUEVal(`kfUEF${n}Ratio`).split(',').map(v=>Number(v.trim()));
+                const colors=[1,2,3].map(j=>({hex:kfUEVal(`kfUEF${n}Hex${j}`).toUpperCase(),label:kfUEVal(`kfUEF${n}Label${j}`)}));
+                if(!kfUEVal(`kfUEF${n}Name`)||ratio.length!==3||ratio.some(v=>!Number.isFinite(v)||v<0)||Math.abs(ratio.reduce((a,b)=>a+b,0)-100)>0.01||colors.some(c=>!/^#[0-9A-F]{6}$/.test(c.hex)||!c.label)){alert(`Công thức ${n}: cần tên, 3 mã HEX hợp lệ, tên từng màu và tỷ lệ tổng bằng 100%.`);return}
+                formulas.push({name:kfUEVal(`kfUEF${n}Name`),ratio,colors,style:kfUEVal(`kfUEF${n}Style`)});
+            }
+            const previous=colorMapData.find(x=>String(x.id)===String(kfUnifiedEditingId));
+            const id=previous?previous.id:('KF-'+Date.now().toString(36).toUpperCase());
+            const item=Object.assign({},previous||{},{
+                id,source:previous?.source||'custom',name,hex,group:kfUEVal('kfUEGroup')||'Chưa phân nhóm',family:kfUEVal('kfUEGroup')||previous?.family||'Tùy chỉnh',
+                temp:kfUEVal('kfUETemp'),temperature:kfUEVal('kfUETemp'),brightnessLabel:kfUEVal('kfUELight'),lightness:Number(kfUEVal('kfUELight'))||previous?.lightness||0,
+                saturationLabel:kfUEVal('kfUESaturation'),saturation:Number((kfUEVal('kfUESaturation').match(/\d+(?:\.\d+)?/)||[])[0])||previous?.saturation||0,
+                rgb,visual:kfUEVal('kfUEVisual'),emotion:kfUEVal('kfUEEmotion'),meaning:kfUEVal('kfUEMeaning'),match:kfUEVal('kfUEMatch'),effect:kfUEVal('kfUEEffect'),
+                occasion:kfUEVal('kfUEOccasion'),floral:kfUEVal('kfUEFloral'),application:kfUEVal('kfUEApplication'),note:kfUEVal('kfUENote'),formulas,
+                library:{...(previous?.library||{}),'Nhóm màu':kfUEVal('kfUEGroup'),'Tên màu':name,'Mã màu HEX (mã màu số)':hex,'RGB':rgb,'Nhiệt độ':kfUEVal('kfUETemp'),'Độ sáng':kfUEVal('kfUELight'),'Độ bão hòa':kfUEVal('kfUESaturation'),'Cảm nhận thị giác':kfUEVal('kfUEVisual'),'Cảm xúc gợi ra':kfUEVal('kfUEEmotion'),'Ý nghĩa thường gặp':kfUEVal('kfUEMeaning'),'Màu hợp phối cùng':kfUEVal('kfUEMatch'),'Hiệu quả khi phối':kfUEVal('kfUEEffect'),'Mục đích / hoàn cảnh':kfUEVal('kfUEOccasion'),'Gợi ý dùng trong hoa và tráp':kfUEVal('kfUEFloral'),'Ứng dụng':kfUEVal('kfUEApplication'),'Lưu ý để phối hài hòa':kfUEVal('kfUENote'),'Công thức phối màu':formulas}
+            });
+            if(previous)Object.assign(previous,item);else colorMapData.push(item);
+            const saved=kfUnifiedPersist();
+            renderColorList();
+            document.getElementById('kfUnifiedEditorStatus').textContent=saved?`Đã lưu ${id} · ${name} vào bảng tra màu trên trình duyệt này.`:'Đã cập nhật trong phiên hiện tại nhưng trình duyệt không cho phép lưu lâu dài; hãy xuất sao lưu.';
+        }
+        function kfExportUnifiedColors(){
+            const payload={version:1,exportedAt:new Date().toISOString(),colors:colorMapData};
+            const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+            a.href=url;a.download='kim-flora-bang-tra-mau-hop-nhat.json';a.click();URL.revokeObjectURL(url);
+        }
+        function kfImportUnifiedColors(file,input){
+            if(!file)return;const reader=new FileReader();
+            reader.onload=()=>{try{const data=JSON.parse(String(reader.result||'{}')),rows=Array.isArray(data)?data:data.colors;if(!Array.isArray(rows))throw new Error('Không tìm thấy danh sách màu.');
+                rows.forEach(row=>{if(!row||!row.id||!row.name||!/^#[0-9A-F]{6}$/i.test(row.hex||''))return;const old=colorMapData.find(x=>String(x.id)===String(row.id));if(old)Object.assign(old,row);else if(row.source==='custom')colorMapData.push(row)});
+                const saved=kfUnifiedPersist();renderColorList();document.getElementById('kfUnifiedEditorStatus').textContent=saved?'Đã nhập và đồng bộ dữ liệu màu.':'Đã nhập trong phiên hiện tại nhưng không lưu lâu dài.';
+            }catch(e){alert('Không nhập được sao lưu: '+e.message)}if(input)input.value=''};
+            reader.readAsText(file);
+        }
         function renderColorList() {
             const box = document.getElementById('colorsListContainer');
             if (!box) return;
@@ -10287,6 +10351,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                         </div>
                         <span class="badge-pill ${item.source === '72' ? 'badge-occasion' : 'badge-sale-easy'}">${sourceLabel}</span>
                     </div>
+                    <div style="display:flex;justify-content:flex-end;margin:2px 0;"><button type="button" class="meaning-edit-btn" onclick="kfOpenUnifiedColorEditor('${escHtml(String(item.id))}')">✏️ Chỉnh sửa hồ sơ màu</button></div>
                     <div style="display:flex;gap:5px;flex-wrap:wrap;font-size:10.5px;">
                         <span class="badge-pill" style="background:#f1f5f9;color:#334155;">${escHtml(item.hex)}</span>
                         <span class="badge-pill" style="background:#f1f5f9;color:#334155;">${escHtml(item.family)}</span>
@@ -11531,6 +11596,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
         populatePantoneSuggestions();
         loadMeaningLibraryStorage();
         syncMeaningColorsToLibraries();
+        kfUnifiedApplySaved();
         renderColorList();
         renderMeaningLibrary();
         loadFlowerLibrary();
