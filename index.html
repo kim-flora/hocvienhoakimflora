@@ -9811,8 +9811,8 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
 
         function saveMeaningEditorItem() {
             const map=meaningEditorFieldMap();
-            const get=k => String(document.getElementById(map[k])?.value ?? '').trim();
-            const hex=get('hex').toUpperCase();
+            const get=k => String(document.getElementById(map[k])?.value ?? '');
+            const hex=get('hex').trim().toUpperCase();
             const rgb=kfHexToRgb(hex);
             const item={
                 group:get('group'), name:get('name'), hex, rgb:get('rgb') || `${rgb.r}, ${rgb.g}, ${rgb.b}`, temp:get('temp'), light:get('light'),
@@ -9820,7 +9820,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                 effect:get('effect'), occasion:get('occasion'), floral:get('floral'), application:get('application'), note:get('note')
             };
             kfEnsureMeaningProfile(item);
-            if(!item.name) { alert('Vui lòng nhập Tên màu.'); return; }
+            if(!item.name.trim()) { alert('Vui lòng nhập Tên màu.'); return; }
             if(!/^#[0-9A-F]{6}$/i.test(item.hex)) { alert('Mã HEX phải có dạng #FFFFFF.'); return; }
 
             if(meaningEditorMode==='new') {
@@ -10282,7 +10282,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             apply(kfUnifiedOverrides());
             kfUnifiedHydrationPromise=(async()=>{try{const saved=await kfDurableGet(KF_UNIFIED_COLOR_STORAGE_KEY);if(saved&&typeof saved==='object'&&!Array.isArray(saved)){apply(saved);renderColorList();}}catch(e){console.warn('Đang dùng bản lưu tương thích localStorage cho hồ sơ màu:',e);}})();
         }
-        function kfUEVal(id){return document.getElementById(id)?.value?.trim()||''}
+        function kfUEVal(id){const e=document.getElementById(id);return e&&e.value!==undefined?String(e.value):''}
         function kfUESet(id,v){const e=document.getElementById(id);if(e)e.value=v??''}
         function kfOpenUnifiedColorEditor(id){
             const panel=document.getElementById('kfUnifiedColorEditor');if(!panel)return;
@@ -10308,14 +10308,14 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
         function kfPrepareUnifiedNew(){kfOpenUnifiedColorEditor(null);kfUnifiedEditingId=null;kfUESet('kfUESelect','');['kfUEGroup','kfUEName','kfUEHex','kfUERgb','kfUETemp','kfUELight','kfUESaturation','kfUEVisual','kfUEEmotion','kfUEMeaning','kfUEMatch','kfUEEffect','kfUEOccasion','kfUEFloral','kfUEApplication','kfUENote'].forEach(k=>kfUESet(k,''));}
         function kfCloseUnifiedColorEditor(){const p=document.getElementById('kfUnifiedColorEditor');if(p)p.style.display='none'}
         async function kfSaveUnifiedColor(){
-            const name=kfUEVal('kfUEName'),hex=kfUEVal('kfUEHex').toUpperCase();
-            if(!name){alert('Vui lòng nhập Tên màu.');return}
+            const name=kfUEVal('kfUEName'),hex=kfUEVal('kfUEHex').trim().toUpperCase();
+            if(!name.trim()){alert('Vui lòng nhập Tên màu.');return}
             if(!/^#[0-9A-F]{6}$/.test(hex)){alert('Mã HEX phải có dạng #FFFFFF.');return}
             const rgbObj=kfHexToRgb(hex), rgb=kfUEVal('kfUERgb')||`${rgbObj.r}, ${rgbObj.g}, ${rgbObj.b}`;
             const formulas=[];
             for(let n=1;n<=3;n++){
                 const ratio=kfUEVal(`kfUEF${n}Ratio`).split(',').map(v=>Number(v.trim()));
-                const colors=[1,2,3].map(j=>({hex:kfUEVal(`kfUEF${n}Hex${j}`).toUpperCase(),label:kfUEVal(`kfUEF${n}Label${j}`)}));
+                const colors=[1,2,3].map(j=>({hex:kfUEVal(`kfUEF${n}Hex${j}`).trim().toUpperCase(),label:kfUEVal(`kfUEF${n}Label${j}`)}));
                 if(!kfUEVal(`kfUEF${n}Name`)||ratio.length!==3||ratio.some(v=>!Number.isFinite(v)||v<0)||Math.abs(ratio.reduce((a,b)=>a+b,0)-100)>0.01||colors.some(c=>!/^#[0-9A-F]{6}$/.test(c.hex)||!c.label)){alert(`Công thức ${n}: cần tên, 3 mã HEX hợp lệ, tên từng màu và tỷ lệ tổng bằng 100%.`);return}
                 formulas.push({name:kfUEVal(`kfUEF${n}Name`),ratio,colors,style:kfUEVal(`kfUEF${n}Style`)});
             }
