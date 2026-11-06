@@ -1646,6 +1646,26 @@
             margin-top:3px;
         }
 
+
+        /* ===== QUẢN LÝ TIÊU ĐỀ TRONG CÁC TAB KIẾN THỨC ===== */
+        .knowledge-title-btn {
+            flex:0 0 auto; margin-left:4px; border:1px solid #dbe3ef;
+            background:#f8fafc; color:#475569; min-height:29px; padding:4px 8px;
+            border-radius:8px; font-size:10px; font-weight:850; cursor:pointer;
+            white-space:nowrap;
+        }
+        .knowledge-title-btn:hover { border-color:#a5b4fc; color:#4338ca; background:#f8faff; }
+        .knowledge-add-section-btn {
+            min-height:38px; border:1px solid #c7d2fe; background:#eef2ff;
+            color:#3730a3; border-radius:9px; padding:8px 12px;
+            font-size:11px; font-weight:850; cursor:pointer;
+        }
+        .knowledge-add-section-btn:hover { background:#e0e7ff; }
+        @media (max-width:640px) {
+            .knowledge-title-btn { min-height:34px; padding:5px 7px; }
+            .knowledge-add-section-btn { width:100%; }
+        }
+
         /* ===== BỔ SUNG: CHỈNH SỬA TỪNG NỘI DUNG 4 TRANG KIẾN THỨC ===== */
         .knowledge-edit-btn {
             flex: 0 0 auto;
@@ -9811,8 +9831,8 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
 
         function saveMeaningEditorItem() {
             const map=meaningEditorFieldMap();
-            const get=k => String(document.getElementById(map[k])?.value ?? '');
-            const hex=get('hex').trim().toUpperCase();
+            const get=k => String(document.getElementById(map[k])?.value ?? '').trim();
+            const hex=get('hex').toUpperCase();
             const rgb=kfHexToRgb(hex);
             const item={
                 group:get('group'), name:get('name'), hex, rgb:get('rgb') || `${rgb.r}, ${rgb.g}, ${rgb.b}`, temp:get('temp'), light:get('light'),
@@ -9820,7 +9840,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                 effect:get('effect'), occasion:get('occasion'), floral:get('floral'), application:get('application'), note:get('note')
             };
             kfEnsureMeaningProfile(item);
-            if(!item.name.trim()) { alert('Vui lòng nhập Tên màu.'); return; }
+            if(!item.name) { alert('Vui lòng nhập Tên màu.'); return; }
             if(!/^#[0-9A-F]{6}$/i.test(item.hex)) { alert('Mã HEX phải có dạng #FFFFFF.'); return; }
 
             if(meaningEditorMode==='new') {
@@ -10282,7 +10302,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             apply(kfUnifiedOverrides());
             kfUnifiedHydrationPromise=(async()=>{try{const saved=await kfDurableGet(KF_UNIFIED_COLOR_STORAGE_KEY);if(saved&&typeof saved==='object'&&!Array.isArray(saved)){apply(saved);renderColorList();}}catch(e){console.warn('Đang dùng bản lưu tương thích localStorage cho hồ sơ màu:',e);}})();
         }
-        function kfUEVal(id){const e=document.getElementById(id);return e&&e.value!==undefined?String(e.value):''}
+        function kfUEVal(id){return document.getElementById(id)?.value?.trim()||''}
         function kfUESet(id,v){const e=document.getElementById(id);if(e)e.value=v??''}
         function kfOpenUnifiedColorEditor(id){
             const panel=document.getElementById('kfUnifiedColorEditor');if(!panel)return;
@@ -10308,14 +10328,14 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
         function kfPrepareUnifiedNew(){kfOpenUnifiedColorEditor(null);kfUnifiedEditingId=null;kfUESet('kfUESelect','');['kfUEGroup','kfUEName','kfUEHex','kfUERgb','kfUETemp','kfUELight','kfUESaturation','kfUEVisual','kfUEEmotion','kfUEMeaning','kfUEMatch','kfUEEffect','kfUEOccasion','kfUEFloral','kfUEApplication','kfUENote'].forEach(k=>kfUESet(k,''));}
         function kfCloseUnifiedColorEditor(){const p=document.getElementById('kfUnifiedColorEditor');if(p)p.style.display='none'}
         async function kfSaveUnifiedColor(){
-            const name=kfUEVal('kfUEName'),hex=kfUEVal('kfUEHex').trim().toUpperCase();
-            if(!name.trim()){alert('Vui lòng nhập Tên màu.');return}
+            const name=kfUEVal('kfUEName'),hex=kfUEVal('kfUEHex').toUpperCase();
+            if(!name){alert('Vui lòng nhập Tên màu.');return}
             if(!/^#[0-9A-F]{6}$/.test(hex)){alert('Mã HEX phải có dạng #FFFFFF.');return}
             const rgbObj=kfHexToRgb(hex), rgb=kfUEVal('kfUERgb')||`${rgbObj.r}, ${rgbObj.g}, ${rgbObj.b}`;
             const formulas=[];
             for(let n=1;n<=3;n++){
                 const ratio=kfUEVal(`kfUEF${n}Ratio`).split(',').map(v=>Number(v.trim()));
-                const colors=[1,2,3].map(j=>({hex:kfUEVal(`kfUEF${n}Hex${j}`).trim().toUpperCase(),label:kfUEVal(`kfUEF${n}Label${j}`)}));
+                const colors=[1,2,3].map(j=>({hex:kfUEVal(`kfUEF${n}Hex${j}`).toUpperCase(),label:kfUEVal(`kfUEF${n}Label${j}`)}));
                 if(!kfUEVal(`kfUEF${n}Name`)||ratio.length!==3||ratio.some(v=>!Number.isFinite(v)||v<0)||Math.abs(ratio.reduce((a,b)=>a+b,0)-100)>0.01||colors.some(c=>!/^#[0-9A-F]{6}$/.test(c.hex)||!c.label)){alert(`Công thức ${n}: cần tên, 3 mã HEX hợp lệ, tên từng màu và tỷ lệ tổng bằng 100%.`);return}
                 formulas.push({name:kfUEVal(`kfUEF${n}Name`),ratio,colors,style:kfUEVal(`kfUEF${n}Style`)});
             }
@@ -12132,7 +12152,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
         async function saveKnowledgeEdit(section) {
             const content=knowledgeEditorContent(section);if(!content)return;
             const fullHTML=content.innerHTML;const key=section.dataset.knowledgeEditKey;
-            try{await kfDurableWriteWithLegacyMirror(key,fullHTML);const verify=await kfDurableGet(key);if(verify!==fullHTML)throw new Error('Xác minh dữ liệu sau khi lưu không thành công.');markKnowledgeEdited(section,true);finishKnowledgeEdit(section);}
+            try{await kfDurableWriteWithLegacyMirror(key,fullHTML);const verify=await kfDurableGet(key);if(verify!==fullHTML)throw new Error('Xác minh dữ liệu sau khi lưu không thành công.');if(section.dataset.knowledgeExtra==='1'){const page=section.closest('.knowledge-page');const pageId=page?.id;const extrasKey=KNOWLEDGE_EXTRA_SECTIONS_PREFIX+pageId;let extras=[];try{extras=JSON.parse(localStorage.getItem(extrasKey)||'[]');}catch(_){}const item=extras.find(x=>x.id===section.dataset.extraId);if(item)item.content=fullHTML;localStorage.setItem(extrasKey,JSON.stringify(extras));}markKnowledgeEdited(section,true);finishKnowledgeEdit(section);}
             catch(err){alert('Không lưu được đầy đủ nội dung trong kho bền vững. Nội dung vẫn đang hiển thị nhưng chưa được xác nhận lưu; hãy sao chép hoặc xuất sao lưu trước khi rời trang. Chi tiết: '+(err?.message||err));}
         }
 
@@ -12156,8 +12176,176 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
         }
 
 
+
+        // ===== QUẢN LÝ TIÊU ĐỀ: ÁP DỤNG CHO TẤT CẢ CÁC TAB KIẾN THỨC =====
+        const KNOWLEDGE_TITLE_STORAGE_PREFIX = 'kimflora_knowledge_title_v1:';
+        const KNOWLEDGE_EXTRA_SECTIONS_PREFIX = 'kimflora_knowledge_extra_sections_v1:';
+
+        function knowledgeSectionTitle(section) {
+            const summary = section.querySelector(':scope > summary');
+            if (!summary) return null;
+            let title = summary.querySelector('.knowledge-section-title-text');
+            if (!title) {
+                title = document.createElement('span');
+                title.className = 'knowledge-section-title-text';
+                const index = summary.querySelector('.knowledge-index');
+                const editButton = summary.querySelector('.knowledge-edit-btn');
+                const titleButton = summary.querySelector('.knowledge-title-btn');
+                const nodes = Array.from(summary.childNodes);
+                const movable = nodes.filter(node =>
+                    node !== index && node !== editButton && node !== titleButton &&
+                    !(node.nodeType === 1 && (node.classList.contains('knowledge-edited-badge') || node.classList.contains('knowledge-section-title-text')))
+                );
+                movable.forEach(node => title.appendChild(node));
+                if (index && index.nextSibling) summary.insertBefore(title, index.nextSibling);
+                else if (index) summary.appendChild(title);
+                else summary.insertBefore(title, summary.firstChild);
+            }
+            return title;
+        }
+
+        async function editKnowledgeSectionTitle(section) {
+            const titleNode = knowledgeSectionTitle(section);
+            if (!titleNode) return;
+            const current = titleNode.textContent.trim();
+            const next = prompt('Nhập tiêu đề mới:', current);
+            if (next === null) return;
+            const clean = next.trim();
+            if (!clean) { alert('Tiêu đề không được để trống.'); return; }
+            titleNode.textContent = clean;
+            const key = KNOWLEDGE_TITLE_STORAGE_PREFIX + (section.dataset.knowledgeEditKey || section.id || Math.random().toString(36).slice(2));
+            try {
+                await kfDurableWriteWithLegacyMirror(key, clean);
+                const verify = await kfDurableGet(key);
+                if (verify !== clean) throw new Error('Không xác minh được dữ liệu đã lưu.');
+                section.dataset.knowledgeTitleKey = key;
+                if (section.dataset.knowledgeExtra === '1') {
+                    const pageId = section.closest('.knowledge-page')?.id;
+                    const extrasKey = KNOWLEDGE_EXTRA_SECTIONS_PREFIX + pageId;
+                    let extras=[]; try { extras=JSON.parse(localStorage.getItem(extrasKey)||'[]'); } catch (_) {}
+                    const item=extras.find(x=>x.id===section.dataset.extraId);
+                    if(item){item.title=clean;localStorage.setItem(extrasKey,JSON.stringify(extras));}
+                }
+            } catch (error) {
+                titleNode.textContent = current;
+                alert('Không lưu được tiêu đề. Vui lòng thử lại. ' + (error?.message || error));
+            }
+        }
+
+        function addKnowledgeSection(pageId) {
+            const page = document.getElementById(pageId);
+            if (!page) return;
+            const list = page.querySelector('.knowledge-list, .knowledge-deep-list, [id$="KnowledgeList"], [id$="knowledgeList"]');
+            if (!list) { alert('Không tìm thấy khu vực nội dung của tab này.'); return; }
+            const title = prompt('Nhập tiêu đề nội dung mới:');
+            if (title === null) return;
+            const clean = title.trim();
+            if (!clean) { alert('Tiêu đề không được để trống.'); return; }
+
+            const section = document.createElement('details');
+            section.className = 'knowledge-section';
+            section.open = true;
+            section.dataset.knowledgeExtra = '1';
+            const summary = document.createElement('summary');
+            summary.innerHTML = '<span class="knowledge-index">MỚI</span><span class="knowledge-section-title-text"></span>';
+            summary.querySelector('.knowledge-section-title-text').textContent = clean;
+            const content = document.createElement('div');
+            content.className = 'knowledge-content';
+            content.innerHTML = '<p>Nội dung mới. Chọn “Chỉnh sửa” để nhập nội dung.</p>';
+            section.append(summary, content);
+            list.appendChild(section);
+
+            const extrasKey = KNOWLEDGE_EXTRA_SECTIONS_PREFIX + pageId;
+            let extras = [];
+            try { extras = JSON.parse(localStorage.getItem(extrasKey) || '[]'); } catch (_) {}
+            const extraId = 'extra-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+            section.dataset.extraId = extraId;
+            extras.push({id: extraId, title: clean, content: content.innerHTML});
+            try { localStorage.setItem(extrasKey, JSON.stringify(extras)); } catch (_) {}
+            initializeKnowledgeEditors();
+            initializeKnowledgeTitleControls();
+            const titleButton = section.querySelector(':scope > summary .knowledge-title-btn');
+            if (titleButton) titleButton.focus();
+        }
+
+        function initializeKnowledgeTitleControls() {
+            const pageIds = ['compositionKnowledgePage','colorKnowledgePage','displayKnowledgePage','mediaKnowledgePage','careKnowledgePage','deliveryKnowledgePage','chatgptKnowledgePage','fruitTrayKnowledgePage','flowerLibraryPage'];
+            pageIds.forEach(pageId => {
+                const page = document.getElementById(pageId);
+                if (!page) return;
+                page.querySelectorAll('.knowledge-section, .knowledge-deep').forEach(section => {
+                    const summary = section.querySelector(':scope > summary');
+                    if (!summary || summary.dataset.titleControlReady === '1') return;
+                    summary.dataset.titleControlReady = '1';
+                    knowledgeSectionTitle(section);
+                    const titleButton = document.createElement('button');
+                    titleButton.type = 'button';
+                    titleButton.className = 'knowledge-title-btn';
+                    titleButton.textContent = 'Đổi tiêu đề';
+                    titleButton.title = 'Điều chỉnh tiêu đề mục này';
+                    titleButton.addEventListener('click', event => {
+                        event.preventDefault(); event.stopPropagation();
+                        editKnowledgeSectionTitle(section);
+                    });
+                    const editButton = summary.querySelector('.knowledge-edit-btn');
+                    if (editButton) summary.insertBefore(titleButton, editButton);
+                    else summary.appendChild(titleButton);
+
+                    const titleKey = KNOWLEDGE_TITLE_STORAGE_PREFIX + (section.dataset.knowledgeEditKey || '');
+                    if (section.dataset.knowledgeEditKey) {
+                        section.dataset.knowledgeTitleKey = titleKey;
+                        Promise.resolve(kfDurableGet(titleKey)).then(saved => {
+                            if (typeof saved === 'string' && saved.trim()) {
+                                const node = knowledgeSectionTitle(section);
+                                if (node) node.textContent = saved;
+                            }
+                        }).catch(() => {});
+                    }
+                });
+
+                const host = page.querySelector('.knowledge-tools, .knowledge-top-actions');
+                if (host && !host.querySelector('.knowledge-add-section-btn')) {
+                    const addButton = document.createElement('button');
+                    addButton.type = 'button';
+                    addButton.className = 'knowledge-add-section-btn';
+                    addButton.textContent = '+ Thêm tiêu đề nội dung';
+                    addButton.addEventListener('click', () => addKnowledgeSection(pageId));
+                    host.appendChild(addButton);
+                }
+            });
+        }
+
+        function restoreExtraKnowledgeSections() {
+            const pageIds = ['compositionKnowledgePage','colorKnowledgePage','displayKnowledgePage','mediaKnowledgePage','careKnowledgePage','deliveryKnowledgePage','chatgptKnowledgePage','fruitTrayKnowledgePage','flowerLibraryPage'];
+            pageIds.forEach(pageId => {
+                const page = document.getElementById(pageId);
+                if (!page) return;
+                const list = page.querySelector('.knowledge-list, .knowledge-deep-list, [id$="KnowledgeList"], [id$="knowledgeList"]');
+                if (!list) return;
+                let extras = [];
+                try { extras = JSON.parse(localStorage.getItem(KNOWLEDGE_EXTRA_SECTIONS_PREFIX + pageId) || '[]'); } catch (_) {}
+                extras.forEach(item => {
+                    if (!item || !item.id || list.querySelector('[data-extra-id="' + item.id + '"]')) return;
+                    const section = document.createElement('details');
+                    section.className = 'knowledge-section';
+                    section.dataset.knowledgeExtra = '1';
+                    section.dataset.extraId = item.id;
+                    const summary = document.createElement('summary');
+                    summary.innerHTML = '<span class="knowledge-index">MỚI</span><span class="knowledge-section-title-text"></span>';
+                    summary.querySelector('.knowledge-section-title-text').textContent = item.title || 'Tiêu đề mới';
+                    const content = document.createElement('div');
+                    content.className = 'knowledge-content';
+                    content.innerHTML = item.content || '<p>Nội dung mới.</p>';
+                    section.append(summary, content);
+                    list.appendChild(section);
+                });
+            });
+        }
+
+        restoreExtraKnowledgeSections();
         initializeKnowledgeEditors();
-        // Ưu tiên bản lưu IndexedDB mới hơn localStorage; chỉ thay nội dung nếu có bản lưu thật.
+        initializeKnowledgeTitleControls();
+        // Ưu tiên bản lưu IndexedDB mới hơn localStorage; chỉ thay nội dung nếu có bản lưu thật. chỉ thay nội dung nếu có bản lưu thật.
         (async()=>{try{const pages=['compositionKnowledgePage','colorKnowledgePage','displayKnowledgePage','mediaKnowledgePage','careKnowledgePage','deliveryKnowledgePage','chatgptKnowledgePage','fruitTrayKnowledgePage','flowerLibraryPage'];for(const pageId of pages){const page=document.getElementById(pageId);if(!page)continue;for(const section of page.querySelectorAll('.knowledge-section, .knowledge-deep')){const content=knowledgeEditorContent(section);if(!content||!section.dataset.knowledgeEditKey)continue;const saved=await kfDurableGet(section.dataset.knowledgeEditKey);if(typeof saved==='string'){content.innerHTML=saved;markKnowledgeEdited(section,true);}}}}catch(e){console.warn('Không thể đồng bộ bản lưu IndexedDB cho các tab kiến thức:',e);}})();
 
     </script>
