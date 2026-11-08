@@ -1413,6 +1413,22 @@
             color: #64748b;
             padding: 7px 2px;
         }
+
+        /* ===== BỘ MÀU TỰ THÊM TRONG TAB PHỐI THEO LỨA TUỔI ===== */
+        .age-custom-toolbar { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 9px; }
+        .age-custom-editor { display:none; margin:0 0 10px; padding:10px; border:1px solid #c7d2fe; border-radius:10px; background:#f8faff; }
+        .age-custom-editor h4 { margin:0 0 8px; color:#1e1b4b; font-size:12.5px; }
+        .age-custom-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+        .age-custom-fields label { display:flex; flex-direction:column; gap:4px; color:#334155; font-size:10.5px; font-weight:800; }
+        .age-custom-fields input { width:100%; min-width:0; padding:8px; border:1px solid var(--border); border-radius:7px; background:#fff; font-size:12px; }
+        .age-custom-editor-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+        .age-custom-card { border:1px solid #cbd5e1; border-radius:10px; padding:10px 12px; background:#fff; display:flex; flex-direction:column; gap:8px; }
+        .age-custom-card .palette-colors-row { grid-template-columns:repeat(var(--custom-count,6),minmax(0,1fr)); }
+        .age-custom-card .palette-formula-head { gap:8px; flex-wrap:wrap; }
+        @media(max-width:480px) {
+            .age-custom-fields { grid-template-columns:minmax(0,1fr); }
+            .age-custom-card .palette-colors-row { grid-template-columns:repeat(3,minmax(0,1fr)); }
+        }
         @media (max-width: 640px) {
             .saved-color-strip { grid-template-columns: repeat(3, minmax(0,1fr)); }
             .saved-palettes-head { align-items: flex-start; flex-direction: column; }
@@ -2226,14 +2242,6 @@
             <div class="card-title">7 Vị Trí Phối Màu Bó Hoa</div>
             <div class="roles-group" id="rolesGroup"></div>
 
-            <div class="donut-chart-container">
-                <div style="font-size: 12px; font-weight: 800; color: #1e1b4b; align-self: flex-start;">
-                    Tỷ lệ diện tích màu sắc (Trực quan)
-                </div>
-                <svg id="donutSvg" viewBox="0 0 200 200" width="160" height="160"></svg>
-                <div class="donut-legend" id="donutLegend"></div>
-            </div>
-
             <div class="palette-save-panel">
                 <div style="font-size:12px;font-weight:800;color:#1e1b4b;margin-bottom:7px;">Lưu & quản lý bộ màu đang chọn</div>
                 <div class="palette-save-row">
@@ -2248,7 +2256,9 @@
         <div class="card">
             <div class="tabs">
                 <button class="tab-button active" onclick="switchMainTab('age-palette')">Phối Theo Lứa Tuổi &amp; Dịp</button>
+                <button class="tab-button" onclick="switchMainTab('pantone')" title="Pantone 1.089 mã · tra theo HỌ MÀU × Sáng / Dịu / Trung tính / Pha xám / Đậm / Rực">Pantone 1.089 Mã</button>
                 <button class="tab-button" onclick="switchMainTab('map')">Bản Đồ 192 Màu</button>
+                <button class="tab-button" onclick="switchMainTab('reading')" title="Hướng dẫn đọc màu &amp; tra theo cảm giác">Đọc Màu &amp; Cảm Giác</button>
                 <button class="tab-button" onclick="switchMainTab('roles')">15 Vai Trò Hoa &amp; Lá</button>
                 <button class="tab-button" onclick="switchMainTab('framework')">Khung Cốt Lõi</button>
                 <button class="tab-button" onclick="switchMainTab('principles')">Nguyên Tắc &amp; Tỷ Lệ</button>
@@ -2305,7 +2315,67 @@
                     </div>
                 </div>
 
+                <div class="age-custom-toolbar">
+                    <button class="palette-action-btn primary" type="button" onclick="openAgeCustomPaletteEditor(3)">＋ Thêm bộ 3 ô màu</button>
+                    <button class="palette-action-btn primary" type="button" onclick="openAgeCustomPaletteEditor(5)">＋ Thêm bộ 5 ô màu</button>
+                    <button class="palette-action-btn primary" type="button" onclick="openAgeCustomPaletteEditor(6)">＋ Thêm bộ 6 ô màu</button>
+                </div>
+                <div class="age-custom-editor" id="ageCustomPaletteEditor">
+                    <h4 id="ageCustomEditorTitle">Thêm bộ màu</h4>
+                    <div class="age-custom-fields" id="ageCustomPaletteFields"></div>
+                    <div class="age-custom-editor-actions">
+                        <button class="palette-action-btn success" type="button" onclick="saveAgeCustomPalette()">Lưu bộ màu</button>
+                        <button class="palette-action-btn neutral" type="button" onclick="closeAgeCustomPaletteEditor()">Hủy</button>
+                    </div>
+                    <div id="ageCustomPaletteStatus" style="font-size:10.5px;color:#64748b;margin-top:7px;">Nhập mã HEX hoặc tên màu cho từng ô.</div>
+                </div>
+                <div id="ageCustomPalettesContainer" class="cards-list" style="margin-bottom:8px;"></div>
                 <div class="cards-list" id="ageFormulasContainer"></div>
+            </div>
+
+            <!-- TAB RIÊNG: THƯ VIỆN PANTONE 1.089 MÃ -->
+            <div id="tab-pantone" style="display: none;">
+                <details open id="pantoneLibraryDetails" class="pantone-library-panel" ontoggle="if(this.open){renderPantoneLibrary();}">
+                    <summary>Pantone 1.089 mã · tra theo HỌ MÀU × Sáng / Dịu / Trung tính / Pha xám / Đậm / Rực</summary>
+                    <div class="pantone-note">
+                        Bảng này giữ nguyên hệ 192 màu phía dưới và bổ sung thư viện Pantone riêng. Phân nhóm là cách phân loại thực hành theo cảm giác thị giác từ tài liệu nguồn, không phải hệ phân loại chính thức của Pantone. Ô màu trên web là mô phỏng gần đúng từ CMYK để tra cứu trên màn hình; khi cần màu chuẩn in ấn vẫn phải đối chiếu ấn phẩm Pantone hiện hành.
+                    </div>
+                    <div class="pantone-summary-grid">
+                        <div class="pantone-summary-chip"><b>Màu Sáng</b>54 mã · độ sáng cao, trong và rõ</div>
+                        <div class="pantone-summary-chip"><b>Màu Dịu</b>293 mã · sáng nhẹ, mềm, thiên pastel</div>
+                        <div class="pantone-summary-chip"><b>Màu Trung Tính</b>131 mã · trắng, xám, đen và gần trung tính</div>
+                        <div class="pantone-summary-chip"><b>Màu Pha Xám</b>137 mã · có sắc nhưng giảm độ chói</div>
+                        <div class="pantone-summary-chip"><b>Màu Đậm</b>272 mã · độ sáng thấp, sâu và nặng</div>
+                        <div class="pantone-summary-chip"><b>Màu Rực</b>202 mã · bão hòa cao, nổi và bắt mắt</div>
+                    </div>
+                    <div class="pantone-classify-box">
+                        <div class="pantone-classify-title">1 · Chọn HỌ MÀU để thu gọn danh sách</div>
+                        <div id="pantoneFamilyChips" class="pantone-filter-chips"></div>
+                    </div>
+                    <div class="pantone-classify-box">
+                        <div class="pantone-classify-title">2 · Chọn NHÓM CẢM GIÁC: Sáng / Dịu / Trung tính / Pha xám / Đậm / Rực</div>
+                        <div id="pantoneGroupChips" class="pantone-filter-chips"></div>
+                    </div>
+                    <div class="pantone-toolbar pantone-toolbar-3">
+                        <input type="text" id="pantoneLibrarySearch" placeholder="Tìm mã Pantone hoặc CMYK…" oninput="resetPantoneLibrary()">
+                        <select id="pantoneLibraryFamily" onchange="resetPantoneLibrary()">
+                            <option value="">Tất cả họ màu</option>
+                        </select>
+                        <select id="pantoneLibraryGroup" onchange="resetPantoneLibrary()">
+                            <option value="">Tất cả nhóm cảm giác</option>
+                            <option value="SÁNG">Màu Sáng · 54</option>
+                            <option value="DỊU">Màu Dịu · 293</option>
+                            <option value="TRUNG TÍNH">Màu Trung Tính · 131</option>
+                            <option value="PHA XÁM">Màu Pha Xám · 137</option>
+                            <option value="ĐẬM">Màu Đậm · 272</option>
+                            <option value="RỰC">Màu Rực · 202</option>
+                        </select>
+                    </div>
+                    <div id="pantoneResultHeading" class="pantone-result-heading"><span><b>Kết quả:</b> tất cả họ màu × tất cả nhóm cảm giác</span><span>Hiển thị theo từng đợt để dễ tra cứu</span></div>
+                    <div id="pantoneLibraryCount" class="badge-target">1.089 mã Pantone + màu tự thêm của Kim Flora</div>
+                    <div id="pantoneLibraryList" class="pantone-list"></div>
+                    <button id="pantoneLibraryMore" class="pantone-more-btn" type="button" onclick="showMorePantone()" style="display:none;">Xem thêm</button>
+                </details>
             </div>
 
             <!-- TAB 2: BẢN ĐỒ 192 MÀU -->
@@ -2357,56 +2427,10 @@
                     </div>
                 </section>
 
-                <details style="margin-bottom:8px; border:1px solid var(--border); border-radius:8px; padding:8px; background:#fff;">
-                    <summary style="cursor:pointer; font-size:12px; font-weight:800; color:#1e1b4b;">Hướng dẫn đọc màu & tra theo cảm giác</summary>
-                    <div id="colorReadingGuide" style="margin-top:8px;"></div>
-                    <div id="feelingGuideContainer" style="margin-top:8px;"></div>
-                </details>
 
 
 
                 <!-- THƯ VIỆN PANTONE 1.089 MÃ: bổ sung, không thay đổi dữ liệu 192 màu hiện có -->
-                <details id="pantoneLibraryDetails" class="pantone-library-panel" ontoggle="if(this.open){renderPantoneLibrary();}">
-                    <summary>Pantone 1.089 mã · tra theo HỌ MÀU × Sáng / Dịu / Trung tính / Pha xám / Đậm / Rực</summary>
-                    <div class="pantone-note">
-                        Bảng này giữ nguyên hệ 192 màu phía dưới và bổ sung thư viện Pantone riêng. Phân nhóm là cách phân loại thực hành theo cảm giác thị giác từ tài liệu nguồn, không phải hệ phân loại chính thức của Pantone. Ô màu trên web là mô phỏng gần đúng từ CMYK để tra cứu trên màn hình; khi cần màu chuẩn in ấn vẫn phải đối chiếu ấn phẩm Pantone hiện hành.
-                    </div>
-                    <div class="pantone-summary-grid">
-                        <div class="pantone-summary-chip"><b>Màu Sáng</b>54 mã · độ sáng cao, trong và rõ</div>
-                        <div class="pantone-summary-chip"><b>Màu Dịu</b>293 mã · sáng nhẹ, mềm, thiên pastel</div>
-                        <div class="pantone-summary-chip"><b>Màu Trung Tính</b>131 mã · trắng, xám, đen và gần trung tính</div>
-                        <div class="pantone-summary-chip"><b>Màu Pha Xám</b>137 mã · có sắc nhưng giảm độ chói</div>
-                        <div class="pantone-summary-chip"><b>Màu Đậm</b>272 mã · độ sáng thấp, sâu và nặng</div>
-                        <div class="pantone-summary-chip"><b>Màu Rực</b>202 mã · bão hòa cao, nổi và bắt mắt</div>
-                    </div>
-                    <div class="pantone-classify-box">
-                        <div class="pantone-classify-title">1 · Chọn HỌ MÀU để thu gọn danh sách</div>
-                        <div id="pantoneFamilyChips" class="pantone-filter-chips"></div>
-                    </div>
-                    <div class="pantone-classify-box">
-                        <div class="pantone-classify-title">2 · Chọn NHÓM CẢM GIÁC: Sáng / Dịu / Trung tính / Pha xám / Đậm / Rực</div>
-                        <div id="pantoneGroupChips" class="pantone-filter-chips"></div>
-                    </div>
-                    <div class="pantone-toolbar pantone-toolbar-3">
-                        <input type="text" id="pantoneLibrarySearch" placeholder="Tìm mã Pantone hoặc CMYK…" oninput="resetPantoneLibrary()">
-                        <select id="pantoneLibraryFamily" onchange="resetPantoneLibrary()">
-                            <option value="">Tất cả họ màu</option>
-                        </select>
-                        <select id="pantoneLibraryGroup" onchange="resetPantoneLibrary()">
-                            <option value="">Tất cả nhóm cảm giác</option>
-                            <option value="SÁNG">Màu Sáng · 54</option>
-                            <option value="DỊU">Màu Dịu · 293</option>
-                            <option value="TRUNG TÍNH">Màu Trung Tính · 131</option>
-                            <option value="PHA XÁM">Màu Pha Xám · 137</option>
-                            <option value="ĐẬM">Màu Đậm · 272</option>
-                            <option value="RỰC">Màu Rực · 202</option>
-                        </select>
-                    </div>
-                    <div id="pantoneResultHeading" class="pantone-result-heading"><span><b>Kết quả:</b> tất cả họ màu × tất cả nhóm cảm giác</span><span>Hiển thị theo từng đợt để dễ tra cứu</span></div>
-                    <div id="pantoneLibraryCount" class="badge-target">1.089 mã Pantone + màu tự thêm của Kim Flora</div>
-                    <div id="pantoneLibraryList" class="pantone-list"></div>
-                    <button id="pantoneLibraryMore" class="pantone-more-btn" type="button" onclick="showMorePantone()" style="display:none;">Xem thêm</button>
-                </details>
 
                 <input type="text" class="search-bar" id="searchKeyword" placeholder="Tìm tên màu, mã số, ứng dụng, cảm xúc, công thức..." oninput="renderColorList()">
 
@@ -2442,6 +2466,15 @@
                 </div>
 
                 <div class="cards-list" id="colorsListContainer"></div>
+            </div>
+
+            <!-- TAB RIÊNG: HƯỚNG DẪN ĐỌC MÀU & TRA THEO CẢM GIÁC -->
+            <div id="tab-reading" style="display: none;">
+                <details open style="margin-bottom:8px; border:1px solid var(--border); border-radius:8px; padding:8px; background:#fff;">
+                    <summary style="cursor:pointer; font-size:12px; font-weight:800; color:#1e1b4b;">Hướng dẫn đọc màu & tra theo cảm giác</summary>
+                    <div id="colorReadingGuide" style="margin-top:8px;"></div>
+                    <div id="feelingGuideContainer" style="margin-top:8px;"></div>
+                </details>
             </div>
 
             <!-- TAB 3: 15 VAI TRÒ HOA VÀ LÁ (CẬP NHẬT CHUẨN TỪ DOCX) -->
@@ -10510,7 +10543,6 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                 wrap.appendChild(div);
             });
 
-            renderDonutChart();
         }
 
         function selectRole(id) {
@@ -11037,13 +11069,18 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             event.target.classList.add('active');
 
             document.getElementById('tab-age-palette').style.display = tab === 'age-palette' ? 'block' : 'none';
+            document.getElementById('tab-pantone').style.display = tab === 'pantone' ? 'block' : 'none';
             document.getElementById('tab-map').style.display = tab === 'map' ? 'block' : 'none';
+            document.getElementById('tab-reading').style.display = tab === 'reading' ? 'block' : 'none';
             document.getElementById('tab-roles').style.display = tab === 'roles' ? 'block' : 'none';
             document.getElementById('tab-framework').style.display = tab === 'framework' ? 'block' : 'none';
             document.getElementById('tab-principles').style.display = tab === 'principles' ? 'block' : 'none';
             document.getElementById('tab-calculator').style.display = tab === 'calculator' ? 'block' : 'none';
             document.getElementById('tab-guide').style.display = tab === 'guide' ? 'block' : 'none';
 
+            if (tab === 'pantone') {
+                renderPantoneLibrary();
+            }
             if (tab === 'roles') {
                 renderFloralRoles();
             }
@@ -11084,6 +11121,173 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             });
         }
 
+        // ===== BỘ MÀU TỰ THÊM 3 / 5 / 6 Ô — TÁCH BIỆT DỮ LIỆU P01-P72 =====
+        const KF_AGE_CUSTOM_PALETTES_KEY = 'kimflora_age_custom_palettes_v1';
+        let ageCustomPaletteEditId = null;
+        let ageCustomPaletteCount = 3;
+
+        function getAgeCustomPalettes() {
+            const rows = kfReadLocal(KF_AGE_CUSTOM_PALETTES_KEY, []);
+            return Array.isArray(rows) ? rows : [];
+        }
+
+        function setAgeCustomPalettes(rows) {
+            kfWriteLocal(KF_AGE_CUSTOM_PALETTES_KEY, rows);
+        }
+
+        function resolveAgeCustomColor(raw) {
+            const value = String(raw || '').trim();
+            if (!value) return null;
+            let hex = value.toUpperCase();
+            if (/^#?[0-9A-F]{6}$/i.test(hex)) {
+                if (!hex.startsWith('#')) hex = '#' + hex;
+                return { name: value, hex };
+            }
+            if (/^#?[0-9A-F]{3}$/i.test(hex)) {
+                let short = hex.replace('#','');
+                hex = '#' + short.split('').map(ch => ch + ch).join('').toUpperCase();
+                return { name: value, hex };
+            }
+
+            // Ưu tiên tên màu trong thư viện màu Kim Flora / Pantone đang có.
+            const norm = value.toLocaleLowerCase('vi').normalize('NFC').replace(/\s+/g,' ').trim();
+            const meaning = (typeof meaningLibraryData !== 'undefined' && Array.isArray(meaningLibraryData))
+                ? meaningLibraryData.find(x => String(x.name || '').toLocaleLowerCase('vi').normalize('NFC').replace(/\s+/g,' ').trim() === norm)
+                : null;
+            if (meaning && /^#[0-9A-F]{6}$/i.test(meaning.hex || '')) return { name: meaning.name, hex: meaning.hex.toUpperCase() };
+
+            const pantone = (typeof pantoneLibraryData !== 'undefined' && Array.isArray(pantoneLibraryData))
+                ? pantoneLibraryData.find(x => [x.customName, x.name, x.code].some(n => String(n || '').toLocaleLowerCase('vi').normalize('NFC').replace(/\s+/g,' ').trim() === norm))
+                : null;
+            if (pantone) {
+                const pHex = pantone.hex || (typeof cmykToApproxHex === 'function' ? cmykToApproxHex(pantone.c,pantone.m,pantone.y,pantone.k) : '');
+                if (/^#[0-9A-F]{6}$/i.test(pHex)) return { name: value, hex: pHex.toUpperCase() };
+            }
+
+            // Hỗ trợ thêm tên màu chuẩn CSS (red, navy, coral...).
+            const probe = document.createElement('span');
+            probe.style.color = '';
+            probe.style.color = value;
+            if (probe.style.color) {
+                document.body.appendChild(probe);
+                const computed = getComputedStyle(probe).color;
+                probe.remove();
+                const nums = computed.match(/\d+/g);
+                if (nums && nums.length >= 3) {
+                    const cssHex = '#' + nums.slice(0,3).map(n => Number(n).toString(16).padStart(2,'0')).join('');
+                    return { name: value, hex: cssHex.toUpperCase() };
+                }
+            }
+            return null;
+        }
+
+        function openAgeCustomPaletteEditor(count, id = null) {
+            ageCustomPaletteCount = Number(count);
+            ageCustomPaletteEditId = id;
+            const editor = document.getElementById('ageCustomPaletteEditor');
+            const fields = document.getElementById('ageCustomPaletteFields');
+            const title = document.getElementById('ageCustomEditorTitle');
+            const old = id ? getAgeCustomPalettes().find(x => x.id === id) : null;
+            if (old) ageCustomPaletteCount = old.colors.length;
+            title.textContent = old ? `Sửa bộ màu ${old.id}` : `Thêm bộ ${ageCustomPaletteCount} ô màu`;
+            fields.innerHTML = Array.from({length:ageCustomPaletteCount}, (_,i) => {
+                const color = old?.colors?.[i] || {};
+                return `<label>Ô màu ${i+1}<input type="text" id="ageCustomColor${i}" value="${escapeHtmlSafe(color.input || color.name || color.hex || '')}" placeholder="Nhập mã HEX hoặc tên màu"></label>`;
+            }).join('');
+            document.getElementById('ageCustomPaletteStatus').textContent = 'Nhập mã HEX hoặc tên màu cho từng ô.';
+            editor.style.display = 'block';
+            editor.scrollIntoView({behavior:'smooth',block:'center'});
+        }
+
+        function closeAgeCustomPaletteEditor() {
+            const editor = document.getElementById('ageCustomPaletteEditor');
+            if (editor) editor.style.display = 'none';
+            ageCustomPaletteEditId = null;
+        }
+
+        function saveAgeCustomPalette() {
+            const colors = [];
+            for (let i=0; i<ageCustomPaletteCount; i++) {
+                const raw = document.getElementById(`ageCustomColor${i}`)?.value || '';
+                const resolved = resolveAgeCustomColor(raw);
+                if (!resolved) {
+                    alert(`Ô màu ${i+1}: không nhận diện được màu “${raw}”. Hãy nhập mã HEX hoặc tên màu có trong thư viện.`);
+                    return;
+                }
+                colors.push({...resolved, input:String(raw).trim()});
+            }
+            const rows = getAgeCustomPalettes();
+            if (ageCustomPaletteEditId) {
+                const idx = rows.findIndex(x => x.id === ageCustomPaletteEditId);
+                if (idx >= 0) rows[idx] = {...rows[idx], colors, updated_at:new Date().toISOString()};
+            } else {
+                const max = rows.reduce((m,x) => {
+                    const n = Number(String(x.id || '').replace(/^KC/i,''));
+                    return Number.isFinite(n) ? Math.max(m,n) : m;
+                },0);
+                rows.push({id:'KC'+String(max+1).padStart(2,'0'), name:`Bộ ${ageCustomPaletteCount} màu`, colors, created_at:new Date().toISOString()});
+            }
+            setAgeCustomPalettes(rows);
+            closeAgeCustomPaletteEditor();
+            renderAgeCustomPalettes();
+        }
+
+        function applyAgeCustomPalette(id) {
+            const item = getAgeCustomPalettes().find(x => x.id === id);
+            if (!item) return;
+            // Ánh xạ lần lượt vào 6 vị trí đang dùng ở cột chọn màu; ô chưa có trong bộ sẽ giữ nguyên.
+            const roleOrder = ['wrapper','main_flower','sub_flower','link_flower','light_color','deep_color'];
+            item.colors.forEach((color,i) => {
+                const role = flowerRoles.find(r => r.id === roleOrder[i]);
+                if (role && /^#[0-9A-F]{6}$/i.test(color.hex || '')) role.hex = color.hex.toUpperCase();
+            });
+            renderRolesList();
+            activeRoleNotice.textContent = `Đã áp dụng ${item.id} · ${item.colors.length} màu`;
+        }
+
+        function editAgeCustomPalette(id) {
+            const item = getAgeCustomPalettes().find(x => x.id === id);
+            if (item) openAgeCustomPaletteEditor(item.colors.length,id);
+        }
+
+        function deleteAgeCustomPalette(id) {
+            const item = getAgeCustomPalettes().find(x => x.id === id);
+            if (!item || !confirm(`Xóa ${item.id} – ${item.name}?`)) return;
+            setAgeCustomPalettes(getAgeCustomPalettes().filter(x => x.id !== id));
+            renderAgeCustomPalettes();
+        }
+
+        function renderAgeCustomPalettes() {
+            const box = document.getElementById('ageCustomPalettesContainer');
+            if (!box) return;
+            const q = (document.getElementById('searchAgeFormula')?.value || '').trim().toLocaleLowerCase('vi');
+            const rows = getAgeCustomPalettes().filter(item =>
+                !q || `${item.id} ${item.name} ${item.colors.map(c => `${c.name} ${c.hex}`).join(' ')}`.toLocaleLowerCase('vi').includes(q)
+            );
+            if (!rows.length) { box.innerHTML = ''; return; }
+            box.innerHTML = rows.map(item => {
+                const chips = item.colors.map((color,i) => `
+                    <div class="palette-color-slot">
+                        <div class="palette-color-swatch" style="background:${escapeHtmlSafe(color.hex)}"></div>
+                        <span class="palette-color-role">Màu ${i+1}</span>
+                        <span class="palette-color-name">${escapeHtmlSafe(color.name)}<br>${escapeHtmlSafe(color.hex)}</span>
+                    </div>`).join('');
+                return `<div class="age-custom-card">
+                    <div class="palette-formula-head">
+                        <div><span class="palette-title">${escapeHtmlSafe(item.id)} – ${escapeHtmlSafe(item.name)}</span>
+                            <div style="margin-top:2px"><span class="badge-pill badge-occasion">Bộ ${item.colors.length} ô màu · Tự thêm</span></div>
+                        </div>
+                        <div class="preset-palette-actions">
+                            <button class="palette-action-btn success" type="button" onclick="applyAgeCustomPalette('${escapeHtmlSafe(item.id)}')">Áp dụng cả bộ</button>
+                            <button class="palette-action-btn warn" type="button" onclick="editAgeCustomPalette('${escapeHtmlSafe(item.id)}')">Sửa màu</button>
+                            <button class="palette-action-btn danger" type="button" onclick="deleteAgeCustomPalette('${escapeHtmlSafe(item.id)}')">Xóa</button>
+                        </div>
+                    </div>
+                    <div class="palette-colors-row" style="--custom-count:${item.colors.length}">${chips}</div>
+                </div>`;
+            }).join('');
+        }
+
         function renderAgeFormulas() {
             const key = (document.getElementById('searchAgeFormula').value || '').toLowerCase();
             const fTarget = document.getElementById('filterTargetUser').value.toLowerCase();
@@ -11091,6 +11295,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             const fTone = document.getElementById('filterToneGroup').value;
             const fSale = document.getElementById('filterSaleability').value;
 
+            renderAgeCustomPalettes();
             const box = document.getElementById('ageFormulasContainer');
             box.innerHTML = '';
 
