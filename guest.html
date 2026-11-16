@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kim Flora · Cổng học viên</title>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kim Flora · Quản trị</title>
 <style>
 :root{font-family:system-ui,-apple-system,sans-serif;color:#17243c;background:#f5f6fa}
 *{box-sizing:border-box}body{margin:0}.wrap{width:100%;max-width:none;margin:0 auto;padding:12px 18px 20px}
@@ -45,14 +45,13 @@ body:has(#contentPanel:not(.hidden)) #contentPanel{border:0;border-radius:0;box-
  #contentPanel>header{padding:3px 7px}
 }
 </style></head>
-<body><main class="wrap"><header><h1>Kim Flora</h1><nav><button id="openAccountSettings" class="secondary hidden" type="button">Cài đặt tài khoản</button><a href="guest.html">Khách</a><a href="guest.html?admin=1">Quản trị</a></nav></header>
-<section class="card" id="loginPanel"><h2 id="loginTitle">Đăng nhập học viên</h2>
-<p id="loginInfo">Nhập mật khẩu riêng do Kim Flora cấp. Không cần email.</p>
-<form id="guestLogin"><label for="guestPassword">Mật khẩu khách</label><input id="guestPassword" type="password" autocomplete="current-password" required minlength="16"><div><button type="submit">Vào xem tài liệu</button></div></form>
+<body><main class="wrap"><header><h1>Kim Flora</h1><nav><button id="openAccountSettings" class="secondary hidden" type="button">Cài đặt tài khoản</button></nav></header>
+<section class="card" id="loginPanel"><h2 id="loginTitle">Đăng nhập quản trị</h2>
+<p id="loginInfo">Đăng nhập bằng tài khoản quản trị Kim Flora.</p>
 <form id="adminLogin" class="hidden"><label>Email quản trị</label><input type="email" id="adminEmail" required autocomplete="username"><label>Mật khẩu quản trị</label><input type="password" id="adminPassword" required autocomplete="current-password"><div><button type="submit">Đăng nhập quản trị</button><button type="button" class="secondary" id="forgotAdminPassword">Quên mật khẩu?</button></div></form><form id="resetAdminPassword" class="hidden"><h3>Đặt lại mật khẩu quản trị</h3><p>Hãy nhập mật khẩu mới sau khi mở liên kết trong email khôi phục.</p><label for="recoveryPassword">Mật khẩu mới</label><input id="recoveryPassword" type="password" autocomplete="new-password" minlength="12" required><label for="recoveryConfirm">Nhập lại mật khẩu mới</label><input id="recoveryConfirm" type="password" autocomplete="new-password" minlength="12" required><div><button type="submit">Lưu mật khẩu mới</button></div></form></section>
 <p id="message" role="status"></p>
 <section id="contentPanel" class="card hidden"><header><h2 id="pageBrand" title="Kim Flora Studio">Kim Flora Studio</h2><div style="display:flex;align-items:center;gap:6px"><button id="kfQuickBackup" type="button" class="secondary hidden" style="margin:0;padding:7px 10px;font-size:12px">Sao lưu website</button><button id="logout" class="secondary">Đăng xuất</button></div></header><article id="viewer"></article></section>
-<section id="adminPanel" class="card hidden"><header><h2>Cài đặt tài khoản</h2><button id="returnToLessons" type="button" class="secondary">← Quay lại tài liệu</button></header><hr><h3>Quản lý mật khẩu khách</h3><p>Mỗi mật khẩu được tạo ngẫu nhiên và chỉ hiển thị một lần. Hãy sao chép để gửi cho khách. Khách có thể đăng nhập mà không cần email.</p><label>Tên gợi nhớ khách</label><input id="guestLabel" placeholder="Ví dụ: Học viên A"><button id="createGuest">Tạo mật khẩu riêng</button><div id="newPassword" aria-live="polite"></div><h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><h3>Danh sách khách</h3><div id="customerList"></div><hr><h3>Xuất bản thay đổi</h3><p>Chỉnh sửa trong khung tài liệu, sau đó bấm Xuất bản để đồng bộ cho học viên. Nên sao lưu bản JSON trước khi xuất bản.</p><button id="kfRecoverComposition" type="button" class="secondary">Sao chép bài Bố cục đã sửa từ website vào quản trị</button><span id="kfRecoverInfo" role="status"></span> <label for="kfImportHtmlFile" style="font-size:13px;font-weight:700;display:block;margin-top:14px">Nhập file index.html mới từ Kim Flora Studio</label><input id="kfImportHtmlFile" type="file" accept=".html,.htm,text/html" style="max-width:100%;margin:6px 0"><button id="kfImportHtml" type="button" class="secondary">Sao chép HTML vào trang quản trị</button><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
+<section id="adminPanel" class="card hidden"><header><h2>Cài đặt tài khoản</h2><button id="returnToLessons" type="button" class="secondary">← Quay lại tài liệu</button></header><hr><h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><hr><h3>Xuất bản thay đổi</h3><p>Chỉnh sửa trong khung tài liệu, sau đó bấm Xuất bản để đồng bộ cho học viên. Nên sao lưu bản JSON trước khi xuất bản.</p><button id="kfRecoverComposition" type="button" class="secondary">Sao chép bài Bố cục đã sửa từ website vào quản trị</button><span id="kfRecoverInfo" role="status"></span> <label for="kfImportHtmlFile" style="font-size:13px;font-weight:700;display:block;margin-top:14px">Nhập file index.html mới từ Kim Flora Studio</label><input id="kfImportHtmlFile" type="file" accept=".html,.htm,text/html" style="max-width:100%;margin:6px 0"><button id="kfImportHtml" type="button" class="secondary">Sao chép HTML vào trang quản trị</button><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
 </main>
 <script type="module">
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
@@ -62,12 +61,10 @@ const key="sb_publishable_jgSqB-1vyxcnojsbKJ3Tmg_8PsoZrvX";
 const client=createClient(url,key);
 const endpoint=url+"/functions/v1/kf-guest-access";
 const $=id=>document.getElementById(id);
-const adminMode=new URLSearchParams(location.search).get("admin")==="1";
-$("guestLogin").classList.toggle("hidden",adminMode);
-$("adminLogin").classList.toggle("hidden",!adminMode);
-$("loginTitle").textContent=adminMode?"Đăng nhập quản trị":"Đăng nhập học viên";
-$("loginInfo").textContent=adminMode?"Chỉ chủ sở hữu được quản lý mật khẩu khách.":"Nhập mật khẩu Kim Flora cấp riêng cho bạn. Không cần email.";
-let guestSession=null;try{guestSession=sessionStorage.getItem("kf_guest_session_v1")||null;}catch(_){}
+const adminMode=true;
+$("adminLogin").classList.remove("hidden");
+$("loginTitle").textContent="Đăng nhập quản trị";
+$("loginInfo").textContent="Đăng nhập bằng tài khoản quản trị Kim Flora.";
 let adminSession=null,currentFrame=null,visibleText="",editorSnapshot=null,guestSnapshot=null;
 const say=t=>$("message").textContent=t;
 
@@ -331,21 +328,6 @@ function showContent(value,{readOnly=true,snapshot=null}={}){
  $("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");
  $("viewer").replaceChildren(secureHTML(value||"<p>Chưa có nội dung được xuất bản trên máy chủ.</p>",{readOnly,snapshot}));
 }
-async function loadPublicForGuest(){
- const [r,snap]=await Promise.all([
-  api("guest-read",{session:guestSession,key:"published/main"}),
-  api("guest-read",{session:guestSession,key:"published/snapshot"})
- ]);
- showContent(r.value?.html||"",{readOnly:true,snapshot:snap.value});
-}
-$("guestLogin").onsubmit=async e=>{
- e.preventDefault();say("Đang kiểm tra mật khẩu...");
- try{
-  const result=await api("login",{password:$("guestPassword").value});
-  guestSession=result.session;try{sessionStorage.setItem("kf_guest_session_v1",guestSession);}catch(_){}$( "guestPassword" ).value="";
-  await loadPublicForGuest();say("");
- }catch(err){guestSession=null;try{sessionStorage.removeItem("kf_guest_session_v1");}catch(_){}say(err.message)}
-};
 $("adminLogin").onsubmit=async e=>{
  e.preventDefault();say("Đang đăng nhập...");
  try{
@@ -363,7 +345,7 @@ $("adminLogin").onsubmit=async e=>{
   showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("openAccountSettings").classList.remove("hidden");
   $("kfQuickBackup").classList.remove("hidden");
-  say("");await listGuests();void flushPending();
+  say("");void flushPending();
  }catch(err){say(err.message)}
 };
 
@@ -478,7 +460,7 @@ async function listGuests(){
  }
 }
 $("logout").onclick=async()=>{
- if(guestSession){try{await api("guest-logout",{session:guestSession})}catch{}guestSession=null;try{sessionStorage.removeItem("kf_guest_session_v1");}catch{}}
+ 
  if(adminSession){await client.auth.signOut();adminSession=null;}
  location.reload();
 };
@@ -502,22 +484,11 @@ async function restoreAdminSession(){
   showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("openAccountSettings").classList.remove("hidden");
   say("");
-  void listGuests().catch(err=>console.warn("Guest list",err));
+  
  }catch(err){
   console.warn("Restore admin session",err);
   say("Không tải được tài liệu. Phiên đăng nhập vẫn được giữ; vui lòng tải lại trang.");
  }finally{restoring=false;}
-}
-if(!adminMode&&guestSession){
- // Restore the existing guest session in this tab; only ask for the password if it expired.
- (async()=>{
-  try{await loadPublicForGuest();say("");}
-  catch(err){
-   guestSession=null;
-   try{sessionStorage.removeItem("kf_guest_session_v1");}catch(_){}
-   say("Phiên học viên đã hết hạn. Vui lòng đăng nhập lại.");
-  }
- })();
 }
 if(adminMode){
  await restoreAdminSession();
