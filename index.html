@@ -12742,5 +12742,87 @@ document.addEventListener('click',event=>{
 },true);
 })();
 </script>
+
+<!-- Kim Flora: sao lưu dữ liệu từ chính trình duyệt đang sử dụng, không thay đổi bài học -->
+<style>
+.kf-whole-backup-button{appearance:none;border:1px solid #a5b4fc!important;border-radius:9px!important;padding:8px 12px!important;background:#eef2ff!important;color:#3730a3!important;font-size:12px!important;font-weight:800!important;cursor:pointer!important}
+.kf-whole-backup-button[disabled]{opacity:.6;cursor:progress!important}
+body.kf-guest .kf-whole-backup-button{display:none!important}
+</style>
+<script>
+(function(){
+"use strict";
+const allowedKey=k=>/^(?:kimflora_|kf_)/i.test(k) && !/(?:auth|password|secret|token|session|pin)/i.test(k);
+function readLocal(){
+ const local={};
+ for(let i=0;i<localStorage.length;i++){
+  const key=localStorage.key(i);
+  if(key && allowedKey(key)) local[key]=localStorage.getItem(key);
+ }
+ return local;
+}
+async function readIndexed(){
+ const indexed={};
+ if(!window.indexedDB)return indexed;
+ const db=await new Promise((resolve,reject)=>{
+  const request=indexedDB.open("kimflora_durable_v1");
+  request.onsuccess=()=>resolve(request.result);
+  request.onerror=()=>reject(request.error);
+  request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains("records"))request.result.createObjectStore("records");};
+ });
+ try{
+  if(!db.objectStoreNames.contains("records"))return indexed;
+  await new Promise((resolve,reject)=>{
+   const tx=db.transaction("records","readonly");
+   const store=tx.objectStore("records");
+   const keys=store.getAllKeys(), values=store.getAll();
+   tx.oncomplete=()=>{
+    keys.result.forEach((key,i)=>{if(allowedKey(String(key)))indexed[String(key)]=values.result[i];});
+    resolve();
+   };
+   tx.onerror=()=>reject(tx.error);
+  });
+ }finally{db.close();}
+ return indexed;
+}
+async function backupSite(event){
+ const button=event.currentTarget;
+ if(document.body.classList.contains("kf-guest"))return;
+ button.disabled=true;
+ try{
+  const snapshot={format:1,capturedAt:new Date().toISOString(),local:readLocal(),indexed:await readIndexed()};
+  snapshot.websiteHTML="<!DOCTYPE html>\n"+document.documentElement.outerHTML;
+  const blob=new Blob([JSON.stringify(snapshot,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");
+  link.href=url;
+  link.download="kimflora-sao-luu-website-"+new Date().toISOString().replace(/[:.]/g,"-")+".json";
+  document.body.appendChild(link);
+  link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+ }catch(error){alert("Không sao lưu được website: "+(error?.message||error));}
+ finally{button.disabled=false;}
+}
+function insert(){
+ const placements=[
+  document.querySelector(".header-actions"),
+  document.querySelector("#compositionKnowledgePage .knowledge-top-actions")
+ ];
+ for(const parent of placements){
+  if(!parent||parent.querySelector(".kf-whole-backup-button"))continue;
+  const btn=document.createElement("button");
+  btn.type="button";
+  btn.className="kf-whole-backup-button";
+  btn.textContent="Sao lưu website";
+  btn.title="Sao lưu nội dung, bài đã chỉnh sửa và dữ liệu trên trình duyệt này";
+  btn.addEventListener("click",backupSite);
+  parent.appendChild(btn);
+ }
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",insert,{once:true});
+else insert();
+})();
+</script>
+
 </body>
 </html>
