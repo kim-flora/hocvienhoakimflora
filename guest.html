@@ -67,7 +67,8 @@ $("guestLogin").classList.toggle("hidden",adminMode);
 $("adminLogin").classList.toggle("hidden",!adminMode);
 $("loginTitle").textContent=adminMode?"Đăng nhập quản trị":"Đăng nhập học viên";
 $("loginInfo").textContent=adminMode?"Chỉ chủ sở hữu được quản lý mật khẩu khách.":"Nhập mật khẩu Kim Flora cấp riêng cho bạn. Không cần email.";
-let guestSession=null,adminSession=null,currentFrame=null,visibleText="",editorSnapshot=null,guestSnapshot=null;
+let guestSession=null;try{guestSession=sessionStorage.getItem("kf_guest_session_v1")||null;}catch(_){}
+let adminSession=null,currentFrame=null,visibleText="",editorSnapshot=null,guestSnapshot=null;
 const say=t=>$("message").textContent=t;
 
 const KF_PENDING_KEY="kf_editor_unsynced_v1";
@@ -331,17 +332,19 @@ function showContent(value,{readOnly=true,snapshot=null}={}){
  $("viewer").replaceChildren(secureHTML(value||"<p>Chưa có nội dung được xuất bản trên máy chủ.</p>",{readOnly,snapshot}));
 }
 async function loadPublicForGuest(){
- const r=await api("guest-read",{session:guestSession,key:"published/main"});
- const snap=await api("guest-read",{session:guestSession,key:"published/snapshot"});
+ const [r,snap]=await Promise.all([
+  api("guest-read",{session:guestSession,key:"published/main"}),
+  api("guest-read",{session:guestSession,key:"published/snapshot"})
+ ]);
  showContent(r.value?.html||"",{readOnly:true,snapshot:snap.value});
 }
 $("guestLogin").onsubmit=async e=>{
  e.preventDefault();say("Đang kiểm tra mật khẩu...");
  try{
   const result=await api("login",{password:$("guestPassword").value});
-  guestSession=result.session;$("guestPassword").value="";
+  guestSession=result.session;try{sessionStorage.setItem("kf_guest_session_v1",guestSession);}catch(_){}$( "guestPassword" ).value="";
   await loadPublicForGuest();say("");
- }catch(err){guestSession=null;say(err.message)}
+ }catch(err){guestSession=null;try{sessionStorage.removeItem("kf_guest_session_v1");}catch(_){}say(err.message)}
 };
 $("adminLogin").onsubmit=async e=>{
  e.preventDefault();say("Đang đăng nhập...");
@@ -352,8 +355,11 @@ $("adminLogin").onsubmit=async e=>{
   if(rpcError||allowed!==true){await client.auth.signOut();throw new Error("Tài khoản không được cấp quyền quản trị.");}
   adminSession=data.session;
   $("adminPassword").value="";
-  const result=await api("admin-read",{key:"published/main"},data.session.access_token);
-  editorSnapshot=await initializeAdminSnapshot(data.session.access_token);
+  const [result,snapshot]=await Promise.all([
+   api("admin-read",{key:"published/main"},data.session.access_token),
+   initializeAdminSnapshot(data.session.access_token)
+  ]);
+  editorSnapshot=snapshot;
   showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("openAccountSettings").classList.remove("hidden");
   $("kfQuickBackup").classList.remove("hidden");
@@ -472,7 +478,7 @@ async function listGuests(){
  }
 }
 $("logout").onclick=async()=>{
- if(guestSession){try{await api("guest-logout",{session:guestSession})}catch{}guestSession=null;}
+ if(guestSession){try{await api("guest-logout",{session:guestSession})}catch{}guestSession=null;try{sessionStorage.removeItem("kf_guest_session_v1");}catch{}}
  if(adminSession){await client.auth.signOut();adminSession=null;}
  location.reload();
 };
@@ -488,8 +494,11 @@ async function restoreAdminSession(){
   if(error||allowed!==true)return;
   adminSession=session;
   if(currentFrame){$("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");return;}
-  const content=await api("admin-read",{key:"published/main"},session.access_token);
-  editorSnapshot=await initializeAdminSnapshot(session.access_token);
+  const [content,snapshot]=await Promise.all([
+   api("admin-read",{key:"published/main"},session.access_token),
+   initializeAdminSnapshot(session.access_token)
+  ]);
+  editorSnapshot=snapshot;
   showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("openAccountSettings").classList.remove("hidden");
   say("");
