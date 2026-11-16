@@ -51,7 +51,7 @@ body:has(#contentPanel:not(.hidden)) #contentPanel{border:0;border-radius:0;box-
 <form id="guestLogin"><label for="guestPassword">Mật khẩu khách</label><input id="guestPassword" type="password" autocomplete="current-password" required minlength="16"><div><button type="submit">Vào xem tài liệu</button></div></form>
 <form id="adminLogin" class="hidden"><label>Email quản trị</label><input type="email" id="adminEmail" required autocomplete="username"><label>Mật khẩu quản trị</label><input type="password" id="adminPassword" required autocomplete="current-password"><div><button type="submit">Đăng nhập quản trị</button><button type="button" class="secondary" id="forgotAdminPassword">Quên mật khẩu?</button></div></form><form id="resetAdminPassword" class="hidden"><h3>Đặt lại mật khẩu quản trị</h3><p>Hãy nhập mật khẩu mới sau khi mở liên kết trong email khôi phục.</p><label for="recoveryPassword">Mật khẩu mới</label><input id="recoveryPassword" type="password" autocomplete="new-password" minlength="12" required><label for="recoveryConfirm">Nhập lại mật khẩu mới</label><input id="recoveryConfirm" type="password" autocomplete="new-password" minlength="12" required><div><button type="submit">Lưu mật khẩu mới</button></div></form></section>
 <p id="message" role="status"></p>
-<section id="contentPanel" class="card hidden"><header><h2 id="pageBrand" title="Kim Flora Studio">Kim Flora Studio</h2><button id="logout" class="secondary">Đăng xuất</button></header><article id="viewer"></article></section>
+<section id="contentPanel" class="card hidden"><header><h2 id="pageBrand" title="Kim Flora Studio">Kim Flora Studio</h2><div style="display:flex;align-items:center;gap:6px"><button id="kfQuickBackup" type="button" class="secondary hidden" style="margin:0;padding:7px 10px;font-size:12px">Sao lưu website</button><button id="logout" class="secondary">Đăng xuất</button></div></header><article id="viewer"></article></section>
 <section id="adminPanel" class="card hidden"><header><h2>Cài đặt tài khoản</h2><button id="returnToLessons" type="button" class="secondary">← Quay lại tài liệu</button></header><hr><h3>Quản lý mật khẩu khách</h3><p>Mỗi mật khẩu được tạo ngẫu nhiên và chỉ hiển thị một lần. Hãy sao chép để gửi cho khách. Khách có thể đăng nhập mà không cần email.</p><label>Tên gợi nhớ khách</label><input id="guestLabel" placeholder="Ví dụ: Học viên A"><button id="createGuest">Tạo mật khẩu riêng</button><div id="newPassword" aria-live="polite"></div><h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><h3>Danh sách khách</h3><div id="customerList"></div><hr><h3>Xuất bản thay đổi</h3><p>Chỉnh sửa trong khung tài liệu, sau đó bấm Xuất bản để đồng bộ cho học viên. Nên sao lưu bản JSON trước khi xuất bản.</p><button id="kfRecoverComposition" type="button" class="secondary">Sao chép bài Bố cục đã sửa từ website vào quản trị</button><span id="kfRecoverInfo" role="status"></span> <label for="kfImportHtmlFile" style="font-size:13px;font-weight:700;display:block;margin-top:14px">Nhập file index.html mới từ Kim Flora Studio</label><input id="kfImportHtmlFile" type="file" accept=".html,.htm,text/html" style="max-width:100%;margin:6px 0"><button id="kfImportHtml" type="button" class="secondary">Sao chép HTML vào trang quản trị</button><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
 </main>
 <script type="module">
@@ -356,6 +356,7 @@ $("adminLogin").onsubmit=async e=>{
   editorSnapshot=await initializeAdminSnapshot(data.session.access_token);
   showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("openAccountSettings").classList.remove("hidden");
+  $("kfQuickBackup").classList.remove("hidden");
   say("");await listGuests();void flushPending();
  }catch(err){say(err.message)}
 };
@@ -401,6 +402,14 @@ $("kfImportHtml").onclick=async()=>{
   say("");
  }catch(err){say("Không nhập được HTML: "+err.message)}
  finally{$("kfImportHtml").disabled=false;}
+};
+$("kfQuickBackup").onclick=async()=>{
+ try{
+  const snapshot=await readEditor();
+  const current=await api("admin-read",{key:"published/main"},adminSession.access_token);
+  const backup={...snapshot,websiteHTML:current.value?.html||""};
+  downloadJSON(backup);
+ }catch(err){say("Không sao lưu được: "+err.message)}
 };
 $("kfBackup").onclick=async()=>{
  try{const snapshot=await readEditor();downloadJSON(snapshot);say("Đã sao lưu dữ liệu chỉnh sửa.");}
