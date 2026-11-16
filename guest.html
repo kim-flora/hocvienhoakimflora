@@ -21,7 +21,7 @@ nav a{font-size:13px;color:#4f46e5;margin-left:10px}
 <section class="card" id="loginPanel"><h2 id="loginTitle">Đăng nhập học viên</h2>
 <p id="loginInfo">Nhập mật khẩu riêng do Kim Flora cấp. Không cần email.</p>
 <form id="guestLogin"><label for="guestPassword">Mật khẩu khách</label><input id="guestPassword" type="password" autocomplete="current-password" required minlength="16"><div><button type="submit">Vào xem tài liệu</button></div></form>
-<form id="adminLogin" class="hidden"><label>Email quản trị</label><input type="email" id="adminEmail" required autocomplete="username"><label>Mật khẩu quản trị</label><input type="password" id="adminPassword" required autocomplete="current-password"><div><button type="submit">Đăng nhập quản trị</button></div></form></section>
+<form id="adminLogin" class="hidden"><label>Email quản trị</label><input type="email" id="adminEmail" required autocomplete="username"><label>Mật khẩu quản trị</label><input type="password" id="adminPassword" required autocomplete="current-password"><div><button type="submit">Đăng nhập quản trị</button><button type="button" class="secondary" id="forgotAdminPassword">Quên mật khẩu?</button></div></form><form id="resetAdminPassword" class="hidden"><h3>Đặt lại mật khẩu quản trị</h3><p>Hãy nhập mật khẩu mới sau khi mở liên kết trong email khôi phục.</p><label for="recoveryPassword">Mật khẩu mới</label><input id="recoveryPassword" type="password" autocomplete="new-password" minlength="12" required><label for="recoveryConfirm">Nhập lại mật khẩu mới</label><input id="recoveryConfirm" type="password" autocomplete="new-password" minlength="12" required><div><button type="submit">Lưu mật khẩu mới</button></div></form></section>
 <p id="message" role="status"></p>
 <section id="contentPanel" class="card hidden"><header><h2>Tài liệu Kim Flora</h2><button id="logout" class="secondary">Đăng xuất</button></header><input id="search" type="search" placeholder="Tìm trong nội dung..."><article id="viewer"></article></section>
 <section id="adminPanel" class="card hidden"><h2>Quản lý mật khẩu khách</h2><p>Mỗi mật khẩu được tạo ngẫu nhiên và chỉ hiển thị một lần. Hãy sao chép để gửi cho khách. Khách có thể đăng nhập mà không cần email.</p><label>Tên gợi nhớ khách</label><input id="guestLabel" placeholder="Ví dụ: Học viên A"><button id="createGuest">Tạo mật khẩu riêng</button><div id="newPassword" aria-live="polite"></div><h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><h3>Danh sách khách</h3><div id="customerList"></div><hr><h3>Xuất bản thay đổi</h3><p>Chỉnh sửa trong khung tài liệu, sau đó bấm Xuất bản để đồng bộ cho học viên. Nên sao lưu bản JSON trước khi xuất bản.</p><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
@@ -33,6 +33,46 @@ const url="https://kqoyujqlkanwpdedqljr.supabase.co";
 const key="sb_publishable_jgSqB-1vyxcnojsbKJ3Tmg_8PsoZrvX";
 const client=createClient(url,key);
 const endpoint=url+"/functions/v1/kf-guest-access";
+const recoveryRedirect="https://kim-flora.github.io/hocvienhoakimflora/guest.html?admin=1";
+const recoveryForm=$("resetAdminPassword");
+let recoveryMode=false;
+function showRecovery(){
+ recoveryMode=true;
+ $("loginPanel").classList.remove("hidden");
+ $("adminLogin").classList.add("hidden");
+ $("guestLogin").classList.add("hidden");
+ recoveryForm.classList.remove("hidden");
+ $("loginTitle").textContent="Đặt lại mật khẩu quản trị";
+ $("loginInfo").textContent="Nhập mật khẩu mới để hoàn tất khôi phục.";
+}
+client.auth.onAuthStateChange((event)=>{
+ if(event==="PASSWORD_RECOVERY")showRecovery();
+});
+if(adminMode&&new URLSearchParams(location.hash.substring(1)).get("type")==="recovery")showRecovery();
+$("forgotAdminPassword").onclick=async()=>{
+ const email=$("adminEmail").value.trim();
+ if(!email)return say("Nhập email quản trị trước.");
+ try{
+  const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:recoveryRedirect});
+  if(error)throw error;
+  say("Đã yêu cầu email khôi phục. Hãy kiểm tra hộp thư và mục Spam.");
+ }catch(e){say("Không gửi được email khôi phục: "+e.message);}
+};
+recoveryForm.onsubmit=async e=>{
+ e.preventDefault();
+ const password=$("recoveryPassword").value,confirmPassword=$("recoveryConfirm").value;
+ if(password.length<12)return say("Mật khẩu cần ít nhất 12 ký tự.");
+ if(password!==confirmPassword)return say("Hai mật khẩu chưa trùng nhau.");
+ try{
+  const {data:{session}}=await client.auth.getSession();
+  if(!session)throw new Error("Liên kết hết hạn hoặc chưa được xác thực.");
+  const {error}=await client.auth.updateUser({password});
+  if(error)throw error;
+  await client.auth.signOut();
+  location.replace("guest.html?admin=1");
+ }catch(e){say("Chưa đổi được mật khẩu: "+e.message);}
+};
+
 const $=id=>document.getElementById(id);
 const adminMode=new URLSearchParams(location.search).get("admin")==="1";
 $("guestLogin").classList.toggle("hidden",adminMode);
