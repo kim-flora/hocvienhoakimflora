@@ -24,7 +24,7 @@ nav a{font-size:13px;color:#4f46e5;margin-left:10px}
 <form id="adminLogin" class="hidden"><label>Email quản trị</label><input type="email" id="adminEmail" required autocomplete="username"><label>Mật khẩu quản trị</label><input type="password" id="adminPassword" required autocomplete="current-password"><div><button type="submit">Đăng nhập quản trị</button></div></form></section>
 <p id="message" role="status"></p>
 <section id="contentPanel" class="card hidden"><header><h2>Tài liệu Kim Flora</h2><button id="logout" class="secondary">Đăng xuất</button></header><input id="search" type="search" placeholder="Tìm trong nội dung..."><article id="viewer"></article></section>
-<section id="adminPanel" class="card hidden"><h2>Quản lý mật khẩu khách</h2><p>Mỗi mật khẩu được tạo ngẫu nhiên và chỉ hiển thị một lần. Hãy sao chép để gửi cho khách. Khách có thể đăng nhập mà không cần email.</p><label>Tên gợi nhớ khách</label><input id="guestLabel" placeholder="Ví dụ: Học viên A"><button id="createGuest">Tạo mật khẩu riêng</button><div id="newPassword" aria-live="polite"></div><h3>Danh sách khách</h3><div id="customerList"></div><hr><h3>Xuất bản thay đổi</h3><p>Chỉnh sửa trong khung tài liệu, sau đó bấm Xuất bản để đồng bộ cho học viên. Nên sao lưu bản JSON trước khi xuất bản.</p><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
+<section id="adminPanel" class="card hidden"><h2>Quản lý mật khẩu khách</h2><p>Mỗi mật khẩu được tạo ngẫu nhiên và chỉ hiển thị một lần. Hãy sao chép để gửi cho khách. Khách có thể đăng nhập mà không cần email.</p><label>Tên gợi nhớ khách</label><input id="guestLabel" placeholder="Ví dụ: Học viên A"><button id="createGuest">Tạo mật khẩu riêng</button><div id="newPassword" aria-live="polite"></div><h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><h3>Danh sách khách</h3><div id="customerList"></div><hr><h3>Xuất bản thay đổi</h3><p>Chỉnh sửa trong khung tài liệu, sau đó bấm Xuất bản để đồng bộ cho học viên. Nên sao lưu bản JSON trước khi xuất bản.</p><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
 </main>
 <script type="module">
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
@@ -142,6 +142,17 @@ $("kfPublish").onclick=async()=>{
   editorSnapshot=snapshot;
   say("Đã xuất bản dữ liệu! Học viên sẽ xem bản mới từ lần đăng nhập tiếp theo.");
  }catch(err){say("Chưa xuất bản được: "+err.message);}
+};
+$("changeAdminPassword").onclick=async()=>{
+ const password=$("adminNewPassword").value;
+ if(password.length<12)return say("Mật khẩu mới cần ít nhất 12 ký tự.");
+ if(!confirm("Đổi mật khẩu đăng nhập quản trị Kim Flora?"))return;
+ try{
+  const {error}=await client.auth.updateUser({password});
+  if(error)throw error;
+  $("adminNewPassword").value="";
+  say("Đã đổi mật khẩu quản trị. Hãy dùng mật khẩu mới khi đăng nhập lần sau.");
+ }catch(e){say("Chưa đổi được mật khẩu: "+e.message);}
 };
 $("createGuest").onclick=async()=>{
  const label=$("guestLabel").value.trim();
