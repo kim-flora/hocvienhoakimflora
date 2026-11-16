@@ -73,4 +73,174 @@
       break;
     }
   });
+
+  // Minimal custom navigation: unchanged built-in tabs remain controlled by the original application.
+  const NAV_KEY="kimflora_custom_nav_v1";
+  let navState={names:{},tabs:[]};
+  let customActive=null;
+  let renameNext=false;
+  function loadNav(){
+    try{
+      const saved=JSON.parse(storage.getItem(NAV_KEY)||"{}");
+      if(saved && typeof saved==="object"){
+        navState.names=saved.names&&typeof saved.names==="object"?saved.names:{};
+        navState.tabs=Array.isArray(saved.tabs)?saved.tabs.filter(x=>x && typeof x.id==="string" && typeof x.name==="string"): [];
+      }
+    }catch(_){}
+  }
+  function saveNav(){if(editable)storage.setItem(NAV_KEY,JSON.stringify(navState));}
+  function initialNav(){
+    const bar=document.querySelector(".header-actions");
+    const header=document.querySelector(".header");
+    if(!bar||!header)return;
+    loadNav();
+    const original=[...bar.querySelectorAll(":scope > button")].filter(b=>!b.classList.contains("btn-relock"));
+    original.forEach((button,index)=>{
+      const id="base-"+index;
+      button.dataset.kfNavId=id;
+      if(typeof navState.names[id]==="string" && navState.names[id])button.textContent=navState.names[id];
+    });
+    const host=document.createElement("section");
+    host.id="kfCustomPage";
+    host.hidden=true;
+    host.innerHTML='<div class="kf-custom-card"><h2 id="kfCustomTitle"></h2><div id="kfCustomEditor" class="kf-custom-editor"></div></div>';
+    header.after(host);
+    const title=host.querySelector("#kfCustomTitle");
+    const editor=host.querySelector("#kfCustomEditor");
+    editor.contentEditable=String(editable);
+    function hideCustom(){
+      if(customActive!==null)persistCustom();
+      customActive=null;
+      host.hidden=true;
+      document.body.classList.remove("kf-custom-open");
+    }
+    function persistCustom(){
+      if(!editable||customActive===null)return;
+      const item=navState.tabs.find(x=>x.id===customActive);
+      if(item){item.html=editor.innerHTML;saveNav();}
+    }
+    let saveTimer=0;
+    editor.addEventListener("input",()=>{
+      if(!editable)return;
+      clearTimeout(saveTimer);
+      saveTimer=setTimeout(persistCustom,350);
+    });
+    editor.addEventListener("blur",persistCustom,true);
+    function showCustom(item){
+      if(customActive!==null)persistCustom();
+      customActive=item.id;
+      title.textContent=item.name.toLocaleUpperCase("vi-VN");
+      editor.innerHTML=typeof item.html==="string"?item.html:"";
+      editor.contentEditable=String(editable);
+      document.body.classList.add("kf-custom-open");
+      document.body.classList.remove("knowledge-mode");
+      document.querySelectorAll(".knowledge-page.active").forEach(p=>{p.classList.remove("active");p.setAttribute("aria-hidden","true");});
+      host.hidden=false;
+      window.scrollTo({top:0,behavior:"instant"});
+    }
+    function rename(button){
+      if(!editable)return;
+      const id=button.dataset.kfNavId;
+      if(!id)return;
+      const previous=button.textContent.trim();
+      const entered=prompt("Tên tab",previous);
+      if(entered===null)return;
+      const next=entered.trim().slice(0,100);
+      if(!next || next===previous)return;
+      if(id.startsWith("base-"))navState.names[id]=next;
+      else{
+        const item=navState.tabs.find(x=>x.id===id);
+        if(item){item.name=next;if(customActive===id)title.textContent=next.toLocaleUpperCase("vi-VN");}
+      }
+      button.textContent=next;
+      saveNav();
+    }
+    function addCustomButton(item){
+      const button=document.createElement("button");
+      button.type="button";
+      button.className="btn-knowledge kf-custom-tab";
+      button.dataset.kfNavId=item.id;
+      button.textContent=item.name;
+      button.addEventListener("click",()=>showCustom(item));
+      bar.insertBefore(button,bar.querySelector(".btn-relock"));
+      return button;
+    }
+    navState.tabs.forEach(addCustomButton);
+    bar.addEventListener("click",e=>{
+      const btn=e.target.closest("button[data-kf-nav-id]");
+      if(!btn)return;
+      if(renameNext){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        renameNext=false;
+        rename(btn);
+        return;
+      }
+      if(btn.dataset.kfNavId.startsWith("base-"))hideCustom();
+    },true);
+    if(editable){
+      const add=document.createElement("button");
+      add.type="button";add.className="kf-nav-control";
+      add.textContent="+ Tab";add.title="Thêm tab";
+      add.onclick=()=>{
+        const name=prompt("Tên tab mới");
+        if(name===null||!name.trim())return;
+        const item={id:"added-"+crypto.randomUUID(),name:name.trim().slice(0,100),html:""};
+        navState.tabs.push(item);saveNav();
+        const button=addCustomButton(item);
+        showCustom(item);
+        button.scrollIntoView({inline:"nearest",block:"nearest"});
+      };
+      const renameButton=document.createElement("button");
+      renameButton.type="button";renameButton.className="kf-nav-control";
+      renameButton.textContent="Đổi tên";renameButton.title="Bấm Đổi tên rồi chọn tab cần sửa";
+      renameButton.onclick=()=>{renameNext=!renameNext;renameButton.classList.toggle("active",renameNext);};
+      // Keep original tabs and lock button in place.
+      bar.append(add,renameButton);
+    }
+  }
+  function formatPastedImage(img){
+    if(!img||img.nodeName!=="IMG")return;
+    img.setAttribute("width","189");
+    img.setAttribute("height","265");
+    img.style.width="5cm";img.style.height="7cm";
+    img.style.objectFit="contain";
+    img.style.maxWidth="100%";
+    img.dataset.kfPasted="1";
+  }
+  function pasteImage(e){
+    if(!editable||!e.target.closest("[contenteditable=true]"))return;
+    const items=[...(e.clipboardData?.items||[])];
+    const item=items.find(x=>x.type.startsWith("image/"));
+    if(!item)return;
+    const file=item.getAsFile();
+    if(!file)return;
+    e.preventDefault();
+    const selection=window.getSelection();
+    const range=selection?.rangeCount?selection.getRangeAt(0).cloneRange():null;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const img=document.createElement("img");
+      img.src=String(reader.result);formatPastedImage(img);
+      const target=e.target.closest("[contenteditable=true]");
+      if(range&&target?.contains(range.commonAncestorContainer)){
+        range.deleteContents();range.insertNode(img);
+        range.setStartAfter(img);range.collapse(true);
+        selection.removeAllRanges();selection.addRange(range);
+      }else target?.append(img);
+      target?.dispatchEvent(new Event("input",{bubbles:true}));
+    };
+    reader.readAsDataURL(file);
+  }
+  document.addEventListener("paste",pasteImage,true);
+  // For pasted rich HTML (e.g. an image within a copied article), only affect newly added images.
+  document.addEventListener("paste",e=>{
+    if(!editable||!e.target.closest("[contenteditable=true]"))return;
+    if([...(e.clipboardData?.items||[])].some(x=>x.type.startsWith("image/")))return;
+    const target=e.target.closest("[contenteditable=true]");
+    const before=new Set(target.querySelectorAll("img"));
+    setTimeout(()=>target.querySelectorAll("img").forEach(img=>{if(!before.has(img))formatPastedImage(img);}),0);
+  },true);
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initialNav,{once:true});
+  else initialNav();
 })();
