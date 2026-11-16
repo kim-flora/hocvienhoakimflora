@@ -56,9 +56,9 @@ function secureHTML(value,{readOnly=true,snapshot=null}={}){
  html=html.includes("</head>")?html.replace("</head>",added+"</head>"):added+html;
  frame.srcdoc=html;
  currentFrame=frame;
- const stripped=html.replace(/<script[^>]*>[sS]*?</script>/gi,"").replace(/<style[^>]*>[sS]*?</style>/gi,"");
- const doc=new DOMParser().parseFromString(stripped,"text/html");
- visibleText=(doc.body?.textContent||"").replace(/s+/g," ");
+ const doc=new DOMParser().parseFromString(html,"text/html");
+ doc.querySelectorAll("script,style,noscript").forEach(x=>x.remove());
+ visibleText=(doc.body?.textContent||"").replace(/\s+/g," ");
  return frame;
 }
 async function api(action,body={},bearer=null){
