@@ -41,3 +41,13 @@ create policy "kf_admin_content_read" on public.kf_content
 revoke select on public.kf_content from anon;
 grant select on public.kf_content to authenticated;
 -- Do not treat the existing public GitHub HTML as secret. It must be migrated.
+
+-- Edge Function uses PostgREST over schema private; add private to the
+-- Supabase API exposed schemas in Project Settings > API > Exposed schemas.
+-- The grants below expose these tables ONLY to service_role, never anon/authenticated.
+grant usage on schema private to service_role;
+grant select, insert, update, delete on private.kf_guest_credentials to service_role;
+grant select, insert, update, delete on private.kf_guest_sessions to service_role;
+grant select, insert, update, delete on private.kf_guest_login_attempts to service_role;
+grant usage, select on all sequences in schema private to service_role;
+-- Protect private tables with RLS policies, service_role bypasses RLS.
