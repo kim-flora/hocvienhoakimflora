@@ -1,22 +1,25 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import {createKimFloraClient,signInAdmin,changeAdminPassword,isCurrentAdmin} from "./supabase/kim-flora-client.js";
+import {createKimFloraClient,changeAdminPassword,isCurrentAdmin} from "./supabase/kim-flora-client.js";
 import {captureLocalSnapshot,downloadSnapshotFile,uploadLocalSnapshot,downloadServerSnapshot,restoreSnapshotAfterBackup} from "./supabase/kim-flora-sync.js";
 const client=createKimFloraClient(createClient);
-let admin=false;
+let admin=false, loggedIn=false;
+const gate=document.createElement("style");gate.textContent="body:not(.kf-logged-in) > :not(#kfAccountPanel):not(script):not(style){display:none!important}";document.head.append(gate);
 const el=document.createElement("div");el.id="kfAccountPanel";
 const css=document.createElement("style");
 css.textContent='#lockScreen{display:none!important}#kfAccountPanel{position:sticky;top:0;z-index:9999;background:#fff;border:1px solid #dbe3ef;border-radius:10px;margin:0 auto 10px;max-width:1440px;padding:9px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font:12px system-ui;color:#334155}#kfAccountPanel button{border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;border-radius:7px;padding:7px 10px;font-weight:700;cursor:pointer}#kfAccountPanel input{border:1px solid #cbd5e1;border-radius:7px;padding:8px;max-width:220px}#kfAccountPanel .kf-hidden{display:none!important}body:not(.kf-is-admin) .knowledge-edit-btn,body:not(.kf-is-admin) .knowledge-add-section-btn,body:not(.kf-is-admin) .knowledge-edit-bar{display:none!important}';
 document.head.append(css);
-el.innerHTML='<strong>Kim Flora</strong> <span id="kfRoleStatus">Khách · chỉ xem và tìm kiếm</span> <button id="kfLoginShow">Đăng nhập quản trị</button><form id="kfLoginForm" class="kf-hidden"><input id="kfEmail" type="email" autocomplete="username" required placeholder="Email quản trị"><input id="kfPassword" type="password" autocomplete="current-password" required placeholder="Mật khẩu"><button type="submit">Đăng nhập</button><button type="button" id="kfLoginCancel">Hủy</button></form><div id="kfAdminActions" class="kf-hidden"><button id="kfBackup">Sao lưu dữ liệu máy này</button><button id="kfUpload">Đồng bộ lên Supabase</button><button id="kfDownload">Tải từ Supabase về máy này</button><button id="kfChangePassword">Đổi mật khẩu</button><button id="kfLogout">Đăng xuất</button></div><span id="kfSyncStatus" role="status"></span>';
+el.innerHTML='<strong>Kim Flora</strong> <span id="kfRoleStatus">Cần đăng nhập</span> <button id="kfLoginShow">Đăng nhập</button><form id="kfLoginForm" class="kf-hidden"><input id="kfEmail" type="email" autocomplete="username" required placeholder="Email quản trị"><input id="kfPassword" type="password" autocomplete="current-password" required placeholder="Mật khẩu"><button type="submit">Đăng nhập</button><button type="button" id="kfLoginCancel">Hủy</button></form><div id="kfAdminActions" class="kf-hidden"><button id="kfBackup">Sao lưu dữ liệu máy này</button><button id="kfUpload">Đồng bộ lên Supabase</button><button id="kfDownload">Tải từ Supabase về máy này</button><button id="kfChangePassword">Đổi mật khẩu</button><button id="kfLogout">Đăng xuất</button></div><button id="kfGuestLogout" class="kf-hidden">Đăng xuất</button><span id="kfSyncStatus" role="status"></span>';
 document.body.insertBefore(el,document.body.firstChild);
 const $=id=>document.getElementById(id);
 const status=t=>$("kfSyncStatus").textContent=t;
 function role(value){
  admin=!!value;
+ document.body.classList.toggle("kf-logged-in",loggedIn);
  document.body.classList.toggle("kf-is-admin",admin);
- $("kfRoleStatus").textContent=admin?"Quản trị viên":"Khách · chỉ xem và tìm kiếm";
+ $("kfRoleStatus").textContent=!loggedIn?"Chưa đăng nhập":admin?"Quản trị viên":"Khách · chỉ xem và tìm kiếm";
  $("kfAdminActions").classList.toggle("kf-hidden",!admin);
- $("kfLoginShow").classList.toggle("kf-hidden",admin);
+ $("kfGuestLogout").classList.toggle("kf-hidden",!loggedIn||admin);
+ $("kfLoginShow").classList.toggle("kf-hidden",loggedIn);
  $("kfLoginForm").classList.add("kf-hidden");
  if(!admin)document.querySelectorAll("[contenteditable]").forEach(e=>e.removeAttribute("contenteditable"));
 }
@@ -35,10 +38,11 @@ $("kfLoginShow").onclick=()=>{$("kfLoginForm").classList.remove("kf-hidden");$("
 $("kfLoginCancel").onclick=()=>$("kfLoginForm").classList.add("kf-hidden");
 $("kfLoginForm").onsubmit=async e=>{
  e.preventDefault();status("Đang đăng nhập...");
- try{await signInAdmin(client,$("kfEmail").value,$("kfPassword").value);$("kfPassword").value="";role(true);status("Đã đăng nhập.");}
+ try{const {error}=await client.auth.signInWithPassword({email:$("kfEmail").value,password:$("kfPassword").value});if(error)throw error;loggedIn=true;const isAdmin=await isCurrentAdmin(client);$("kfPassword").value="";role(isAdmin);status(isAdmin?"Đã đăng nhập quản trị.":"Đã đăng nhập khách, chỉ có quyền xem.");}
  catch(err){status("Không đăng nhập được: "+err.message);}
 };
-$("kfLogout").onclick=async()=>{await client.auth.signOut();role(false);location.reload();};
+$("kfGuestLogout").onclick=async()=>{await client.auth.signOut();loggedIn=false;role(false);location.reload();};
+$("kfLogout").onclick=async()=>{await client.auth.signOut();loggedIn=false;role(false);location.reload();};
 $("kfChangePassword").onclick=async()=>{
  const p=prompt("Mật khẩu mới (ít nhất 12 ký tự):");if(p===null)return;
  if(p.length<12){status("Mật khẩu quá ngắn.");return;}
@@ -62,5 +66,5 @@ $("kfDownload").onclick=async()=>{
   await restoreSnapshotAfterBackup(r.snapshot,{confirmed:true});location.reload();
  }catch(err){status("Không tải được: "+err.message);}
 };
-try{role(await isCurrentAdmin(client));}catch(err){status("Kiểm tra phiên thất bại: "+err.message);}
-client.auth.onAuthStateChange(event=>{if(event==="SIGNED_OUT")role(false);});
+try{const {data:{session}}=await client.auth.getSession();loggedIn=!!session;role(loggedIn?await isCurrentAdmin(client):false);}catch(err){status("Kiểm tra phiên thất bại: "+err.message);}
+client.auth.onAuthStateChange(event=>{if(event==="SIGNED_OUT"){loggedIn=false;role(false);}});
