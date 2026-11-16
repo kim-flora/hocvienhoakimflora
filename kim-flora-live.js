@@ -8,7 +8,7 @@ const el=document.createElement("div");el.id="kfAccountPanel";
 const css=document.createElement("style");
 css.textContent='#lockScreen{display:none!important}#kfAccountPanel{position:sticky;top:0;z-index:9999;background:#fff;border:1px solid #dbe3ef;border-radius:10px;margin:0 auto 10px;max-width:1440px;padding:9px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font:12px system-ui;color:#334155}#kfAccountPanel button{border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;border-radius:7px;padding:7px 10px;font-weight:700;cursor:pointer}#kfAccountPanel input{border:1px solid #cbd5e1;border-radius:7px;padding:8px;max-width:220px}#kfAccountPanel .kf-hidden{display:none!important}body:not(.kf-is-admin) .knowledge-edit-btn,body:not(.kf-is-admin) .knowledge-add-section-btn,body:not(.kf-is-admin) .knowledge-edit-bar{display:none!important}';
 document.head.append(css);
-el.innerHTML='<strong>Kim Flora</strong> <span id="kfRoleStatus">Cần đăng nhập</span> <button id="kfLoginShow">Đăng nhập</button><form id="kfLoginForm" class="kf-hidden"><input id="kfEmail" type="email" autocomplete="username" required placeholder="Email quản trị"><input id="kfPassword" type="password" autocomplete="current-password" required placeholder="Mật khẩu"><button type="submit">Đăng nhập</button><button type="button" id="kfLoginCancel">Hủy</button></form><div id="kfAdminActions" class="kf-hidden"><button id="kfBackup">Sao lưu dữ liệu máy này</button><button id="kfUpload">Đồng bộ lên Supabase</button><button id="kfDownload">Tải từ Supabase về máy này</button><button id="kfChangePassword">Đổi mật khẩu</button><button id="kfLogout">Đăng xuất</button></div><button id="kfGuestLogout" class="kf-hidden">Đăng xuất</button><span id="kfSyncStatus" role="status"></span>';
+el.innerHTML='<strong>Kim Flora</strong> <span id="kfRoleStatus">Cần đăng nhập</span> <button id="kfLoginShow">Đăng nhập</button><form id="kfLoginForm" class="kf-hidden"><input id="kfEmail" type="email" autocomplete="username" required placeholder="Email quản trị"><input id="kfPassword" type="password" autocomplete="current-password" required placeholder="Mật khẩu"><button type="submit">Đăng nhập</button><button type="button" id="kfLoginCancel">Hủy</button></form><div id="kfAdminActions" class="kf-hidden"><button id="kfInviteGuest">Mời khách bằng email</button><button id="kfBackup">Sao lưu dữ liệu máy này</button><button id="kfUpload">Đồng bộ lên Supabase</button><button id="kfDownload">Tải từ Supabase về máy này</button><button id="kfChangePassword">Đổi mật khẩu</button><button id="kfLogout">Đăng xuất</button></div><button id="kfGuestLogout" class="kf-hidden">Đăng xuất</button><span id="kfSyncStatus" role="status"></span>';
 document.body.insertBefore(el,document.body.firstChild);
 const $=id=>document.getElementById(id);
 const status=t=>$("kfSyncStatus").textContent=t;
@@ -47,6 +47,25 @@ $("kfChangePassword").onclick=async()=>{
  const p=prompt("Mật khẩu mới (ít nhất 12 ký tự):");if(p===null)return;
  if(p.length<12){status("Mật khẩu quá ngắn.");return;}
  try{await changeAdminPassword(client,p);status("Đã đổi mật khẩu.");}catch(err){status(err.message);}
+};
+$("kfInviteGuest").onclick=async()=>{
+ if(!admin)return;
+ const email=prompt("Nhập email của khách để gửi lời mời đăng nhập:");
+ if(!email)return;
+ if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())){status("Email không hợp lệ.");return;}
+ status("Đang gửi lời mời...");
+ try{
+  const {data:{session}}=await client.auth.getSession();
+  if(!session)throw new Error("Bạn cần đăng nhập lại.");
+  const response=await fetch("https://kqoyujqlkanwpdedqljr.supabase.co/functions/v1/invite-kf-guest",{
+   method:"POST",
+   headers:{"apikey":"sb_publishable_jgSqB-1vyxcnojsbKJ3Tmg_8PsoZrvX","Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},
+   body:JSON.stringify({email:email.trim()})
+  });
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.error||"Không thể gửi lời mời.");
+  status("Đã gửi lời mời tới "+email.trim()+".");
+ }catch(err){status("Lỗi mời khách: "+err.message+" (cần triển khai Edge Function trước).");}
 };
 $("kfBackup").onclick=async()=>{
  try{downloadSnapshotFile(await captureLocalSnapshot());status("Đã sao lưu dữ liệu.");}catch(err){status("Lỗi sao lưu: "+err.message);}
