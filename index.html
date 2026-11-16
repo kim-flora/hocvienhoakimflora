@@ -2132,6 +2132,27 @@
       @media(max-width:640px){.btn-visual-color-knowledge{min-height:36px}.visual-color-toolbar{grid-template-columns:1fr}.visual-color-grid{grid-template-columns:1fr;padding:9px}.visual-color-image{height:200px}.visual-color-form{grid-template-columns:1fr}.visual-color-form label.full{grid-column:auto}.visual-color-toolbar .visual-color-btn{width:100%}}
     </style>
 
+
+<style id="kf-custom-controls">
+.kf-guest-login{display:block;width:100%;padding:11px 8px;margin-top:9px;border:1px solid rgba(255,255,255,.6);border-radius:12px;background:transparent;color:#fff;font-weight:750;cursor:pointer}
+.kf-owner-only[hidden]{display:none!important}
+/* Chỉ tiêu đề nội dung, không thay đổi tên tab, đoạn văn, bảng. */
+.knowledge-section>summary .knowledge-section-title-text,.knowledge-deep>summary .knowledge-section-title-text,
+.knowledge-content h1,.knowledge-content h2,.knowledge-content h3,.knowledge-content h4,
+.knowledge-deep-body h1,.knowledge-deep-body h2,.knowledge-deep-body h3,.knowledge-deep-body h4,
+.topic-section>summary,.card-title,.topic-card h2,.topic-card h3{ text-transform:uppercase; }
+.knowledge-content img.kf-pasted-image,.knowledge-deep-body img.kf-pasted-image,
+.kf-custom-content img.kf-pasted-image{width:5cm!important;height:7cm!important;max-width:100%;object-fit:contain;vertical-align:top}
+.kf-guest .knowledge-edit-btn,.kf-guest .knowledge-title-btn,.kf-guest .knowledge-add-section-btn,
+.kf-guest .knowledge-edit-bar,.kf-guest .age-custom-toolbar,.kf-guest .age-custom-editor,
+.kf-guest .palette-save-row,.kf-guest .saved-palette-actions,.kf-guest .preset-palette-actions,
+.kf-guest .flower-library-edit-btn{display:none!important}
+.kf-tab-custom{border:1px solid #c7d2fe;border-radius:20px;padding:7px 12px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:800;cursor:pointer}
+.kf-custom-editor{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.kf-custom-editor button{border:1px solid #c7d2fe;background:#eef2ff;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:700}
+.kf-custom-content[contenteditable="true"]{outline:2px solid #818cf8;min-height:150px;padding:10px;border-radius:8px}
+.kf-custom-content{min-height:70px}
+</style>
 </head>
 <body>
 
@@ -2141,7 +2162,8 @@
             <h2>KIM FLORA</h2>
             <p>Hệ Thống Phối Màu Theo Lứa Tuổi</p>
             <input type="password" id="pinCode" class="pin-input" placeholder="MẬT MÃ" maxlength="6" inputmode="numeric" autofocus>
-            <button class="btn-unlock" onclick="checkPin()">MỞ KHÓA</button>
+            <button class="btn-unlock" onclick="checkPin()">ĐĂNG NHẬP QUẢN TRỊ</button>
+            <button type="button" class="kf-guest-login" onclick="enterGuest()">Khách truy cập · Chỉ xem và tìm kiếm</button>
             <div id="lockMsg" class="lock-error">Mật mã không đúng. Vui lòng thử lại!</div>
         </div>
     </div>
@@ -2160,6 +2182,9 @@
             <button class="btn-delivery-knowledge" type="button" onclick="openDeliveryKnowledge()">Nhận đơn · Đóng gói · Vận chuyển</button>
             <button class="btn-fruittray-knowledge" type="button" onclick="openFruitTrayKnowledge()">Giỏ trái cây &amp; Tráp cưới</button>
             <button class="btn-knowledge" type="button" onclick="openCompositionKnowledge()">Bố cục &amp; Thiết kế</button>
+            <button class="btn-relock kf-owner-only" type="button" onclick="changeWebPassword()">Đổi mật khẩu</button>
+            <button class="btn-relock kf-owner-only" type="button" onclick="kfAddTab()">+ Thêm tab</button>
+            <button class="btn-relock kf-owner-only" type="button" onclick="kfRenameTab()">Đổi tên tab</button>
             <button class="btn-relock" onclick="lockApp()">Khóa lại</button>
         </div>
     </div>
@@ -9462,34 +9487,58 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             try{localStorage.setItem(key,typeof value==='string'?value:JSON.stringify(value));}catch(e){console.warn('Đã lưu IndexedDB; không tạo được bản localStorage phụ:',key,e);}
             return true;
         }
-        const SECRET_PIN = "1306";
-
-        function checkPin() {
-            const input = document.getElementById('pinCode').value.trim();
-            const msg = document.getElementById('lockMsg');
-            if (input === SECRET_PIN) {
-                document.getElementById('lockScreen').style.display = 'none';
-                localStorage.setItem('kimflora_auth', 'unlocked');
-                msg.style.display = 'none';
-            } else {
-                msg.style.display = 'block';
-                document.getElementById('pinCode').value = '';
+        // Vai trò cục bộ: chủ web / khách chỉ xem.
+        const KF_PASS_KEY='kimflora_owner_pin_v2';
+        const KF_ROLE_KEY='kimflora_role_v2';
+        function kfGetPin(){return localStorage.getItem(KF_PASS_KEY)||'1306';}
+        function kfIsOwner(){return sessionStorage.getItem(KF_ROLE_KEY)==='owner';}
+        function kfApplyRole(role){
+            sessionStorage.setItem(KF_ROLE_KEY,role);
+            document.body.classList.toggle('kf-guest',role!=='owner');
+            document.getElementById('lockScreen').style.display='none';
+            const ownerTools=document.querySelectorAll('.kf-owner-only');
+            ownerTools.forEach(el=>el.hidden=role!=='owner');
+            document.querySelectorAll('[contenteditable="true"]').forEach(el=>{if(role!=='owner')el.removeAttribute('contenteditable');});
+            document.querySelectorAll('.knowledge-edit-mode').forEach(el=>{if(role!=='owner')el.classList.remove('knowledge-edit-mode');});
+        }
+        function checkPin(){
+            const input=document.getElementById('pinCode').value.trim();
+            if(input===kfGetPin()){
+                localStorage.setItem('kimflora_auth','unlocked');
+                document.getElementById('lockMsg').style.display='none';
+                kfApplyRole('owner');
+            }else{
+                document.getElementById('lockMsg').style.display='block';
+                document.getElementById('pinCode').value='';
             }
         }
-
-        function lockApp() {
+        function enterGuest(){
             localStorage.removeItem('kimflora_auth');
-            document.getElementById('pinCode').value = '';
-            document.getElementById('lockScreen').style.display = 'flex';
+            kfApplyRole('guest');
         }
-
-        if (localStorage.getItem('kimflora_auth') === 'unlocked') {
-            document.getElementById('lockScreen').style.display = 'none';
+        function lockApp(){
+            sessionStorage.removeItem(KF_ROLE_KEY);
+            localStorage.removeItem('kimflora_auth');
+            document.body.classList.remove('kf-guest');
+            document.getElementById('pinCode').value='';
+            document.getElementById('lockScreen').style.display='flex';
         }
-
-        document.getElementById('pinCode').addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') checkPin();
-        });
+        function changeWebPassword(){
+            if(!kfIsOwner())return;
+            const old=prompt('Nhập mật khẩu hiện tại:');
+            if(old===null)return;
+            if(old!==kfGetPin()){alert('Mật khẩu hiện tại không đúng.');return;}
+            const next=prompt('Nhập mật khẩu mới (ít nhất 6 ký tự):');
+            if(next===null)return;
+            if(next.length<6){alert('Mật khẩu mới cần ít nhất 6 ký tự.');return;}
+            const again=prompt('Nhập lại mật khẩu mới:');
+            if(again!==next){alert('Mật khẩu xác nhận không khớp.');return;}
+            localStorage.setItem(KF_PASS_KEY,next);
+            alert('Đã đổi mật khẩu trên trình duyệt này.');
+        }
+        if(sessionStorage.getItem(KF_ROLE_KEY)==='owner' || localStorage.getItem('kimflora_auth')==='unlocked') kfApplyRole('owner');
+        else if(sessionStorage.getItem(KF_ROLE_KEY)==='guest') kfApplyRole('guest');
+        document.getElementById('pinCode').addEventListener('keyup',e=>{if(e.key==='Enter')checkPin();});
 
         // 15 VAI TRÒ HOA & LÁ (CHUẨN TỪ TÀI LIỆU DOCX KIM FLORA)[cite: 3]
         const floralRolesData = [
@@ -12554,5 +12603,144 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
         (async()=>{try{const pages=['compositionKnowledgePage','colorKnowledgePage','displayKnowledgePage','mediaKnowledgePage','careKnowledgePage','deliveryKnowledgePage','chatgptKnowledgePage','fruitTrayKnowledgePage','flowerLibraryPage'];for(const pageId of pages){const page=document.getElementById(pageId);if(!page)continue;for(const section of page.querySelectorAll('.knowledge-section, .knowledge-deep')){const content=knowledgeEditorContent(section);if(!content||!section.dataset.knowledgeEditKey)continue;const saved=await kfDurableGet(section.dataset.knowledgeEditKey);if(typeof saved==='string'){content.innerHTML=saved;markKnowledgeEdited(section,true);}}}}catch(e){console.warn('Không thể đồng bộ bản lưu IndexedDB cho các tab kiến thức:',e);}})();
 
     </script>
+
+<script id="kf-custom-script">
+(function(){
+'use strict';
+const KFTABS='kimflora_custom_tabs_v1', KFRENAMES='kimflora_tab_renames_v1';
+const getJSON=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')||fallback}catch(_){return fallback}};
+const setJSON=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
+const header=document.querySelector('.header-actions');
+const fixedTabs=Array.from(header.querySelectorAll('button[onclick^="open"]'));
+const getCustomTabs=()=>getJSON(KFTABS,[]);
+function applyNames(){
+  const renames=getJSON(KFRENAMES,{});
+  fixedTabs.forEach((b,i)=>{if(renames[i])b.textContent=renames[i];});
+}
+function renderCustomTabs(){
+ document.querySelectorAll('.kf-tab-custom, .kf-generated-page').forEach(el=>el.remove());
+ getCustomTabs().forEach(t=>{
+   const button=document.createElement('button');button.type='button';button.className='kf-tab-custom';button.textContent=t.name;
+   button.addEventListener('click',()=>openTab(t.id));
+   header.insertBefore(button,header.querySelector('.btn-relock'));
+   const page=document.createElement('section');page.className='knowledge-page kf-generated-page';page.id='kf-tab-'+t.id;
+   page.setAttribute('aria-hidden','true');
+   page.innerHTML='<div class="knowledge-shell"><div class="knowledge-topbar"><button class="knowledge-back" type="button">← Trang chính</button><div class="knowledge-top-actions"><button type="button" class="kf-owner-only kf-add-item">+ Thêm tiêu đề nội dung</button></div></div><div class="knowledge-hero"><h2></h2></div><div class="knowledge-tools"><input type="search" placeholder="Tìm kiếm nội dung trong tab này" aria-label="Tìm kiếm trong tab"></div><div class="knowledge-list"></div></div>';
+   page.querySelector('h2').textContent=t.name;
+   page.querySelector('.knowledge-back').addEventListener('click',()=>{page.classList.remove('active');page.setAttribute('aria-hidden','true');document.body.classList.remove('knowledge-mode');window.scrollTo(0,0)});
+   page.querySelector('.kf-add-item').addEventListener('click',()=>addItem(t.id));
+   page.querySelector('input[type="search"]').addEventListener('input',e=>{
+     const needle=e.target.value.toLocaleLowerCase('vi');
+     page.querySelectorAll('.knowledge-section').forEach(section=>{section.hidden=!section.textContent.toLocaleLowerCase('vi').includes(needle)});
+   });
+   document.body.appendChild(page);
+   renderItems(t.id);
+ });
+ document.querySelectorAll('.kf-owner-only').forEach(el=>el.hidden=!kfIsOwner());
+}
+function openTab(id){
+  document.querySelectorAll('.knowledge-page.active').forEach(el=>{el.classList.remove('active');el.setAttribute('aria-hidden','true')});
+  document.body.classList.add('knowledge-mode');
+  const page=document.getElementById('kf-tab-'+id);
+  if(page){page.classList.add('active');page.setAttribute('aria-hidden','false')}
+  window.scrollTo(0,0);
+}
+function updateTab(id,fn){const tabs=getCustomTabs();const tab=tabs.find(t=>t.id===id);if(tab){fn(tab);setJSON(KFTABS,tabs);renderCustomTabs();openTab(id)}}
+function renderItems(id){
+ const t=getCustomTabs().find(x=>x.id===id);if(!t)return;
+ const list=document.getElementById('kf-tab-'+id)?.querySelector('.knowledge-list');if(!list)return;
+ list.replaceChildren();
+ (t.sections||[]).forEach((item,index)=>{
+  const section=document.createElement('details');section.className='knowledge-section';section.open=true;
+  const summary=document.createElement('summary');
+  const num=document.createElement('span');num.className='knowledge-index';num.textContent=index+1;
+  const title=document.createElement('span');title.className='knowledge-section-title-text';title.textContent=item.title.toLocaleUpperCase('vi');
+  summary.append(num,title);
+  const rename=document.createElement('button');rename.type='button';rename.className='knowledge-title-btn kf-owner-only';rename.textContent='Đổi tiêu đề';
+  rename.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(!kfIsOwner())return;const value=prompt('Tên tiêu đề mới:',item.title);if(value?.trim())updateTab(id,tab=>tab.sections[index].title=value.trim().toLocaleUpperCase('vi'))});
+  summary.append(rename);
+  const body=document.createElement('div');body.className='knowledge-content kf-custom-content';body.innerHTML=item.html||'<p>Chưa có nội dung.</p>';
+  const actions=document.createElement('div');actions.className='kf-custom-editor kf-owner-only';
+  const edit=document.createElement('button');edit.textContent='✎ Chỉnh sửa';
+  const save=document.createElement('button');save.textContent='Lưu';save.hidden=true;
+  const cancel=document.createElement('button');cancel.textContent='Hủy';cancel.hidden=true;
+  let previous='';
+  edit.addEventListener('click',()=>{if(!kfIsOwner())return;previous=body.innerHTML;body.contentEditable='true';edit.hidden=true;save.hidden=false;cancel.hidden=false;body.focus()});
+  save.addEventListener('click',()=>{if(!kfIsOwner())return;const html=body.innerHTML;body.removeAttribute('contenteditable');updateTab(id,tab=>tab.sections[index].html=html)});
+  cancel.addEventListener('click',()=>{body.innerHTML=previous;body.removeAttribute('contenteditable');edit.hidden=false;save.hidden=true;cancel.hidden=true});
+  actions.append(edit,save,cancel);
+  section.append(summary,actions,body);list.append(section);
+ });
+}
+function addItem(id){
+ if(!kfIsOwner())return;
+ const title=prompt('Tên tiêu đề mới:');if(!title?.trim())return;
+ updateTab(id,t=>{t.sections=t.sections||[];t.sections.push({title:title.trim().toLocaleUpperCase('vi'),html:'<p>Nội dung mới.</p>'})});
+}
+window.kfAddTab=function(){
+ if(!kfIsOwner())return;
+ const name=prompt('Tên tab mới:');if(!name?.trim())return;
+ const id='t'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+ const tabs=getCustomTabs();tabs.push({id,name:name.trim(),sections:[]});setJSON(KFTABS,tabs);renderCustomTabs();openTab(id);
+};
+window.kfRenameTab=function(){
+ if(!kfIsOwner())return;
+ const tabs=getCustomTabs();
+ const options=fixedTabs.map((b,i)=>`${i+1}. ${b.textContent.trim()}`).concat(tabs.map((t,i)=>`${fixedTabs.length+i+1}. ${t.name}`));
+ const chosen=prompt('Chọn số thứ tự tab cần đổi tên:\n'+options.join('\n'));
+ if(chosen===null)return;
+ const n=Number(chosen);if(!Number.isInteger(n)||n<1||n>options.length){alert('Số tab không hợp lệ.');return;}
+ const old=n<=fixedTabs.length?fixedTabs[n-1].textContent:tabs[n-fixedTabs.length-1].name;
+ const name=prompt('Tên tab mới:',old);if(!name?.trim())return;
+ if(n<=fixedTabs.length){const names=getJSON(KFRENAMES,{});names[n-1]=name.trim();setJSON(KFRENAMES,names);applyNames()}
+ else {tabs[n-fixedTabs.length-1].name=name.trim();setJSON(KFTABS,tabs);renderCustomTabs()}
+};
+applyNames();renderCustomTabs();
+// Tự động đặt ảnh dán từ clipboard theo kích thước 5 x 7 cm. Không ảnh hưởng ảnh cũ.
+document.addEventListener('paste',event=>{
+ if(!kfIsOwner())return;
+ const editor=event.target.closest('[contenteditable="true"]');if(!editor)return;
+ const items=Array.from(event.clipboardData?.items||[]);
+ const images=items.filter(item=>item.kind==='file'&&item.type.startsWith('image/'));
+ if(images.length){
+  event.preventDefault();
+  images.forEach(item=>{const file=item.getAsFile();if(!file)return;
+   const reader=new FileReader();reader.onload=()=>{
+    const img=document.createElement('img');img.src=reader.result;img.className='kf-pasted-image';img.style.cssText='width:5cm;height:7cm;object-fit:contain;max-width:100%';img.alt='Hình ảnh đã dán';
+    const sel=window.getSelection();if(sel&&sel.rangeCount&&editor.contains(sel.anchorNode)){
+      const range=sel.getRangeAt(0);range.deleteContents();range.insertNode(img);range.setStartAfter(img);range.collapse(true);sel.removeAllRanges();sel.addRange(range);
+    }else editor.appendChild(img);
+   };reader.readAsDataURL(file);
+  });
+  return;
+ }
+ // Khi dán ảnh qua HTML (ví dụ copy từ một trang web), chỉ định kích thước cho ảnh mới.
+ const html=event.clipboardData?.getData('text/html')||'';
+ if(/<img\b/i.test(html)){
+  event.preventDefault();
+  const tpl=document.createElement('template');tpl.innerHTML=html;
+  tpl.content.querySelectorAll('script,iframe,object,embed,form').forEach(el=>el.remove());
+  tpl.content.querySelectorAll('img').forEach(img=>{img.removeAttribute('srcset');img.classList.add('kf-pasted-image');img.style.cssText='width:5cm;height:7cm;object-fit:contain;max-width:100%';});
+  const range=window.getSelection()?.rangeCount?window.getSelection().getRangeAt(0):null;
+  if(range&&editor.contains(range.commonAncestorContainer)){
+    range.deleteContents();const fragment=tpl.content;const last=fragment.lastChild;range.insertNode(fragment);
+    if(last){range.setStartAfter(last);range.collapse(true);window.getSelection().removeAllRanges();window.getSelection().addRange(range)}
+  }else editor.appendChild(tpl.content);
+ }
+},true);
+// Tự động viết hoa khi chủ web sửa hoặc tạo tiêu đề; vẫn giữ nguyên nội dung văn bản.
+document.addEventListener('click',event=>{
+ if(!document.body.classList.contains('kf-guest'))return;
+ const btn=event.target.closest('button,a,[role="button"]');if(!btn)return;
+ const code=(btn.getAttribute('onclick')||'').toLowerCase();
+ const label=(btn.textContent||'').trim().toLocaleLowerCase('vi');
+ const cls=btn.className&&typeof btn.className==='string'?btn.className.toLowerCase():'';
+ const forbidden=/(edit|save|reset|delete|remove|add|upload|import|export|clear|apply|update|custom|create|rename|restore|backup|manage)/i.test(cls)
+  ||/(thêm|sửa|xóa|xoá|lưu|đổi tên|khôi phục|tải lên|nhập dữ liệu|tạo mới|gán màu|ghi đè|áp dụng chỉnh sửa)/i.test(label)
+  ||/(save|delete|edit|add|update|reset|remove|import|upload|clear|create|restore)/i.test(code);
+ if(forbidden){event.preventDefault();event.stopImmediatePropagation();}
+},true);
+})();
+</script>
 </body>
 </html>
