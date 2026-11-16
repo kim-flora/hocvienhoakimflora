@@ -23,6 +23,26 @@ nav a{font-size:13px;color:#4f46e5;margin-left:10px}
 #loginPanel{max-width:900px;margin:26px auto}
 #adminPanel{margin-top:12px}
 @media(max-width:700px){.wrap{padding:8px}.card{padding:10px;border-radius:8px}#contentPanel{padding:8px}#viewer{min-height:calc(100dvh - 140px)}nav a{margin-left:6px}}
+
+/* Trang tài liệu dùng toàn bộ không gian màn hình; không lặp giao diện bên ngoài. */
+body:has(#contentPanel:not(.hidden)){background:#fff}
+body:has(#contentPanel:not(.hidden)) .wrap{padding:0}
+body:has(#contentPanel:not(.hidden)) .wrap>header{height:42px;padding:0 12px;border-bottom:1px solid #e5e7eb}
+body:has(#contentPanel:not(.hidden)) .wrap>header h1{font-size:18px;line-height:1.2}
+body:has(#contentPanel:not(.hidden)) .wrap>header nav{display:flex;align-items:center;gap:8px}
+body:has(#contentPanel:not(.hidden)) .wrap>header nav a{font-size:12px}
+body:has(#contentPanel:not(.hidden)) #message:empty{display:none}
+body:has(#contentPanel:not(.hidden)) #contentPanel{border:0;border-radius:0;box-shadow:none;padding:0;margin:0}
+#contentPanel>header{height:40px;margin:0!important;padding:3px 12px;justify-content:space-between;border-bottom:1px solid #eceff4}
+#contentPanel #search{margin:0;width:340px;max-width:70%;height:32px;padding:5px 10px;font-size:13px}
+#contentPanel #logout{margin:0;padding:7px 12px;font-size:12px}
+#viewer{min-height:calc(100dvh - 86px)}
+@media(max-width:700px){
+ body:has(#contentPanel:not(.hidden)) .wrap>header{padding:0 7px}
+ body:has(#contentPanel:not(.hidden)) .wrap>header h1{font-size:16px}
+ body:has(#contentPanel:not(.hidden)) #openAccountSettings{padding:8px}
+ #contentPanel>header{padding:3px 7px}
+}
 </style></head>
 <body><main class="wrap"><header><h1>Kim Flora</h1><nav><button id="openAccountSettings" class="secondary hidden" type="button">Cài đặt tài khoản</button><a href="guest.html">Khách</a><a href="guest.html?admin=1">Quản trị</a></nav></header>
 <section class="card" id="loginPanel"><h2 id="loginTitle">Đăng nhập học viên</h2>
@@ -30,7 +50,7 @@ nav a{font-size:13px;color:#4f46e5;margin-left:10px}
 <form id="guestLogin"><label for="guestPassword">Mật khẩu khách</label><input id="guestPassword" type="password" autocomplete="current-password" required minlength="16"><div><button type="submit">Vào xem tài liệu</button></div></form>
 <form id="adminLogin" class="hidden"><label>Email quản trị</label><input type="email" id="adminEmail" required autocomplete="username"><label>Mật khẩu quản trị</label><input type="password" id="adminPassword" required autocomplete="current-password"><div><button type="submit">Đăng nhập quản trị</button><button type="button" class="secondary" id="forgotAdminPassword">Quên mật khẩu?</button></div></form><form id="resetAdminPassword" class="hidden"><h3>Đặt lại mật khẩu quản trị</h3><p>Hãy nhập mật khẩu mới sau khi mở liên kết trong email khôi phục.</p><label for="recoveryPassword">Mật khẩu mới</label><input id="recoveryPassword" type="password" autocomplete="new-password" minlength="12" required><label for="recoveryConfirm">Nhập lại mật khẩu mới</label><input id="recoveryConfirm" type="password" autocomplete="new-password" minlength="12" required><div><button type="submit">Lưu mật khẩu mới</button></div></form></section>
 <p id="message" role="status"></p>
-<section id="contentPanel" class="card hidden"><header><h2>Tài liệu Kim Flora</h2><button id="logout" class="secondary">Đăng xuất</button></header><input id="search" type="search" placeholder="Tìm trong nội dung..."><article id="viewer"></article></section>
+<section id="contentPanel" class="card hidden"><header><input id="search" type="search" placeholder="Tìm trong nội dung..."><button id="logout" class="secondary">Đăng xuất</button></header><article id="viewer"></article></section>
 <section id="adminPanel" class="card hidden"><header><h2>Cài đặt tài khoản</h2><button id="returnToLessons" type="button" class="secondary">← Quay lại tài liệu</button></header><hr><h3>Quản lý mật khẩu khách</h3><p>Mỗi mật khẩu được tạo ngẫu nhiên và chỉ hiển thị một lần. Hãy sao chép để gửi cho khách. Khách có thể đăng nhập mà không cần email.</p><label>Tên gợi nhớ khách</label><input id="guestLabel" placeholder="Ví dụ: Học viên A"><button id="createGuest">Tạo mật khẩu riêng</button><div id="newPassword" aria-live="polite"></div><h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><h3>Danh sách khách</h3><div id="customerList"></div><hr><h3>Xuất bản thay đổi</h3><p>Chỉnh sửa trong khung tài liệu, sau đó bấm Xuất bản để đồng bộ cho học viên. Nên sao lưu bản JSON trước khi xuất bản.</p><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
 </main>
 <script type="module">
@@ -116,12 +136,12 @@ function secureHTML(value,{readOnly=true,snapshot=null}={}){
  const frame=document.createElement("iframe");
  frame.setAttribute("sandbox","allow-scripts");
  frame.title="Tài liệu Kim Flora";
- frame.style.cssText="display:block;width:100%;height:calc(100vh - 185px);min-height:600px;border:0;border-radius:6px";
+ frame.style.cssText="display:block;width:100%;height:calc(100dvh - 86px);min-height:560px;border:0;border-radius:0";
  const model=snapshot?.format===1?snapshot:{format:1,local:{},indexed:{}};
  const modelText=JSON.stringify(model).replace(/</g,"\\u003c").replace(/\u2028/g,"\\u2028");
  const bootstrap="<scr"+"ipt>window.__kfSnapshot="+modelText+";window.__kfReadOnly="+JSON.stringify(readOnly)+";</scr"+"ipt>";
  const script="<scr"+"ipt>"+"// This script runs only inside a sandboxed, opaque-origin guest iframe.\n// It creates an ephemeral view of published data, never grants write access to Supabase.\n(function(){\n  \"use strict\";\n  const snapshot=window.__kfSnapshot||{local:{},indexed:{}};\n  const local=new Map(Object.entries(snapshot.local||{}));\n  local.set(\"kimflora_auth\",\"unlocked\");\n  const indexed=new Map(Object.entries(snapshot.indexed||{}));\n  const editable=window.__kfReadOnly===false;\n  const signal=()=>{if(editable) window.parent.postMessage({type:\"kf-dirty\"},\"*\");};\n  const storage={\n    getItem:k=>local.has(String(k))?String(local.get(String(k))):null,\n    setItem:(k,v)=>{local.set(String(k),String(v));signal();},\n    removeItem:k=>{local.delete(String(k));signal();},\n    clear:()=>{local.clear();signal();},\n    key:i=>Array.from(local.keys())[i]??null,\n    get length(){return local.size;}\n  };\n  try{Object.defineProperty(window,\"localStorage\",{configurable:true,value:storage});}catch(e){console.warn(\"Guest storage unavailable\",e);}\n  const db={\n    objectStoreNames:{contains:()=>true},\n    createObjectStore:()=>{},\n    transaction:()=>{\n      const tx={oncomplete:null,onerror:null,onabort:null};\n      const completed=()=>setTimeout(()=>tx.oncomplete?.(),0);\n      tx.objectStore=()=>({\n        get:key=>{const r={result:null,onsuccess:null,onerror:null};setTimeout(()=>{r.result=indexed.get(String(key))??null;r.onsuccess?.({target:r});},0);return r;},\n        put:(value,key)=>{indexed.set(String(key),value);signal();completed();return {};},\n        delete:key=>{indexed.delete(String(key));signal();completed();return {};}\n      });\n      return tx;\n    }\n  };\n  const idb={\n    open:()=>{const r={result:db,onupgradeneeded:null,onsuccess:null,onerror:null};setTimeout(()=>{r.onupgradeneeded?.({target:r});r.onsuccess?.({target:r});},0);return r;}\n  };\n  try{Object.defineProperty(window,\"indexedDB\",{configurable:true,value:idb});}catch(e){console.warn(\"Guest indexed storage unavailable\",e);}\n  document.addEventListener(\"click\",e=>{\n    if(!editable)return;\n    const title=e.target.closest(\"h1, .header h2, [class*=studio-title], [class*=brand]\");\n    if(title && /^Kim\\s*Flora\\s*Studio$/i.test((title.textContent||\"\").trim())){\n      e.preventDefault();e.stopImmediatePropagation();\n      window.parent.postMessage({type:\"kf-open-account-settings\"},\"*\");\n    }\n  },true);\n  document.addEventListener(\"click\",e=>{\n    const b=e.target.closest(\"button,[role=button],input[type=submit]\");\n    if(!b||editable)return;\n    const txt=(b.textContent||b.value||\"\").trim();\n    if(/^[✏️✎＋+💾🗑️\\s]*(?:thêm|sửa|chỉnh sửa|xóa|xoá|lưu|đổi tên|tạo mới)/i.test(txt)){\n      e.preventDefault();e.stopImmediatePropagation();\n    }\n  },true);\n  window.addEventListener(\"message\",e=>{\n    if(e.data?.type===\"kf-export\"&&editable){\n      const exported={format:1,capturedAt:new Date().toISOString(),local:Object.fromEntries([...local].filter(([k])=>/^(kimflora_|kf_)/i.test(k)&&!/auth|password|secret|token|session|pin/i.test(k))),indexed:Object.fromEntries([...indexed].filter(([k])=>/^(kimflora_|kf_)/i.test(k)&&!/auth|password|secret|token|session|pin/i.test(k)))};\n      window.parent.postMessage({type:\"kf-snapshot\",snapshot:exported},\"*\");return;\n    }\n    if(e.data?.type!==\"kimflora-search\")return;\n    const term=String(e.data.term||\"\").trim().toLowerCase();\n    if(!term)return;\n    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);\n    let node;\n    while((node=walker.nextNode())){\n      if(node.parentElement?.closest(\"script,style,noscript\"))continue;\n      const at=(node.nodeValue||\"\").toLowerCase().indexOf(term);\n      if(at<0)continue;\n      const details=node.parentElement?.closest(\"details\");\n      if(details)details.open=true;\n      const range=document.createRange();\n      range.setStart(node,at);range.setEnd(node,at+term.length);\n      try{const mark=document.createElement(\"mark\");range.surroundContents(mark);mark.scrollIntoView({block:\"center\"});}catch(_){}\n      break;\n    }\n  });\n})();\n"+"</scr"+"ipt>";
- const css="<style>#lockScreen{display:none!important}body{overflow:auto!important}</style>";
+ const css="<style>#lockScreen{display:none!important}html{zoom:1.13}body{overflow:auto!important;margin:0!important} @media(max-width:760px){html{zoom:1}}</style>";
  let html=String(value||"");
  const added=css+bootstrap+script;
  html=html.includes("</head>")?html.replace("</head>",added+"</head>"):added+html;
@@ -155,7 +175,7 @@ $("guestLogin").onsubmit=async e=>{
  try{
   const result=await api("login",{password:$("guestPassword").value});
   guestSession=result.session;$("guestPassword").value="";
-  await loadPublicForGuest();say("Đã đăng nhập khách. Bạn chỉ có quyền xem và tìm kiếm.");
+  await loadPublicForGuest();say("");
  }catch(err){guestSession=null;say(err.message)}
 };
 $("adminLogin").onsubmit=async e=>{
@@ -172,7 +192,7 @@ $("adminLogin").onsubmit=async e=>{
   editorSnapshot=snap.value?.format===1?snap.value:await captureLocalSnapshot();
   showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("openAccountSettings").classList.remove("hidden");
-  say("Đã đăng nhập quản trị.");await listGuests();
+  say("");await listGuests();
  }catch(err){say(err.message)}
 };
 
@@ -274,7 +294,7 @@ if(adminMode){
   const {data:allowed}=await client.rpc("kf_is_admin");
   if(allowed){adminSession=data.session;try{const content=await api("admin-read",{key:"published/main"},adminSession.access_token);const snap=await api("admin-read",{key:"published/snapshot"},adminSession.access_token);
    editorSnapshot=snap.value?.format===1?snap.value:{format:1,local:{},indexed:{}};
-   showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});$("openAccountSettings").classList.remove("hidden");await listGuests();}catch(err){say(err.message);}}
+   showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});$("openAccountSettings").classList.remove("hidden");say("");await listGuests();}catch(err){say(err.message);}}
  }
 }
 </script></body></html>
