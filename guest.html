@@ -2,20 +2,27 @@
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kim Flora · Cổng học viên</title>
 <style>
 :root{font-family:system-ui,-apple-system,sans-serif;color:#17243c;background:#f5f6fa}
-*{box-sizing:border-box}body{margin:0}.wrap{max-width:950px;margin:36px auto;padding:16px}
+*{box-sizing:border-box}body{margin:0}.wrap{width:100%;max-width:none;margin:0 auto;padding:12px 18px 20px}
 header{display:flex;align-items:center;justify-content:space-between;gap:10px}
 h1{font-size:24px;margin:0;color:#302b74}p{line-height:1.5;color:#64748b}
-.card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;box-shadow:0 5px 26px #1820360b;margin-top:18px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;box-shadow:0 2px 12px #1820360b;margin-top:10px}
 label{display:block;font-size:13px;font-weight:700;margin:10px 0 6px}
 input{width:100%;max-width:430px;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px}
 button{cursor:pointer;border:0;border-radius:9px;background:#4f46e5;color:white;padding:12px 16px;font-size:14px;font-weight:700;margin:12px 6px 0 0}
 button.secondary{background:#e0e7ff;color:#3730a3}
 nav a{font-size:13px;color:#4f46e5;margin-left:10px}
 .hidden{display:none!important}#message{font-size:13px;font-weight:600;white-space:pre-wrap}
-#viewer{line-height:1.65;overflow-wrap:anywhere}#viewer img{max-width:100%;height:auto}#viewer table{display:block;overflow-x:auto}
+#viewer{line-height:1.65;overflow-wrap:anywhere;width:100%;min-height:calc(100vh - 180px)}#viewer img{max-width:100%;height:auto}#viewer table{display:block;overflow-x:auto}
 #search{margin:12px 0}mark{background:#fef08a}#customerList{display:grid;gap:8px;margin-top:10px}
 .customer{display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid #eee;border-radius:8px;gap:8px}
 .customer button{margin:0;background:#be123c;padding:7px 10px}
+#contentPanel{width:100%;max-width:none;margin:10px 0 0;padding:12px 14px}
+#contentPanel>header{margin:0 0 4px}
+#contentPanel>header h2{font-size:19px;margin:4px 0}
+#contentPanel #search{margin:5px 0 10px;width:340px;max-width:100%;padding:8px 10px}
+#loginPanel{max-width:900px;margin:26px auto}
+#adminPanel{margin-top:12px}
+@media(max-width:700px){.wrap{padding:8px}.card{padding:10px;border-radius:8px}#contentPanel{padding:8px}#viewer{min-height:calc(100dvh - 140px)}nav a{margin-left:6px}}
 </style></head>
 <body><main class="wrap"><header><h1>Kim Flora</h1><nav><a href="guest.html">Khách</a><a href="guest.html?admin=1">Quản trị</a></nav></header>
 <section class="card" id="loginPanel"><h2 id="loginTitle">Đăng nhập học viên</h2>
@@ -86,7 +93,7 @@ function secureHTML(value,{readOnly=true,snapshot=null}={}){
  const frame=document.createElement("iframe");
  frame.setAttribute("sandbox","allow-scripts");
  frame.title="Tài liệu Kim Flora";
- frame.style.cssText="width:100%;height:82vh;border:1px solid #ddd;border-radius:9px";
+ frame.style.cssText="display:block;width:100%;height:calc(100vh - 185px);min-height:600px;border:0;border-radius:6px";
  const model=snapshot?.format===1?snapshot:{format:1,local:{},indexed:{}};
  const modelText=JSON.stringify(model).replace(/</g,"\\u003c").replace(/\u2028/g,"\\u2028");
  const bootstrap="<scr"+"ipt>window.__kfSnapshot="+modelText+";window.__kfReadOnly="+JSON.stringify(readOnly)+";</scr"+"ipt>";
