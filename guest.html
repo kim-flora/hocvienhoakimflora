@@ -209,14 +209,25 @@ $("kfRecoverComposition").onclick=async()=>{
 
 async function initializeAdminSnapshot(accessToken){
  const {value:server}=await api("admin-read",{key:"published/snapshot"},accessToken);
- if(server?.format===1)return server;
- // First admin desktop login migrates its existing browser edits once if no server snapshot exists.
- const local=await captureLocalSnapshot().catch(()=>({format:1,local:{},indexed:{}}));
- if(Object.keys(local.local||{}).length||Object.keys(local.indexed||{}).length){
-  const {error}=await client.rpc("kf_patch_snapshot",{p_local:local.local,p_indexed:local.indexed});
-  if(error)console.warn("Kim Flora initial migration:",error);
+ const base=server?.format===1?server:{format:1,local:{},indexed:{}};
+ // The original Studio and the admin portal share the same GitHub Pages origin.
+ // Preserve every server-side edit and import only missing local composition edits.
+ const browser=await captureLocalSnapshot().catch(()=>({format:1,local:{},indexed:{}}));
+ const additions={local:{},indexed:{}};
+ const merged={...base,format:1,local:{...(base.local||{})},indexed:{...(base.indexed||{})}};
+ for(const area of ["local","indexed"]){
+  for(const [key,value] of Object.entries(browser[area]||{})){
+   if(!KF_COMPOSITION_RECOVERY_RE.test(key))continue;
+   if(Object.prototype.hasOwnProperty.call(merged[area],key))continue;
+   additions[area][key]=value;
+   merged[area][key]=value;
+  }
  }
- return local;
+ if(Object.keys(additions.local).length||Object.keys(additions.indexed).length){
+  const {error}=await client.rpc("kf_patch_snapshot",{p_local:additions.local,p_indexed:additions.indexed});
+  if(error)console.warn("Kim Flora composition import:",error);
+ }
+ return merged;
 }
 
 
