@@ -51,7 +51,7 @@ body:has(#contentPanel:not(.hidden)) #contentPanel{border:0;border-radius:0;box-
 <form id="adminLogin" class="hidden"><label>Email quản trị</label><input type="email" id="adminEmail" required autocomplete="username"><label>Mật khẩu quản trị</label><input type="password" id="adminPassword" required autocomplete="current-password"><div><button type="submit">Đăng nhập quản trị</button><button type="button" class="secondary" id="forgotAdminPassword">Quên mật khẩu?</button></div></form><form id="resetAdminPassword" class="hidden"><h3>Đặt lại mật khẩu quản trị</h3><p>Hãy nhập mật khẩu mới sau khi mở liên kết trong email khôi phục.</p><label for="recoveryPassword">Mật khẩu mới</label><input id="recoveryPassword" type="password" autocomplete="new-password" minlength="12" required><label for="recoveryConfirm">Nhập lại mật khẩu mới</label><input id="recoveryConfirm" type="password" autocomplete="new-password" minlength="12" required><div><button type="submit">Lưu mật khẩu mới</button></div></form></section>
 <p id="message" role="status"></p>
 <section id="contentPanel" class="card hidden"><header><h2 id="pageBrand" title="Kim Flora Studio">Kim Flora Studio</h2><button id="logout" class="secondary">Đăng xuất</button></header><article id="viewer"></article></section>
-<section id="adminPanel" class="card hidden"><header><h2>Cài đặt tài khoản</h2><button id="returnToLessons" type="button" class="secondary">← Quay lại tài liệu</button></header><hr><h3>Quản lý mật khẩu khách</h3><p>Mỗi mật khẩu được tạo ngẫu nhiên và chỉ hiển thị một lần. Hãy sao chép để gửi cho khách. Khách có thể đăng nhập mà không cần email.</p><label>Tên gợi nhớ khách</label><input id="guestLabel" placeholder="Ví dụ: Học viên A"><button id="createGuest">Tạo mật khẩu riêng</button><div id="newPassword" aria-live="polite"></div><h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><h3>Danh sách khách</h3><div id="customerList"></div><hr><h3>Xuất bản thay đổi</h3><p>Chỉnh sửa trong khung tài liệu, sau đó bấm Xuất bản để đồng bộ cho học viên. Nên sao lưu bản JSON trước khi xuất bản.</p><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
+<section id="adminPanel" class="card hidden"><header><h2>Cài đặt tài khoản</h2><button id="returnToLessons" type="button" class="secondary">← Quay lại tài liệu</button></header><hr><h3>Quản lý mật khẩu khách</h3><p>Mỗi mật khẩu được tạo ngẫu nhiên và chỉ hiển thị một lần. Hãy sao chép để gửi cho khách. Khách có thể đăng nhập mà không cần email.</p><label>Tên gợi nhớ khách</label><input id="guestLabel" placeholder="Ví dụ: Học viên A"><button id="createGuest">Tạo mật khẩu riêng</button><div id="newPassword" aria-live="polite"></div><h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><h3>Danh sách khách</h3><div id="customerList"></div><hr><h3>Xuất bản thay đổi</h3><p>Chỉnh sửa trong khung tài liệu, sau đó bấm Xuất bản để đồng bộ cho học viên. Nên sao lưu bản JSON trước khi xuất bản.</p><button id="kfRecoverComposition" type="button" class="secondary">Khôi phục Bố cục & Thiết kế từ máy này</button><span id="kfRecoverInfo" role="status"></span> <button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
 </main>
 <script type="module">
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
@@ -157,6 +157,55 @@ window.addEventListener("online",()=>void flushPending());
 document.addEventListener("visibilitychange",()=>{
  if(document.visibilityState==="hidden"&&hasPending())void flushPending();
 });
+
+const KF_COMPOSITION_RECOVERY_RE=/^kimflora_knowledge_(?:edit|title|extra_sections)_v1:compositionKnowledgePage(?::|$)/i;
+function compositionKeys(s){
+ const result={local:{},indexed:{}};
+ for(const area of ["local","indexed"])for(const [key,value] of Object.entries(s?.[area]||{})){
+  if(KF_COMPOSITION_RECOVERY_RE.test(key))result[area][key]=value;
+ }
+ return result;
+}
+async function findCompositionRecovery(){
+ const local=await captureLocalSnapshot();
+ const saved=compositionKeys(local);
+ const count=Object.keys(saved.local).length+Object.keys(saved.indexed).length;
+ return {saved,count};
+}
+async function refreshRecoveryInfo(){
+ const label=$("kfRecoverInfo");
+ try{
+  const {count}=await findCompositionRecovery();
+  label.textContent=count?("Có "+count+" bản lưu bố cục trên thiết bị này."):"";
+  $("kfRecoverComposition").disabled=!count;
+ }catch(e){label.textContent="Không đọc được bản lưu trên thiết bị này.";}
+}
+$("kfRecoverComposition").onclick=async()=>{
+ if(!adminSession)return;
+ try{
+  const {saved,count}=await findCompositionRecovery();
+  if(!count)throw new Error("Không tìm thấy nội dung bố cục đã lưu trên máy này.");
+  const current=await api("admin-read",{key:"published/snapshot"},adminSession.access_token);
+  const onServer=compositionKeys(current.value||{});
+  const missing={local:{},indexed:{}};
+  let kept=0;
+  for(const area of ["local","indexed"])for(const [key,value] of Object.entries(saved[area])){
+   if(Object.prototype.hasOwnProperty.call(onServer[area],key))kept++;
+   else missing[area][key]=value;
+  }
+  const recoverCount=Object.keys(missing.local).length+Object.keys(missing.indexed).length;
+  downloadJSON({format:1,capturedAt:new Date().toISOString(),...saved});
+  if(!recoverCount){
+   $("kfRecoverInfo").textContent="Đã sao lưu "+count+" mục; dữ liệu tương ứng đã có trên máy chủ.";
+   return;
+  }
+  if(!confirm("Đã sao lưu "+count+" mục bố cục từ máy này. Khôi phục "+recoverCount+" mục còn thiếu lên Supabase?"))return;
+  const {error}=await client.rpc("kf_patch_snapshot",{p_local:missing.local,p_indexed:missing.indexed});
+  if(error)throw error;
+  $("kfRecoverInfo").textContent="Đã khôi phục "+recoverCount+" mục. Tải lại trang trên máy tính và điện thoại để xem.";
+ }catch(e){$("kfRecoverInfo").textContent="Chưa khôi phục: "+e.message;}
+};
+
 async function initializeAdminSnapshot(accessToken){
  const {value:server}=await api("admin-read",{key:"published/snapshot"},accessToken);
  if(server?.format===1)return server;
@@ -177,6 +226,7 @@ function showAccountSettings(){
  $("contentPanel").classList.add("hidden");
  $("openAccountSettings").classList.add("hidden");
  window.scrollTo({top:0,behavior:"instant"});
+ void refreshRecoveryInfo();
 }
 function showLessons(){
  $("adminPanel").classList.add("hidden");
