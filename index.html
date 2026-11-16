@@ -12747,7 +12747,7 @@ document.addEventListener('click',event=>{
 <style>
 .kf-whole-backup-button{appearance:none;border:1px solid #a5b4fc!important;border-radius:9px!important;padding:8px 12px!important;background:#eef2ff!important;color:#3730a3!important;font-size:12px!important;font-weight:800!important;cursor:pointer!important}
 .kf-whole-backup-button[disabled]{opacity:.6;cursor:progress!important}
-body.kf-guest .kf-whole-backup-button{display:none!important}
+body .kf-whole-backup-button{display:inline-flex!important;align-items:center;justify-content:center!important}
 </style>
 <script>
 (function(){
@@ -12787,7 +12787,6 @@ async function readIndexed(){
 }
 async function backupSite(event){
  const button=event.currentTarget;
- if(document.body.classList.contains("kf-guest"))return;
  button.disabled=true;
  try{
   const snapshot={format:1,capturedAt:new Date().toISOString(),local:readLocal(),indexed:await readIndexed()};
@@ -12806,7 +12805,8 @@ async function backupSite(event){
 function insert(){
  const placements=[
   document.querySelector(".header-actions"),
-  document.querySelector("#compositionKnowledgePage .knowledge-top-actions")
+  document.querySelector("#compositionKnowledgePage .knowledge-top-actions"),
+  document.querySelector("#compositionKnowledgePage .knowledge-tools")
  ];
  for(const parent of placements){
   if(!parent||parent.querySelector(".kf-whole-backup-button"))continue;
@@ -12816,7 +12816,14 @@ function insert(){
   btn.textContent="Sao lưu website";
   btn.title="Sao lưu nội dung, bài đã chỉnh sửa và dữ liệu trên trình duyệt này";
   btn.addEventListener("click",backupSite);
-  parent.appendChild(btn);
+  parent.prepend(btn);
+ }
+ if(!document.querySelector(".kf-whole-backup-button")){
+   const fallback=document.createElement("button");
+   fallback.type="button";fallback.className="kf-whole-backup-button";fallback.textContent="Sao lưu website";
+   fallback.addEventListener("click",backupSite);
+   fallback.style.cssText="position:fixed!important;top:12px!important;right:12px!important;z-index:2147483647!important;box-shadow:0 4px 16px #0002!important";
+   document.body.appendChild(fallback);
  }
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",insert,{once:true});
