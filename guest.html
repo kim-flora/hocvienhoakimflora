@@ -373,7 +373,7 @@ $("kfImportHtml").onclick=async()=>{
   const selected=$("kfImportHtmlFile").files?.[0];
   if(!selected)throw new Error("Chọn file index.html trước.");
   const html=await selected.text();
-  if(!/<html[\\s>]/i.test(html)||!html.includes('compositionKnowledgePage'))throw new Error("File HTML không chứa trang Bố cục Kim Flora hợp lệ.");
+  if(!/<html[\s>]/i.test(html)||!html.includes('compositionKnowledgePage'))throw new Error("File HTML không chứa trang Bố cục Kim Flora hợp lệ.");
   const existing=await api("admin-read",{key:"published/main"},adminSession.access_token);
   const previous=existing.value?.html||"";
   if(!previous)throw new Error("Không đọc được bản HTML hiện tại để sao lưu.");
