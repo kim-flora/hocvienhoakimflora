@@ -260,7 +260,6 @@ function showRecovery(){
  recoveryMode=true;
  $("loginPanel").classList.remove("hidden");
  $("adminLogin").classList.add("hidden");
- $("guestLogin").classList.add("hidden");
  recoveryForm.classList.remove("hidden");
  $("loginTitle").textContent="Đặt lại mật khẩu quản trị";
  $("loginInfo").textContent="Nhập mật khẩu mới để hoàn tất khôi phục.";
@@ -429,36 +428,6 @@ $("changeAdminPassword").onclick=async()=>{
   say("Đã đổi mật khẩu quản trị. Hãy dùng mật khẩu mới khi đăng nhập lần sau.");
  }catch(e){say("Chưa đổi được mật khẩu: "+e.message);}
 };
-$("createGuest").onclick=async()=>{
- const label=$("guestLabel").value.trim();
- if(!label)return say("Nhập tên khách trước.");
- try{
-  const result=await api("create-guest",{label},adminSession?.access_token);
-  $("newPassword").replaceChildren();
-  const p=document.createElement("p");
-  p.textContent="Mật khẩu mới của "+label+": "+result.password+" (chỉ hiển thị lần này)";
-  $("newPassword").append(p);
-  $("guestLabel").value="";await listGuests();
- }catch(err){say(err.message)}
-};
-async function listGuests(){
- const r=await api("list-guests",{},adminSession?.access_token);
- $("customerList").replaceChildren();
- for(const guest of r.guests||[]){
-  const row=document.createElement("div");row.className="customer";
-  const title=document.createElement("span");
-  title.textContent=guest.label+(guest.revoked_at?" (Đã thu hồi)":"");
-  row.append(title);
-  if(!guest.revoked_at){
-   const b=document.createElement("button");b.textContent="Thu hồi";
-   b.onclick=async()=>{
-    if(!confirm("Thu hồi mật khẩu khách "+guest.label+"?"))return;
-    try{await api("revoke-guest",{id:guest.id},adminSession?.access_token);await listGuests();}catch(err){say(err.message)}
-   };row.append(b);
-  }
-  $("customerList").append(row);
- }
-}
 $("logout").onclick=async()=>{
  
  if(adminSession){await client.auth.signOut();adminSession=null;}
