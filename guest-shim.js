@@ -293,6 +293,71 @@
       bar.append(add,renameButton);
     }
   }
+
+  // Admin-only editing controls for the original composition/design lesson.
+  // Reuse the original lesson's edit and add handlers; never rewrite lesson content.
+  function ensureCompositionAdminControls(){
+    if(!editable)return;
+    const page=document.getElementById("compositionKnowledgePage");
+    if(!page)return;
+    const toolbar=page.querySelector(".knowledge-tools, .knowledge-top-actions");
+    if(!toolbar)return;
+    if(!toolbar.querySelector("[data-kf-composition-action=edit]")){
+      const edit=document.createElement("button");
+      edit.type="button";
+      edit.textContent="✎ Chỉnh sửa nội dung";
+      edit.className="kf-composition-admin-action";
+      edit.dataset.kfCompositionAction="edit";
+      edit.addEventListener("click",event=>{
+        event.preventDefault();event.stopPropagation();
+        const sections=[...page.querySelectorAll(".knowledge-section, .knowledge-deep")];
+        const section=sections.find(x=>x.open)||sections[0];
+        if(!section)return;
+        section.open=true;
+        if(typeof window.startKnowledgeEdit==="function"){
+          window.startKnowledgeEdit(section);
+          section.scrollIntoView({behavior:"smooth",block:"start"});
+        }else{
+          const existing=section.querySelector(":scope > summary .knowledge-edit-btn");
+          if(existing)existing.click();
+        }
+      });
+      toolbar.appendChild(edit);
+    }
+    if(!toolbar.querySelector("[data-kf-composition-action=add]")){
+      const add=document.createElement("button");
+      add.type="button";
+      add.textContent="+ Thêm mục mới";
+      add.className="kf-composition-admin-action";
+      add.dataset.kfCompositionAction="add";
+      add.addEventListener("click",event=>{
+        event.preventDefault();event.stopPropagation();
+        if(typeof window.addKnowledgeSection==="function")
+          window.addKnowledgeSection("compositionKnowledgePage");
+      });
+      toolbar.appendChild(add);
+    }
+    // The legacy document already has per-section edit/title buttons.
+    // Restore visibility if browser-specific styling hid them on the admin view.
+    page.querySelectorAll(".knowledge-edit-btn, .knowledge-title-btn").forEach(btn=>{
+      btn.hidden=false;
+      btn.style.removeProperty("display");
+    });
+  }
+  if(editable){
+    const adminStyle=document.createElement("style");
+    adminStyle.textContent=".kf-composition-admin-action{font-size:11px;font-weight:800;padding:7px 12px;border:1px solid #c7d2fe;border-radius:9px;background:#eef2ff;color:#3730a3;cursor:pointer;margin-left:6px}#compositionKnowledgePage .knowledge-edit-btn,#compositionKnowledgePage .knowledge-title-btn{display:inline-flex!important;align-items:center}";
+    document.head.appendChild(adminStyle);
+    document.addEventListener("DOMContentLoaded",()=>{
+      ensureCompositionAdminControls();
+      const composition=document.getElementById("compositionKnowledgePage");
+      if(composition){
+        // Only top-level additions need a refresh; don't watch the whole lesson DOM.
+        const toolbar=composition.querySelector(".knowledge-tools, .knowledge-top-actions");
+        if(toolbar)new MutationObserver(()=>ensureCompositionAdminControls()).observe(toolbar,{childList:true});
+      }
+    },{once:true});
+  }
   function formatPastedImage(img){
     if(!img||img.nodeName!=="IMG")return;
     img.setAttribute("width","189");
