@@ -7,12 +7,16 @@
   local.set("kimflora_auth","unlocked");
   const indexed=new Map(Object.entries(snapshot.indexed||{}));
   const editable=window.__kfReadOnly===false;
-  const signal=()=>{if(editable) window.parent.postMessage({type:"kf-dirty"},"*");};
+  const syncKey=k=>/^(kimflora_|kf_)/i.test(String(k))&&!/auth|password|secret|token|session|pin/i.test(String(k));
+  const signal=(area,key,value,removed=false)=>{
+    if(!editable||!syncKey(key))return;
+    window.parent.postMessage({type:"kf-sync-change",area,key:String(key),value,removed},"*");
+  };
   const storage={
     getItem:k=>local.has(String(k))?String(local.get(String(k))):null,
-    setItem:(k,v)=>{local.set(String(k),String(v));signal();},
-    removeItem:k=>{local.delete(String(k));signal();},
-    clear:()=>{local.clear();signal();},
+    setItem:(k,v)=>{const key=String(k),value=String(v);local.set(key,value);signal("local",key,value);},
+    removeItem:k=>{const key=String(k);local.delete(key);signal("local",key,null,true);},
+    clear:()=>{const keys=[...local.keys()];local.clear();for(const key of keys)signal("local",key,null,true);},
     key:i=>Array.from(local.keys())[i]??null,
     get length(){return local.size;}
   };
@@ -25,8 +29,8 @@
       const completed=()=>setTimeout(()=>tx.oncomplete?.(),0);
       tx.objectStore=()=>({
         get:key=>{const r={result:null,onsuccess:null,onerror:null};setTimeout(()=>{r.result=indexed.get(String(key))??null;r.onsuccess?.({target:r});},0);return r;},
-        put:(value,key)=>{indexed.set(String(key),value);signal();completed();return {};},
-        delete:key=>{indexed.delete(String(key));signal();completed();return {};}
+        put:(value,key)=>{const k=String(key);indexed.set(k,value);completed();signal("indexed",k,value);return {};},
+        delete:key=>{const k=String(key);indexed.delete(k);completed();signal("indexed",k,null,true);return {};}
       });
       return tx;
     }
