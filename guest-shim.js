@@ -3,10 +3,52 @@
 (function(){
   "use strict";
   const snapshot=window.__kfSnapshot||{local:{},indexed:{}};
-  const local=new Map(Object.entries(snapshot.local||{}));
-  local.set("kimflora_auth","unlocked");
-  const indexed=new Map(Object.entries(snapshot.indexed||{}));
   const editable=window.__kfReadOnly===false;
+  const local=new Map(Object.entries(snapshot.local||{}));
+  if(editable)local.set("kimflora_auth","unlocked");
+  else local.delete("kimflora_auth");
+  const indexed=new Map(Object.entries(snapshot.indexed||{}));
+  // Legacy app checks sessionStorage to decide which controls to render.
+  // The guest iframe must never inherit an owner role.
+  const ephemeralSession=new Map([["kimflora_role_v2",editable?"owner":"guest"]]);
+  const sessionApi={
+    getItem:k=>ephemeralSession.has(String(k))?ephemeralSession.get(String(k)):null,
+    setItem:(k,v)=>ephemeralSession.set(String(k),String(v)),
+    removeItem:k=>ephemeralSession.delete(String(k)),
+    clear:()=>ephemeralSession.clear(),
+    key:i=>Array.from(ephemeralSession.keys())[i]??null,
+    get length(){return ephemeralSession.size;}
+  };
+  try{Object.defineProperty(window,"sessionStorage",{configurable:true,value:sessionApi});}catch(e){}
+  if(!editable){
+    const guestCss=document.createElement("style");
+    guestCss.textContent=[
+      ".kf-guest .knowledge-title-btn,.kf-guest .knowledge-edit-btn,.kf-guest .knowledge-add-section-btn,.kf-guest .knowledge-edit-bar",
+      ",.kf-guest .kf-owner-only,.kf-guest .kf-custom-editor,.kf-guest .kf-nav-control",
+      ",.kf-guest .age-custom-toolbar,.kf-guest .age-custom-editor",
+      ",.kf-guest .palette-save-row,.kf-guest .saved-palette-actions,.kf-guest .preset-palette-actions",
+      ",.kf-guest .flower-library-edit-btn{display:none!important}"
+    ].join("");
+    document.head.appendChild(guestCss);
+    const guardEditors=()=>{
+      document.body?.classList.add("kf-guest");
+      document.querySelectorAll('[contenteditable="true"]').forEach(el=>el.removeAttribute("contenteditable"));
+    };
+    document.addEventListener("DOMContentLoaded",()=>{
+      guardEditors();
+      const watch=new MutationObserver(records=>{
+        let mustCheck=false;
+        for(const rec of records){
+          if(rec.type==="attributes"&&rec.target.matches?.('[contenteditable="true"]')){
+            rec.target.removeAttribute("contenteditable");
+          }
+          if(rec.type==="childList"&&rec.addedNodes.length)mustCheck=true;
+        }
+        if(mustCheck)guardEditors();
+      });
+      watch.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["contenteditable"]});
+    },{once:true});
+  }
   const syncKey=k=>/^(kimflora_|kf_)/i.test(String(k))&&!/auth|password|secret|token|session|pin/i.test(String(k));
   const signal=(area,key,value,removed=false)=>{
     if(!editable||!syncKey(key))return;
