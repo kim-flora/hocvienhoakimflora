@@ -33,6 +33,14 @@ const url="https://kqoyujqlkanwpdedqljr.supabase.co";
 const key="sb_publishable_jgSqB-1vyxcnojsbKJ3Tmg_8PsoZrvX";
 const client=createClient(url,key);
 const endpoint=url+"/functions/v1/kf-guest-access";
+const $=id=>document.getElementById(id);
+const adminMode=new URLSearchParams(location.search).get("admin")==="1";
+$("guestLogin").classList.toggle("hidden",adminMode);
+$("adminLogin").classList.toggle("hidden",!adminMode);
+$("loginTitle").textContent=adminMode?"Đăng nhập quản trị":"Đăng nhập học viên";
+$("loginInfo").textContent=adminMode?"Chỉ chủ sở hữu được quản lý mật khẩu khách.":"Nhập mật khẩu Kim Flora cấp riêng cho bạn. Không cần email.";
+let guestSession=null,adminSession=null,currentFrame=null,visibleText="",editorSnapshot=null,guestSnapshot=null;
+const say=t=>$("message").textContent=t;
 const recoveryRedirect="https://kim-flora.github.io/hocvienhoakimflora/guest.html?admin=1";
 const recoveryForm=$("resetAdminPassword");
 let recoveryMode=false;
@@ -73,14 +81,7 @@ recoveryForm.onsubmit=async e=>{
  }catch(e){say("Chưa đổi được mật khẩu: "+e.message);}
 };
 
-const $=id=>document.getElementById(id);
-const adminMode=new URLSearchParams(location.search).get("admin")==="1";
-$("guestLogin").classList.toggle("hidden",adminMode);
-$("adminLogin").classList.toggle("hidden",!adminMode);
-$("loginTitle").textContent=adminMode?"Đăng nhập quản trị":"Đăng nhập học viên";
-$("loginInfo").textContent=adminMode?"Chỉ chủ sở hữu được quản lý mật khẩu khách.":"Nhập mật khẩu Kim Flora cấp riêng cho bạn. Không cần email.";
-let guestSession=null,adminSession=null,currentFrame=null,visibleText="",editorSnapshot=null,guestSnapshot=null;
-const say=t=>$("message").textContent=t;
+
 function secureHTML(value,{readOnly=true,snapshot=null}={}){
  const frame=document.createElement("iframe");
  frame.setAttribute("sandbox","allow-scripts");
