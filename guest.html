@@ -325,10 +325,9 @@ $("kfPublish").onclick=async()=>{
   if(!confirm("Đã tạo bản sao lưu JSON. Xuất bản nội dung chỉnh sửa này cho học viên?"))return;
   const {data:{user},error:authErr}=await client.auth.getUser();
   if(authErr||!user)throw new Error("Phiên quản trị hết hạn.");
-  const {error}=await client.from("kf_content").upsert({
-   content_key:"published/snapshot",content_value:snapshot,
-   updated_by:user.id,updated_at:new Date().toISOString()
-  },{onConflict:"content_key"});
+  const {error}=await client.rpc("kf_patch_snapshot",{
+   p_local:snapshot.local,p_indexed:snapshot.indexed
+  });
   if(error)throw error;
   editorSnapshot=snapshot;
   say("Đã xuất bản dữ liệu! Học viên sẽ xem bản mới từ lần đăng nhập tiếp theo.");
