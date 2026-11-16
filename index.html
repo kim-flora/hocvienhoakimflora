@@ -2132,6 +2132,7 @@
       @media(max-width:640px){.btn-visual-color-knowledge{min-height:36px}.visual-color-toolbar{grid-template-columns:1fr}.visual-color-grid{grid-template-columns:1fr;padding:9px}.visual-color-image{height:200px}.visual-color-form{grid-template-columns:1fr}.visual-color-form label.full{grid-column:auto}.visual-color-toolbar .visual-color-btn{width:100%}}
     </style>
 
+<style id="kf-preauth-gate">body:not(.kf-logged-in) > :not(#kfAccountPanel):not(script):not(style){display:none!important}#lockScreen{display:none!important}</style>
 </head>
 <body>
 
@@ -12554,5 +12555,6 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
         (async()=>{try{const pages=['compositionKnowledgePage','colorKnowledgePage','displayKnowledgePage','mediaKnowledgePage','careKnowledgePage','deliveryKnowledgePage','chatgptKnowledgePage','fruitTrayKnowledgePage','flowerLibraryPage'];for(const pageId of pages){const page=document.getElementById(pageId);if(!page)continue;for(const section of page.querySelectorAll('.knowledge-section, .knowledge-deep')){const content=knowledgeEditorContent(section);if(!content||!section.dataset.knowledgeEditKey)continue;const saved=await kfDurableGet(section.dataset.knowledgeEditKey);if(typeof saved==='string'){content.innerHTML=saved;markKnowledgeEdited(section,true);}}}}catch(e){console.warn('Không thể đồng bộ bản lưu IndexedDB cho các tab kiến thức:',e);}})();
 
     </script>
+<script type="module" src="./kim-flora-live.js"></script>
 </body>
 </html>
