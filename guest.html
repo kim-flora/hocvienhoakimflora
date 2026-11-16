@@ -28,6 +28,7 @@ nav a{font-size:13px;color:#4f46e5;margin-left:10px}
 </main>
 <script type="module">
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
+import {captureLocalSnapshot,downloadSnapshotFile} from "./supabase/kim-flora-sync.js";
 const url="https://kqoyujqlkanwpdedqljr.supabase.co";
 const key="sb_publishable_jgSqB-1vyxcnojsbKJ3Tmg_8PsoZrvX";
 const client=createClient(url,key);
@@ -97,7 +98,7 @@ $("adminLogin").onsubmit=async e=>{
   $("adminPassword").value="";
   const result=await api("admin-read",{key:"published/main"},data.session.access_token);
   const snap=await api("admin-read",{key:"published/snapshot"},data.session.access_token);
-  editorSnapshot=snap.value?.format===1?snap.value:{format:1,local:{},indexed:{}};
+  editorSnapshot=snap.value?.format===1?snap.value:await captureLocalSnapshot();
   showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("adminPanel").classList.remove("hidden");
   say("Đã đăng nhập quản trị.");await listGuests();
