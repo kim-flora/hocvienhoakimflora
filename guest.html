@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kim Flora · Cổng học viên</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#17243c;background:#f5f6fa}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:950px;margin:36px auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+h1{font-size:24px;margin:0;color:#302b74}p{line-height:1.5;color:#64748b}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;box-shadow:0 5px 26px #1820360b;margin-top:18px}
+label{display:block;font-size:13px;font-weight:700;margin:10px 0 6px}
+input{width:100%;max-width:430px;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px}
+button{cursor:pointer;border:0;border-radius:9px;background:#4f46e5;color:white;padding:12px 16px;font-size:14px;font-weight:700;margin:12px 6px 0 0}
+button.secondary{background:#e0e7ff;color:#3730a3}
+nav a{font-size:13px;color:#4f46e5;margin-left:10px}
+.hidden{display:none!important}#message{font-size:13px;font-weight:600;white-space:pre-wrap}
+#viewer{line-height:1.65;overflow-wrap:anywhere}#viewer img{max-width:100%;height:auto}#viewer table{display:block;overflow-x:auto}
+#search{margin:12px 0}mark{background:#fef08a}#customerList{display:grid;gap:8px;margin-top:10px}
+.customer{display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid #eee;border-radius:8px;gap:8px}
+.customer button{margin:0;background:#be123c;padding:7px 10px}
+</style></head>
+<body><main class="wrap"><header><h1>Kim Flora</h1><nav><a href="guest.html">Khách</a><a href="guest.html?admin=1">Quản trị</a></nav></header>
+<section class="card" id="loginPanel"><h2 id="loginTitle">Đăng nhập học viên</h2>
+<p id="loginInfo">Nhập mật khẩu riêng do Kim Flora cấp. Không cần email.</p>
+<form id="guestLogin"><label for="guestPassword">Mật khẩu khách</label><input id="guestPassword" type="password" autocomplete="current-password" required minlength="16"><div><button type="submit">Vào xem tài liệu</button></div></form>
+<form id="adminLogin" class="hidden"><label>Email quản trị</label><input type="email" id="adminEmail" required autocomplete="username"><label>Mật khẩu quản trị</label><input type="password" id="adminPassword" required autocomplete="current-password"><div><button type="submit">Đăng nhập quản trị</button></div></form></section>
+<p id="message" role="status"></p>
+<section id="contentPanel" class="card hidden"><header><h2>Tài liệu Kim Flora</h2><button id="logout" class="secondary">Đăng xuất</button></header><input id="search" type="search" placeholder="Tìm trong nội dung..."><article id="viewer"></article></section>
+<section id="adminPanel" class="card hidden"><h2>Quản lý mật khẩu khách</h2><p>Mỗi mật khẩu được tạo ngẫu nhiên và chỉ hiển thị một lần. Hãy sao chép để gửi cho khách. Khách có thể đăng nhập mà không cần email.</p><label>Tên gợi nhớ khách</label><input id="guestLabel" placeholder="Ví dụ: Học viên A"><button id="createGuest">Tạo mật khẩu riêng</button><div id="newPassword" aria-live="polite"></div><h3>Danh sách khách</h3><div id="customerList"></div></section>
+</main>
+<script type="module">
+import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
+const url="https://kqoyujqlkanwpdedqljr.supabase.co";
+const key="sb_publishable_jgSqB-1vyxcnojsbKJ3Tmg_8PsoZrvX";
+const client=createClient(url,key);
+const endpoint=url+"/functions/v1/kf-guest-access";
+const $=id=>document.getElementById(id);
+const adminMode=new URLSearchParams(location.search).get("admin")==="1";
+$("guestLogin").classList.toggle("hidden",adminMode);
+$("adminLogin").classList.toggle("hidden",!adminMode);
+$("loginTitle").textContent=adminMode?"Đăng nhập quản trị":"Đăng nhập học viên";
+$("loginInfo").textContent=adminMode?"Chỉ chủ sở hữu được quản lý mật khẩu khách.":"Nhập mật khẩu Kim Flora cấp riêng cho bạn. Không cần email.";
+let guestSession=null,adminSession=null,originalText="";
+const say=t=>$("message").textContent=t;
+function secureHTML(value){
+ // Never use arbitrary HTML from a remote source as same-origin DOM.
+ // Render published material inside a sandboxed iframe instead (no scripts).
+ const frame=document.createElement("iframe");
+ frame.setAttribute("sandbox","");
+ frame.title="Tài liệu Kim Flora";
+ frame.style.cssText="width:100%;height:70vh;border:0";
+ frame.srcdoc=String(value||"");
+ return frame;
+}
+async function api(action,body={},bearer=null){
+ const headers={"content-type":"application/json","apikey":key};
+ if(bearer)headers.authorization="Bearer "+bearer;
+ const r=await fetch(endpoint,{method:"POST",headers,body:JSON.stringify({action,...body})});
+ let data={};try{data=await r.json()}catch{}
+ if(!r.ok)throw new Error(data.error||"Máy chủ không phản hồi.");
+ return data;
+}
+function showContent(value){
+ $("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");
+ $("viewer").replaceChildren(secureHTML(value||"<p>Chưa có nội dung được xuất bản trên máy chủ.</p>"));
+ $("search").value="";
+}
+async function loadPublicForGuest(){
+ const r=await api("guest-read",{session:guestSession,key:"published/main"});
+ showContent(r.value?.html||"");
+}
+$("guestLogin").onsubmit=async e=>{
+ e.preventDefault();say("Đang kiểm tra mật khẩu...");
+ try{
+  const result=await api("login",{password:$("guestPassword").value});
+  guestSession=result.session;$("guestPassword").value="";
+  await loadPublicForGuest();say("Đã đăng nhập khách. Bạn chỉ có quyền xem và tìm kiếm.");
+ }catch(err){guestSession=null;say(err.message)}
+};
+$("adminLogin").onsubmit=async e=>{
+ e.preventDefault();say("Đang đăng nhập...");
+ try{
+  const {data,error}=await client.auth.signInWithPassword({email:$("adminEmail").value,password:$("adminPassword").value});
+  if(error)throw error;
+  const {data:allowed,error:rpcError}=await client.rpc("kf_is_admin");
+  if(rpcError||allowed!==true){await client.auth.signOut();throw new Error("Tài khoản không được cấp quyền quản trị.");}
+  adminSession=data.session;
+  $("adminPassword").value="";
+  const result=await api("admin-read",{key:"published/main"},data.session.access_token);
+  showContent(result.value?.html||"");
+  $("adminPanel").classList.remove("hidden");
+  say("Đã đăng nhập quản trị.");await listGuests();
+ }catch(err){say(err.message)}
+};
+$("createGuest").onclick=async()=>{
+ const label=$("guestLabel").value.trim();
+ if(!label)return say("Nhập tên khách trước.");
+ try{
+  const result=await api("create-guest",{label},adminSession?.access_token);
+  $("newPassword").replaceChildren();
+  const p=document.createElement("p");
+  p.textContent="Mật khẩu mới của "+label+": "+result.password+" (chỉ hiển thị lần này)";
+  $("newPassword").append(p);
+  $("guestLabel").value="";await listGuests();
+ }catch(err){say(err.message)}
+};
+async function listGuests(){
+ const r=await api("list-guests",{},adminSession?.access_token);
+ $("customerList").replaceChildren();
+ for(const guest of r.guests||[]){
+  const row=document.createElement("div");row.className="customer";
+  const title=document.createElement("span");
+  title.textContent=guest.label+(guest.revoked_at?" (Đã thu hồi)":"");
+  row.append(title);
+  if(!guest.revoked_at){
+   const b=document.createElement("button");b.textContent="Thu hồi";
+   b.onclick=async()=>{
+    if(!confirm("Thu hồi mật khẩu khách "+guest.label+"?"))return;
+    try{await api("revoke-guest",{id:guest.id},adminSession?.access_token);await listGuests();}catch(err){say(err.message)}
+   };row.append(b);
+  }
+  $("customerList").append(row);
+ }
+}
+$("logout").onclick=async()=>{
+ if(guestSession){try{await api("guest-logout",{session:guestSession})}catch{}guestSession=null;}
+ if(adminSession){await client.auth.signOut();adminSession=null;}
+ location.reload();
+};
+$("search").oninput=()=>{
+ // Sandbox keeps markup isolated; browser-native Ctrl+F works for its contents.
+ // Basic local search via CSS highlight is not attempted across sandbox boundary.
+ say($("search").value?"Để tìm cụm từ trong tài liệu, dùng Ctrl+F (hoặc Tìm trên trang của trình duyệt).":"");
+};
+if(adminMode){
+ const {data}=await client.auth.getSession();
+ if(data.session){
+  const {data:allowed}=await client.rpc("kf_is_admin");
+  if(allowed){adminSession=data.session;try{const content=await api("admin-read",{key:"published/main"},adminSession.access_token);showContent(content.value?.html||"");$("adminPanel").classList.remove("hidden");await listGuests();}catch(err){say(err.message);}}
+ }
+}
+</script></body></html>
