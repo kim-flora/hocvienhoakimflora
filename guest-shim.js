@@ -8,6 +8,29 @@
   if(editable)local.set("kimflora_auth","unlocked");
   else local.delete("kimflora_auth");
   const indexed=new Map(Object.entries(snapshot.indexed||{}));
+  // Role belongs to the authenticated parent portal, not the legacy page.
+  // Never let the embedded legacy "Khóa lại" screen replace that portal session.
+  const forceEmbeddedRole=()=>{
+    const lock=document.getElementById("lockScreen");
+    if(lock){lock.style.setProperty("display","none","important");lock.setAttribute("aria-hidden","true");}
+    const legacyLock=[...document.querySelectorAll(".header-actions .btn-relock")].find(btn=>/khóa lại/i.test(btn.textContent||""));
+    if(legacyLock){legacyLock.hidden=true;legacyLock.style.setProperty("display","none","important");}
+    document.body?.classList.toggle("kf-guest",!editable);
+  };
+  window.addEventListener("DOMContentLoaded",()=>{
+    forceEmbeddedRole();
+    // The original app sometimes changes the lock overlay when switching topic tabs.
+    // The actual session is owned by the outer admin/guest portal.
+    const lock=document.getElementById("lockScreen");
+    if(lock)new MutationObserver(()=>{if(lock.style.display!=="none")lock.style.setProperty("display","none","important");}).observe(lock,{attributes:true,attributeFilter:["style","class"]});
+  },{once:true});
+  document.addEventListener("click",event=>{
+    const legacyLock=event.target.closest?.(".header-actions .btn-relock");
+    if(legacyLock&&/khóa lại/i.test(legacyLock.textContent||"")){
+      event.preventDefault();event.stopImmediatePropagation();
+    }
+  },true);
+
   // Legacy app checks sessionStorage to decide which controls to render.
   // The guest iframe must never inherit an owner role.
   const ephemeralSession=new Map([["kimflora_role_v2",editable?"owner":"guest"]]);
