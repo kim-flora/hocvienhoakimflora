@@ -36,6 +36,14 @@
   };
   try{Object.defineProperty(window,"indexedDB",{configurable:true,value:idb});}catch(e){console.warn("Guest indexed storage unavailable",e);}
   document.addEventListener("click",e=>{
+    if(!editable)return;
+    const title=e.target.closest("h1, .header h2, [class*=studio-title], [class*=brand]");
+    if(title && /^Kim\s*Flora\s*Studio$/i.test((title.textContent||"").trim())){
+      e.preventDefault();e.stopImmediatePropagation();
+      window.parent.postMessage({type:"kf-open-account-settings"},"*");
+    }
+  },true);
+  document.addEventListener("click",e=>{
     const b=e.target.closest("button,[role=button],input[type=submit]");
     if(!b||editable)return;
     const txt=(b.textContent||b.value||"").trim();
