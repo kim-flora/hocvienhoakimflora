@@ -31,6 +31,25 @@
     }
   },true);
 
+  // The original lessons are embedded in an isolated document. Local links
+  // must never replace that document with a second copy of the login portal.
+  // Opening the portal inside the iframe produces a misleading login screen.
+  document.addEventListener("click",event=>{
+    const link=event.target.closest?.("a[href]");
+    if(!link)return;
+    let dest;
+    try{dest=new URL(link.getAttribute("href"),document.baseURI);}
+    catch(_){return;}
+    const raw=(link.getAttribute("href")||"").trim();
+    const portalPath=/\/hocvienhoakimflora\/(?:guest\.html|index\.html)?\/?$/i;
+    const pointsToPortal=(dest.hostname==="kim-flora.github.io"&&portalPath.test(dest.pathname))
+      || /^(?:\.?\/)?(?:guest|index)\.html(?:[?#]|$)/i.test(raw);
+    if(pointsToPortal){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.parent.postMessage({type:"kf-portal-navigation-blocked"},"*");
+    }
+  },true);
   // Legacy app checks sessionStorage to decide which controls to render.
   // The guest iframe must never inherit an owner role.
   const ephemeralSession=new Map([["kimflora_role_v2",editable?"owner":"guest"]]);
