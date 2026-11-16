@@ -429,12 +429,35 @@ $("logout").onclick=async()=>{
  if(adminSession){await client.auth.signOut();adminSession=null;}
  location.reload();
 };
+// Restore authenticated administrator after a reload or token refresh.
+let restoring=false;
+async function restoreAdminSession(){
+ if(!adminMode||restoring)return;
+ restoring=true;
+ try{
+  const {data:{session}}=await client.auth.getSession();
+  if(!session)return;
+  const {data:allowed,error}=await client.rpc("kf_is_admin");
+  if(error||allowed!==true)return;
+  adminSession=session;
+  if(currentFrame){$("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");return;}
+  const content=await api("admin-read",{key:"published/main"},session.access_token);
+  editorSnapshot=await initializeAdminSnapshot(session.access_token);
+  showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
+  $("openAccountSettings").classList.remove("hidden");
+  say("");
+  void listGuests().catch(err=>console.warn("Guest list",err));
+ }catch(err){
+  console.warn("Restore admin session",err);
+  say("Không tải được tài liệu. Phiên đăng nhập vẫn được giữ; vui lòng tải lại trang.");
+ }finally{restoring=false;}
+}
 if(adminMode){
- const {data}=await client.auth.getSession();
- if(data.session){
-  const {data:allowed}=await client.rpc("kf_is_admin");
-  if(allowed){adminSession=data.session;try{const content=await api("admin-read",{key:"published/main"},adminSession.access_token);editorSnapshot=await initializeAdminSnapshot(adminSession.access_token);
-   showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});$("openAccountSettings").classList.remove("hidden");say("");await listGuests();}catch(err){say(err.message);}}
- }
+ await restoreAdminSession();
+ client.auth.onAuthStateChange((event,session)=>{
+  if((event==="INITIAL_SESSION"||event==="SIGNED_IN")&&session&&!currentFrame)
+   setTimeout(()=>void restoreAdminSession(),0);
+  if(event==="TOKEN_REFRESHED"&&session&&adminSession)adminSession=session;
+ });
 }
 </script></body></html>
