@@ -27,13 +27,38 @@
       ",.kf-guest .kf-owner-only,.kf-guest .kf-custom-editor,.kf-guest .kf-nav-control",
       ",.kf-guest .age-custom-toolbar,.kf-guest .age-custom-editor",
       ",.kf-guest .palette-save-row,.kf-guest .saved-palette-actions,.kf-guest .preset-palette-actions",
-      ",.kf-guest .flower-library-edit-btn{display:none!important}"
+      ",.kf-guest .flower-library-edit-btn,.kf-guest .flower-library-editor",
+      ",.kf-guest .visual-color-editor,.kf-guest input[type=file]",
+      ",.kf-guest .knowledge-title-btn,.kf-guest [contenteditable=true]{display:none!important}"
     ].join("");
     document.head.appendChild(guestCss);
+    const guardedButtons=/^(?:(?:✏️|✎|🖊️|🗑️|💾|\+|＋)\s*)*(?:chỉnh sửa|sửa(?:\s+[^\s]+)?|đổi tiêu đề|đổi tên|thêm(?:\s+|$)|tạo(?:\s+|$)|lưu(?:\s+|$)|xóa(?:\s+|$)|xoá(?:\s+|$)|khôi phục(?:\s+bản|\s+nội dung)|nhập(?:\s+tệp|\s+dữ liệu)|tải(?:\s+lên|\s+tệp)|đặt lại|cập nhật(?:\s+nội dung|\s+dữ liệu))/i;
+    const editorialClasses=["knowledge-title-btn","knowledge-edit-btn","knowledge-add-section-btn","knowledge-edit-bar","kf-owner-only","kf-custom-editor","kf-nav-control","age-custom-toolbar","age-custom-editor","palette-save-row","saved-palette-actions","preset-palette-actions","flower-library-edit-btn","flower-library-editor","visual-color-editor"];
     const guardEditors=()=>{
       document.body?.classList.add("kf-guest");
-      document.querySelectorAll('[contenteditable="true"]').forEach(el=>el.removeAttribute("contenteditable"));
+      document.querySelectorAll('[contenteditable], [designmode="on"]').forEach(el=>{
+        el.removeAttribute("contenteditable");el.removeAttribute("designmode");
+      });
+      for(const name of editorialClasses)document.querySelectorAll("."+name).forEach(el=>{el.hidden=true;el.style.setProperty("display","none","important");});
+      document.querySelectorAll('button,input[type="submit"],[role="button"]').forEach(el=>{
+        if(el.closest(".header-actions")||el.classList.contains("knowledge-back"))return;
+        const label=(el.textContent||el.value||el.getAttribute("aria-label")||"").replace(/\\s+/g," ").trim();
+        if(guardedButtons.test(label)){
+          el.hidden=true;el.style.setProperty("display","none","important");
+        }
+      });
+      document.querySelectorAll('input[type="file"]').forEach(el=>{el.disabled=true;el.hidden=true;});
     };
+    // Guest-facing interactions are only for browsing and trying color combinations;
+    // no changes are ever persisted or sent to the server.
+    document.addEventListener("click",e=>{
+      const btn=e.target.closest('button,[role="button"],input[type="submit"]');
+      if(!btn||btn.closest(".header-actions"))return;
+      const label=(btn.textContent||btn.value||"").replace(/\\s+/g," ").trim();
+      if(guardedButtons.test(label)||editorialClasses.some(c=>btn.classList.contains(c))){
+        e.preventDefault();e.stopImmediatePropagation();
+      }
+    },true);
     document.addEventListener("DOMContentLoaded",()=>{
       guardEditors();
       const watch=new MutationObserver(records=>{
@@ -46,7 +71,7 @@
         }
         if(mustCheck)guardEditors();
       });
-      watch.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["contenteditable"]});
+      watch.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["contenteditable","designmode"]});
     },{once:true});
   }
   const syncKey=k=>/^(kimflora_|kf_)/i.test(String(k))&&!/auth|password|secret|token|session|pin/i.test(String(k));
