@@ -70,6 +70,7 @@ let guestSession=null,adminSession=null,currentFrame=null,visibleText="",editorS
 const say=t=>$("message").textContent=t;
 
 const KF_PENDING_KEY="kf_editor_unsynced_v1";
+const KF_INFLIGHT_KEY="kf_editor_inflight_v1";
 const freshPending=()=>({local:{},indexed:{},removeLocal:[],removeIndexed:[]});
 let pending=freshPending(),syncBusy=false,syncTimer=null;
 try{
@@ -78,6 +79,14 @@ try{
   pending.local=restored.local||{};pending.indexed=restored.indexed||{};
   pending.removeLocal=Array.isArray(restored.removeLocal)?restored.removeLocal:[];
   pending.removeIndexed=Array.isArray(restored.removeIndexed)?restored.removeIndexed:[];
+ }
+}catch(_){}
+try{
+ const oldFlight=JSON.parse(localStorage.getItem(KF_INFLIGHT_KEY)||"null");
+ if(oldFlight&&typeof oldFlight==="object"){
+  for(const area of ["local","indexed"])pending[area]={...(oldFlight[area]||{}),...pending[area]};
+  pending.removeLocal=[...new Set([...(oldFlight.removeLocal||[]),...pending.removeLocal])].filter(k=>!(k in pending.local));
+  pending.removeIndexed=[...new Set([...(oldFlight.removeIndexed||[]),...pending.removeIndexed])].filter(k=>!(k in pending.indexed));
  }
 }catch(_){}
 function validKey(k){return /^(kimflora_|kf_)/i.test(k)&&!/auth|password|secret|token|session|pin/i.test(k);}
@@ -105,13 +114,16 @@ function queuePatch(area,key,value,removed=false){
 async function flushPending(){
  if(syncBusy||!adminSession||!hasPending())return;
  syncBusy=true;
- const batch=pending;pending=freshPending();preservePending();
+ const batch=pending;
+ try{localStorage.setItem(KF_INFLIGHT_KEY,JSON.stringify(batch));}catch(_){}
+ pending=freshPending();preservePending();
  try{
   const {error}=await client.rpc("kf_patch_snapshot",{
    p_local:batch.local,p_indexed:batch.indexed,
    p_remove_local:batch.removeLocal,p_remove_indexed:batch.removeIndexed
   });
   if(error)throw error;
+  try{localStorage.removeItem(KF_INFLIGHT_KEY);}catch(_){}
   if($("message").textContent.startsWith("Không đồng bộ"))say("");
  }catch(e){
   // Preserve more recent local changes if they arrived during the failed request.
@@ -127,6 +139,7 @@ async function flushPending(){
     if(!(k in pending[area])&&!list.includes(k))list.push(k);
   }
   preservePending();
+  try{localStorage.removeItem(KF_INFLIGHT_KEY);}catch(_){}
   say("Không đồng bộ được. Các thay đổi đang được giữ trên thiết bị này.");
   console.warn("Kim Flora sync:",e);
  }finally{
