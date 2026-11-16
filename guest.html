@@ -508,6 +508,17 @@ async function restoreAdminSession(){
   say("Không tải được tài liệu. Phiên đăng nhập vẫn được giữ; vui lòng tải lại trang.");
  }finally{restoring=false;}
 }
+if(!adminMode&&guestSession){
+ // Restore the existing guest session in this tab; only ask for the password if it expired.
+ (async()=>{
+  try{await loadPublicForGuest();say("");}
+  catch(err){
+   guestSession=null;
+   try{sessionStorage.removeItem("kf_guest_session_v1");}catch(_){}
+   say("Phiên học viên đã hết hạn. Vui lòng đăng nhập lại.");
+  }
+ })();
+}
 if(adminMode){
  await restoreAdminSession();
  client.auth.onAuthStateChange((event,session)=>{
