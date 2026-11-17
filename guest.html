@@ -341,15 +341,23 @@ $("adminLogin").onsubmit=async e=>{
   if(rpcError||allowed!==true){await client.auth.signOut();throw new Error("Tài khoản không được cấp quyền quản trị.");}
   adminSession=data.session;
   $("adminPassword").value="";
-  const [result,snapshot]=await Promise.all([
-   api("admin-read",{key:"published/main"},data.session.access_token),
-   initializeAdminSnapshot(data.session.access_token)
-  ]);
-  editorSnapshot=snapshot;
-  showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
+  // Mở nội dung chính ngay sau khi xác thực; không chờ snapshot nhiều MB.
+  const result=await api("admin-read",{key:"published/main"},data.session.access_token);
+  showContent(result.value?.html||"",{readOnly:false,snapshot:null});
   $("openAccountSettings").classList.remove("hidden");
   $("kfQuickBackup").classList.remove("hidden");
-  say("");await listGuests();void flushPending();
+  say("");
+  // Nạp dữ liệu chỉnh sửa và danh sách khách ở nền, không chặn đăng nhập.
+  void (async()=>{
+   try{
+    const snapshot=await initializeAdminSnapshot(data.session.access_token);
+    editorSnapshot=snapshot;
+    if(adminSession?.access_token===data.session.access_token)
+     showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
+   }catch(err){console.warn("Tải dữ liệu chỉnh sửa nền:",err);}
+  })();
+  void listGuests().catch(err=>console.warn("Tải danh sách Guest:",err));
+  void flushPending();
  }catch(err){say(err.message)}
 };
 
@@ -483,14 +491,15 @@ async function restoreAdminSession(){
   if(error||allowed!==true)return;
   adminSession=session;
   if(currentFrame){$("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");return;}
-  const [content,snapshot]=await Promise.all([
-   api("admin-read",{key:"published/main"},session.access_token),
-   initializeAdminSnapshot(session.access_token)
-  ]);
-  editorSnapshot=snapshot;
-  showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
+  const content=await api("admin-read",{key:"published/main"},session.access_token);
+  showContent(content.value?.html||"",{readOnly:false,snapshot:null});
   $("openAccountSettings").classList.remove("hidden");
   say("");
+  void initializeAdminSnapshot(session.access_token).then(snapshot=>{
+   editorSnapshot=snapshot;
+   if(adminSession?.access_token===session.access_token)
+    showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
+  }).catch(err=>console.warn("Tải dữ liệu chỉnh sửa nền:",err));
   void listGuests().catch(err=>console.warn("Guest list",err));
  }catch(err){
   console.warn("Restore admin session",err);
