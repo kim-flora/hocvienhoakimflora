@@ -300,7 +300,9 @@ recoveryForm.onsubmit=async e=>{
 
 function secureHTML(value,{readOnly=true,snapshot=null}={}){
  const frame=document.createElement("iframe");
- frame.setAttribute("sandbox","allow-scripts");
+ // Admin editing uses native prompt/confirm dialogs across legacy tabs.
+ // Keep guest mode restricted and preserve the iframe’s opaque origin.
+ frame.setAttribute("sandbox",readOnly?"allow-scripts":"allow-scripts allow-modals");
  frame.title="Tài liệu Kim Flora";
  frame.style.cssText="display:block;width:100%;height:calc(100dvh - 78px);min-height:560px;border:0;border-radius:0";
  const model=snapshot?.format===1?snapshot:{format:1,local:{},indexed:{}};
