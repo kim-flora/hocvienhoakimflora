@@ -2296,8 +2296,8 @@
                 <div class="saved-palettes-box" id="savedPalettesArea">
                     <div class="saved-palettes-head">
                         <div>
-                            <div class="saved-palettes-title">Bảng màu tui đã lưu</div>
-                            <div style="font-size:10.5px;color:#64748b;margin-top:2px;">Lưu trực tiếp từ 6 ô màu bên trái. Có thể nạp lại, sửa hoặc xóa bất cứ lúc nào.</div>
+                            <!-- KF_PALETTE_TAB_PATCH_20261117 -->
+                            
                         </div>
                         <button class="palette-action-btn neutral" type="button" onclick="restorePresetPalettes()">Khôi phục 72 bộ gốc</button>
                     </div>
@@ -2316,6 +2316,20 @@
                             <option value="bạn gái">Bạn gái / Vợ</option>
                             <option value="đồng nghiệp">Đồng nghiệp / Bạn bè</option>
                             <option value="trẻ">Khách trẻ / Chị em</option>
+<optgroup label="Nhóm tuổi theo giới tính"><option value="Nữ · 0–12 tuổi">Nữ · 0–12 tuổi</option>
+<option value="Nam · 0–12 tuổi">Nam · 0–12 tuổi</option>
+<option value="Nữ · 13–17 tuổi">Nữ · 13–17 tuổi</option>
+<option value="Nam · 13–17 tuổi">Nam · 13–17 tuổi</option>
+<option value="Nữ · 18–25 tuổi">Nữ · 18–25 tuổi</option>
+<option value="Nam · 18–25 tuổi">Nam · 18–25 tuổi</option>
+<option value="Nữ · 26–35 tuổi">Nữ · 26–35 tuổi</option>
+<option value="Nam · 26–35 tuổi">Nam · 26–35 tuổi</option>
+<option value="Nữ · 36–45 tuổi">Nữ · 36–45 tuổi</option>
+<option value="Nam · 36–45 tuổi">Nam · 36–45 tuổi</option>
+<option value="Nữ · 46–59 tuổi">Nữ · 46–59 tuổi</option>
+<option value="Nam · 46–59 tuổi">Nam · 46–59 tuổi</option>
+<option value="Nữ · Từ 60 tuổi">Nữ · Từ 60 tuổi</option>
+<option value="Nam · Từ 60 tuổi">Nam · Từ 60 tuổi</option></optgroup>
                         </select>
                     </div>
                     <div class="filter-item">
@@ -2324,6 +2338,49 @@
                             <option value="20/10">Dịp 20/10</option>
                             <option value="8/3">Dịp 8/3</option>
                             <option value="Cả hai">Dùng cho cả hai dịp</option>
+<optgroup label="Ngày lễ và dịp tặng hoa"><option value="Tết Dương lịch (1/1)">Tết Dương lịch (1/1)</option>
+<option value="Tết Nguyên đán">Tết Nguyên đán</option>
+<option value="Rằm tháng Giêng">Rằm tháng Giêng</option>
+<option value="Valentine (14/2)">Valentine (14/2)</option>
+<option value="Ngày Thầy thuốc Việt Nam (27/2)">Ngày Thầy thuốc Việt Nam (27/2)</option>
+<option value="Ngày Quốc tế Hạnh phúc (20/3)">Ngày Quốc tế Hạnh phúc (20/3)</option>
+<option value="Ngày thành lập Đoàn (26/3)">Ngày thành lập Đoàn (26/3)</option>
+<option value="Giỗ Tổ Hùng Vương">Giỗ Tổ Hùng Vương</option>
+<option value="Ngày Giải phóng miền Nam (30/4)">Ngày Giải phóng miền Nam (30/4)</option>
+<option value="Ngày Quốc tế Lao động (1/5)">Ngày Quốc tế Lao động (1/5)</option>
+<option value="Ngày của Mẹ">Ngày của Mẹ</option>
+<option value="Ngày Quốc tế Thiếu nhi (1/6)">Ngày Quốc tế Thiếu nhi (1/6)</option>
+<option value="Tết Đoan Ngọ">Tết Đoan Ngọ</option>
+<option value="Ngày của Cha">Ngày của Cha</option>
+<option value="Ngày Báo chí Cách mạng Việt Nam (21/6)">Ngày Báo chí Cách mạng Việt Nam (21/6)</option>
+<option value="Ngày Gia đình Việt Nam (28/6)">Ngày Gia đình Việt Nam (28/6)</option>
+<option value="Ngày Thương binh – Liệt sĩ (27/7)">Ngày Thương binh – Liệt sĩ (27/7)</option>
+<option value="Lễ Vu Lan">Lễ Vu Lan</option>
+<option value="Thất tịch">Thất tịch</option>
+<option value="Tết Trung thu">Tết Trung thu</option>
+<option value="Quốc khánh (2/9)">Quốc khánh (2/9)</option>
+<option value="Ngày Quốc tế Người cao tuổi (1/10)">Ngày Quốc tế Người cao tuổi (1/10)</option>
+<option value="Ngày Doanh nhân Việt Nam (13/10)">Ngày Doanh nhân Việt Nam (13/10)</option>
+<option value="Ngày Quốc tế Nam giới (19/11)">Ngày Quốc tế Nam giới (19/11)</option>
+<option value="Ngày Nhà giáo Việt Nam (20/11)">Ngày Nhà giáo Việt Nam (20/11)</option>
+<option value="Ngày thành lập Quân đội nhân dân Việt Nam (22/12)">Ngày thành lập Quân đội nhân dân Việt Nam (22/12)</option>
+<option value="Giáng sinh (24–25/12)">Giáng sinh (24–25/12)</option>
+<option value="Tết Ông Công Ông Táo">Tết Ông Công Ông Táo</option>
+<option value="Halloween (31/10)">Halloween (31/10)</option>
+<option value="Sinh nhật">Sinh nhật</option>
+<option value="Kỷ niệm ngày cưới / ngày yêu nhau">Kỷ niệm ngày cưới / ngày yêu nhau</option>
+<option value="Cầu hôn">Cầu hôn</option>
+<option value="Lễ cưới / đính hôn">Lễ cưới / đính hôn</option>
+<option value="Lễ tốt nghiệp">Lễ tốt nghiệp</option>
+<option value="Khai trương">Khai trương</option>
+<option value="Tân gia">Tân gia</option>
+<option value="Thăng chức / nhận nhiệm sở">Thăng chức / nhận nhiệm sở</option>
+<option value="Chúc mừng / thành công">Chúc mừng / thành công</option>
+<option value="Tri ân / cảm ơn">Tri ân / cảm ơn</option>
+<option value="Thăm bệnh">Thăm bệnh</option>
+<option value="Chia buồn / tang lễ">Chia buồn / tang lễ</option>
+<option value="Quà tặng không theo dịp">Quà tặng không theo dịp</option>
+<option value="Dịp khác">Dịp khác</option></optgroup>
                         </select>
                     </div>
                     <div class="filter-item">
@@ -2348,6 +2405,7 @@
                 <div class="age-custom-editor" id="ageCustomPaletteEditor">
                     <h4 id="ageCustomEditorTitle">Thêm bộ màu</h4>
                     <div class="age-custom-fields" id="ageCustomPaletteFields"></div>
+<div class="age-custom-fields"><label>Đối tượng<select id="kfAgeCustomTarget" multiple size="4" style="width:100%;padding:6px;border:1px solid #dbe3ee;border-radius:6px"></select></label><label>Dịp lễ<select id="kfAgeCustomOccasion" multiple size="4" style="width:100%;padding:6px;border:1px solid #dbe3ee;border-radius:6px"></select></label></div>
                     <div class="age-custom-editor-actions">
                         <button class="palette-action-btn success" type="button" onclick="saveAgeCustomPalette()">Lưu bộ màu</button>
                         <button class="palette-action-btn neutral" type="button" onclick="closeAgeCustomPaletteEditor()">Hủy</button>
@@ -10458,7 +10516,12 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             const temp = document.getElementById('filterTemp')?.value || '';
             const tone = document.getElementById('filterTone')?.value || '';
 
+            // Chỉ loại khỏi tab màu có HEX trùng và thiếu hồ sơ chi tiết; giữ nguyên kho dữ liệu gốc.
+            const kfHexKey=row=>String(row.hex||'').trim().replace(/^#/,'').toUpperCase();
+            const kfHasDetails=row=>!!(row.library&&['Cảm xúc gợi ra','Ý nghĩa thường gặp','Màu hợp phối cùng'].some(k=>String(row.library[k]||'').trim()));
+            const annotatedHex=new Set(colorMapData.filter(kfHasDetails).map(kfHexKey).filter(h=>/^[0-9A-F]{6}$/.test(h)));
             const filtered = colorMapData.filter(item => {
+                if(annotatedHex.has(kfHexKey(item))&&!kfHasDetails(item))return false;
                 if (source && item.source !== source) return false;
                 if (family && item.family !== family) return false;
                 if (temp && item.temp !== temp) return false;
@@ -10873,7 +10936,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             if (!box) return;
             const items = getSavedPalettes();
             if (!items.length) {
-                box.innerHTML = '<div class="saved-empty">Chưa có bảng màu tự lưu. Chọn đủ 6 màu bên trái rồi bấm “Lưu nhóm màu này”.</div>';
+                box.innerHTML = '';
                 return;
             }
             const roleLabels = {
@@ -11241,6 +11304,12 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                 const color = old?.colors?.[i] || {};
                 return `<label>Ô màu ${i+1}<input type="text" id="ageCustomColor${i}" value="${escapeHtmlSafe(color.input || color.name || color.hex || '')}" placeholder="Nhập mã HEX hoặc tên màu"></label>`;
             }).join('');
+            [['kfAgeCustomTarget','filterTargetUser','targets'],['kfAgeCustomOccasion','filterOccasion','occasions']].forEach(([id,source,prop])=>{
+                const select=document.getElementById(id), original=document.getElementById(source);
+                select.replaceChildren(...Array.from(original.options).filter(o=>o.value).map(o=>o.cloneNode(true)));
+                const selected=old ? (Array.isArray(old[prop])?old[prop]:[]) : [original.value].filter(Boolean);
+                Array.from(select.options).forEach(o=>{o.selected=selected.includes(o.value);});
+            });
             document.getElementById('ageCustomPaletteStatus').textContent = 'Nhập mã HEX hoặc tên màu cho từng ô.';
             editor.style.display = 'block';
             editor.scrollIntoView({behavior:'smooth',block:'center'});
@@ -11264,15 +11333,20 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                 colors.push({...resolved, input:String(raw).trim()});
             }
             const rows = getAgeCustomPalettes();
+            const targets=Array.from(document.getElementById('kfAgeCustomTarget').selectedOptions,o=>o.value);
+            const occasions=Array.from(document.getElementById('kfAgeCustomOccasion').selectedOptions,o=>o.value);
             if (ageCustomPaletteEditId) {
                 const idx = rows.findIndex(x => x.id === ageCustomPaletteEditId);
-                if (idx >= 0) rows[idx] = {...rows[idx], colors, updated_at:new Date().toISOString()};
+                if (idx >= 0) rows[idx] = {...rows[idx], colors, targets, occasions, updated_at:new Date().toISOString()};
             } else {
                 const max = rows.reduce((m,x) => {
                     const n = Number(String(x.id || '').replace(/^KC/i,''));
                     return Number.isFinite(n) ? Math.max(m,n) : m;
                 },0);
-                rows.push({id:'KC'+String(max+1).padStart(2,'0'), name:`Bộ ${ageCustomPaletteCount} màu`, colors, created_at:new Date().toISOString()});
+                const seqKey='kimflora_age_custom_palette_sequence_v1';
+                const next=Math.max(max,Number(kfReadLocal(seqKey,0))||0)+1;
+                kfWriteLocal(seqKey,next);
+                rows.push({id:'KC'+String(next).padStart(2,'0'), name:'Bộ '+ageCustomPaletteCount+' màu', colors, targets, occasions, created_at:new Date().toISOString()});
             }
             setAgeCustomPalettes(rows);
             closeAgeCustomPaletteEditor();
@@ -11300,7 +11374,11 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
         function deleteAgeCustomPalette(id) {
             const item = getAgeCustomPalettes().find(x => x.id === id);
             if (!item || !confirm(`Xóa ${item.id} – ${item.name}?`)) return;
-            setAgeCustomPalettes(getAgeCustomPalettes().filter(x => x.id !== id));
+            const all=getAgeCustomPalettes();
+            const seqKey='kimflora_age_custom_palette_sequence_v1';
+            const max=all.reduce((m,x)=>Math.max(m,Number(String(x.id||'').replace(/^KC/i,''))||0),Number(kfReadLocal(seqKey,0))||0);
+            kfWriteLocal(seqKey,max);
+            setAgeCustomPalettes(all.filter(x => x.id !== id));
             renderAgeCustomPalettes();
         }
 
@@ -11308,9 +11386,18 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             const box = document.getElementById('ageCustomPalettesContainer');
             if (!box) return;
             const q = (document.getElementById('searchAgeFormula')?.value || '').trim().toLocaleLowerCase('vi');
-            const rows = getAgeCustomPalettes().filter(item =>
-                !q || `${item.id} ${item.name} ${item.colors.map(c => `${c.name} ${c.hex}`).join(' ')}`.toLocaleLowerCase('vi').includes(q)
-            );
+            const fTarget=document.getElementById('filterTargetUser')?.value||'';
+            const fOccasion=document.getElementById('filterOccasion')?.value||'';
+            const fTone=document.getElementById('filterToneGroup')?.value||'';
+            const fSale=document.getElementById('filterSaleability')?.value||'';
+            const rows=getAgeCustomPalettes().filter(item=>{
+                const targets=Array.isArray(item.targets)?item.targets:[];
+                const occasions=Array.isArray(item.occasions)?item.occasions:[];
+                if(fTarget&&!targets.includes(fTarget))return false;
+                if(fOccasion&&!occasions.includes(fOccasion)&&!(occasions.includes('Cả hai')&&['8/3','20/10'].includes(fOccasion)))return false;
+                if(fTone||fSale)return false;
+                return !q||[item.id,item.name,...targets,...occasions,...item.colors.map(c=>c.name+' '+c.hex)].join(' ').toLocaleLowerCase('vi').includes(q);
+            });
             if (!rows.length) { box.innerHTML = ''; return; }
             box.innerHTML = rows.map(item => {
                 const chips = item.colors.map((color,i) => `
@@ -11322,7 +11409,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                 return `<div class="age-custom-card">
                     <div class="palette-formula-head">
                         <div><span class="palette-title">${escapeHtmlSafe(item.id)} – ${escapeHtmlSafe(item.name)}</span>
-                            <div style="margin-top:2px"><span class="badge-pill badge-occasion">Bộ ${item.colors.length} ô màu · Tự thêm</span></div>
+                            <div style="margin-top:2px"><span class="badge-pill badge-occasion">Bộ ${item.colors.length} ô màu · Tự thêm</span>${(item.targets||[]).map(t=>`<span class="badge-pill badge-target-user">${escapeHtmlSafe(t)}</span>`).join('')}${(item.occasions||[]).map(t=>`<span class="badge-pill badge-occasion">${escapeHtmlSafe(t)}</span>`).join('')}</div>
                         </div>
                         <div class="preset-palette-actions">
                             <button class="palette-action-btn success" type="button" onclick="applyAgeCustomPalette('${escapeHtmlSafe(item.id)}')">Áp dụng cả bộ</button>
@@ -11348,7 +11435,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
 
             const filtered = getVisibleAgeFormulas().filter(item => {
                 if (fTarget && !item.target.toLowerCase().includes(fTarget)) return false;
-                if (fOccasion && item.occasion !== 'Cả hai' && item.occasion !== fOccasion) return false;
+                if (fOccasion && item.occasion !== fOccasion && !(item.occasion === 'Cả hai' && ['8/3','20/10'].includes(fOccasion))) return false;
                 if (fTone && item.tone !== fTone) return false;
                 if (fSale && item.sale !== fSale) return false;
                 if (key) {
