@@ -97,10 +97,53 @@ function validKey(k){return /^(kimflora_|kf_)/i.test(k)&&!/auth|password|secret|
 function hasPending(q=pending){
  return Object.keys(q.local).length+Object.keys(q.indexed).length+q.removeLocal.length+q.removeIndexed.length>0;
 }
+// Keep unsent edits in IndexedDB if localStorage has reached its size limit.
+const KF_RECOVERY_DB="kf-editor-recovery-v1";
+function recoveryIO(action,value){
+ return new Promise((resolve,reject)=>{
+  const open=indexedDB.open(KF_RECOVERY_DB,1);
+  open.onupgradeneeded=()=>open.result.createObjectStore("records");
+  open.onerror=()=>reject(open.error);
+  open.onsuccess=()=>{
+   const db=open.result,tx=db.transaction("records",action==="get"?"readonly":"readwrite");
+   const store=tx.objectStore("records");
+   const req=action==="get"?store.get("pending"):action==="put"?store.put(value,"pending"):store.delete("pending");
+   req.onsuccess=()=>resolve(req.result);
+   req.onerror=()=>reject(req.error);
+   tx.oncomplete=()=>db.close();
+   tx.onabort=()=>db.close();
+  };
+ });
+}
+let recoveryWrite=Promise.resolve();
+const recoveryReady=(async()=>{
+ try{
+  const saved=await recoveryIO("get");
+  if(!saved)return;
+  for(const area of ["local","indexed"]){
+   for(const [key,value] of Object.entries(saved[area]||{}))
+    if(validKey(key)&&!(key in pending[area])&&!(area==="local"?pending.removeLocal:pending.removeIndexed).includes(key))
+     pending[area][key]=value;
+  }
+  for(const [area,items] of [["local",saved.removeLocal],["indexed",saved.removeIndexed]]){
+   const list=area==="local"?pending.removeLocal:pending.removeIndexed;
+   for(const key of Array.isArray(items)?items:[])
+    if(validKey(key)&&!(key in pending[area])&&!list.includes(key))list.push(key);
+  }
+ }catch(error){console.warn("Kim Flora recovery:",error);}
+})();
 function preservePending(){
- try{if(hasPending())localStorage.setItem(KF_PENDING_KEY,JSON.stringify(pending));
- else localStorage.removeItem(KF_PENDING_KEY);}
- catch(_){say("Bộ nhớ trình duyệt đã đầy. Hãy sao lưu dữ liệu trước khi đóng trang.");}
+ try{
+  if(hasPending())localStorage.setItem(KF_PENDING_KEY,JSON.stringify(pending));
+  else localStorage.removeItem(KF_PENDING_KEY);
+ }catch(error){
+  const backup=JSON.parse(JSON.stringify(pending));
+  recoveryWrite=recoveryWrite.then(()=>recoveryIO("put",backup)).catch(e=>{
+   console.warn("Kim Flora recovery backup:",e);
+   say("Không lưu được bản dự phòng. Hãy sao lưu website trước khi đóng trang.");
+  });
+  setSyncStatus("Đang lưu dự phòng…");
+ }
 }
 function setSyncStatus(text){const node=$("kfSyncStatus");if(node)node.textContent=text;}
 function queuePatch(area,key,value,removed=false){
@@ -118,11 +161,14 @@ function queuePatch(area,key,value,removed=false){
  syncTimer=setTimeout(()=>void flushPending(),850);
 }
 async function flushPending(){
- if(syncBusy||!adminSession||!hasPending())return;
+ if(syncBusy||!adminSession)return;
+ await recoveryReady;
+ await recoveryWrite;
+ if(!hasPending())return;
  syncBusy=true;
  const batch=pending;
  try{localStorage.setItem(KF_INFLIGHT_KEY,JSON.stringify(batch));}catch(_){}
- pending=freshPending();preservePending();
+ pending=freshPending();
  try{
   const {error}=await client.rpc("kf_patch_snapshot",{
    p_local:batch.local,p_indexed:batch.indexed,
@@ -130,6 +176,13 @@ async function flushPending(){
   });
   if(error)throw error;
   try{localStorage.removeItem(KF_INFLIGHT_KEY);}catch(_){}
+  // Acknowledge and clear the durable backup only after the server accepts the changes.
+  await recoveryWrite;
+  if(hasPending())preservePending();
+  else {
+   try{localStorage.removeItem(KF_PENDING_KEY);}catch(_){}
+   await recoveryIO("delete").catch(e=>console.warn("Kim Flora recovery cleanup:",e));
+  }
   if($("message").textContent.startsWith("Không đồng bộ"))say("");
   setSyncStatus(hasPending()?"Đang đồng bộ…":"Đã lưu lên website");
  }catch(e){
