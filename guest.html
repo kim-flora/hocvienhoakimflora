@@ -158,10 +158,17 @@ function queuePatch(area,key,value,removed=false){
 }
 async function flushPending(){
  if(syncBusy||!adminSession)return;
- await recoveryReady;
- await recoveryWrite;
- if(!hasPending())return;
  syncBusy=true;
+ try{
+  await recoveryReady;
+  await recoveryWrite;
+ }catch(error){
+  syncBusy=false;
+  setSyncStatus("Lỗi lưu dự phòng");
+  say("Không kiểm tra được bản lưu dự phòng. Hãy sao lưu website trước khi đóng trang.");
+  return;
+ }
+ if(!hasPending()){syncBusy=false;return;}
  const batch=pending;
  // Recovery journal retains this exact batch until the server confirms it.
  pending=freshPending();
