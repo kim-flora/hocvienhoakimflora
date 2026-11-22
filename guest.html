@@ -99,7 +99,7 @@ function hasPending(q=pending){
 }
 // Keep unsent edits in IndexedDB if localStorage has reached its size limit.
 const KF_RECOVERY_DB="kf-editor-recovery-v1";
-function recoveryIO(action,value){
+function recoveryIO(action,value,recordKey="pending"){
  return new Promise((resolve,reject)=>{
   const open=indexedDB.open(KF_RECOVERY_DB,1);
   open.onupgradeneeded=()=>open.result.createObjectStore("records");
@@ -107,7 +107,7 @@ function recoveryIO(action,value){
   open.onsuccess=()=>{
    const db=open.result,tx=db.transaction("records",action==="get"?"readonly":"readwrite");
    const store=tx.objectStore("records");
-   const req=action==="get"?store.get("pending"):action==="put"?store.put(value,"pending"):store.delete("pending");
+   const req=action==="get"?store.get(recordKey):action==="put"?store.put(value,recordKey):store.delete(recordKey);
    req.onsuccess=()=>resolve(req.result);
    req.onerror=()=>reject(req.error);
    tx.oncomplete=()=>db.close();
@@ -133,17 +133,13 @@ const recoveryReady=(async()=>{
  }catch(error){console.warn("Kim Flora recovery:",error);}
 })();
 function preservePending(){
- try{
-  if(hasPending())localStorage.setItem(KF_PENDING_KEY,JSON.stringify(pending));
-  else localStorage.removeItem(KF_PENDING_KEY);
- }catch(error){
-  const backup=JSON.parse(JSON.stringify(pending));
-  recoveryWrite=recoveryWrite.then(()=>recoveryIO("put",backup)).catch(e=>{
-   console.warn("Kim Flora recovery backup:",e);
-   say("Không lưu được bản dự phòng. Hãy sao lưu website trước khi đóng trang.");
-  });
-  setSyncStatus("Đang lưu dự phòng…");
- }
+ // IndexedDB is the primary durable journal; do not duplicate multi-MB edits in localStorage.
+ const backup=JSON.parse(JSON.stringify(pending));
+ recoveryWrite=recoveryWrite.then(()=>recoveryIO("put",backup)).catch(e=>{
+  console.warn("Kim Flora recovery backup:",e);
+  setSyncStatus("Lỗi lưu dự phòng");
+  say("Không lưu được dữ liệu dự phòng. Hãy sao lưu website trước khi đóng trang.");
+ });
 }
 function setSyncStatus(text){const node=$("kfSyncStatus");if(node)node.textContent=text;}
 function queuePatch(area,key,value,removed=false){
@@ -167,7 +163,7 @@ async function flushPending(){
  if(!hasPending())return;
  syncBusy=true;
  const batch=pending;
- try{localStorage.setItem(KF_INFLIGHT_KEY,JSON.stringify(batch));}catch(_){}
+ // Recovery journal retains this exact batch until the server confirms it.
  pending=freshPending();
  try{
   const {error}=await client.rpc("kf_patch_snapshot",{
@@ -175,14 +171,10 @@ async function flushPending(){
    p_remove_local:batch.removeLocal,p_remove_indexed:batch.removeIndexed
   });
   if(error)throw error;
-  try{localStorage.removeItem(KF_INFLIGHT_KEY);}catch(_){}
-  // Acknowledge and clear the durable backup only after the server accepts the changes.
+  // On acknowledgement, atomically replace the journal with newer edits (if any).
+  recoveryWrite=recoveryWrite.then(()=>hasPending()?recoveryIO("put",JSON.parse(JSON.stringify(pending))):recoveryIO("delete"));
   await recoveryWrite;
-  if(hasPending())preservePending();
-  else {
-   try{localStorage.removeItem(KF_PENDING_KEY);}catch(_){}
-   await recoveryIO("delete").catch(e=>console.warn("Kim Flora recovery cleanup:",e));
-  }
+  try{localStorage.removeItem(KF_PENDING_KEY);localStorage.removeItem(KF_INFLIGHT_KEY);}catch(_){} 
   if($("message").textContent.startsWith("Không đồng bộ"))say("");
   setSyncStatus(hasPending()?"Đang đồng bộ…":"Đã lưu lên website");
  }catch(e){
@@ -199,7 +191,6 @@ async function flushPending(){
     if(!(k in pending[area])&&!list.includes(k))list.push(k);
   }
   preservePending();
-  try{localStorage.removeItem(KF_INFLIGHT_KEY);}catch(_){}
   setSyncStatus("Chưa đồng bộ");
   say("Không đồng bộ được. Các thay đổi đang được giữ trên thiết bị này.");
   console.warn("Kim Flora sync:",e);
@@ -358,10 +349,17 @@ recoveryForm.onsubmit=async e=>{
 
 /* KF_ADMIN_DRAFT_V1: browser-only drafts, never part of published snapshot. */
 function draftStorageKey(){return "kimflora-admin-draft-v1:"+String(adminSession?.user?.id||"");}
-function readDrafts(){
- if(!adminSession)return {};
- try{return JSON.parse(localStorage.getItem(draftStorageKey())||"{}")||{};}catch(_){return {};}
+let draftCache={};
+async function loadDrafts(){
+ if(!adminSession)return;
+ const legacy=(()=>{try{return JSON.parse(localStorage.getItem(draftStorageKey())||"{}")||{};}catch(_){return {};}})();
+ try{
+  const stored=await recoveryIO("get",undefined,"draft:"+adminSession.user.id);
+  draftCache={...legacy,...(stored&&typeof stored==="object"?stored:{})};
+  if(Object.keys(draftCache).length)await recoveryIO("put",draftCache,"draft:"+adminSession.user.id);
+ }catch(e){draftCache=legacy;console.warn("Kim Flora draft restore:",e);}
 }
+function readDrafts(){return adminSession?draftCache:{};}
 window.addEventListener("message",e=>{
  if(!adminSession||e.source!==currentFrame?.contentWindow||e.data?.type!=="kf-editor-draft")return;
  const {id,record}=e.data;
@@ -370,8 +368,11 @@ window.addEventListener("message",e=>{
  if(record===null)delete drafts[id];
  else if(record&&typeof record.value==="string"&&typeof record.base==="string")drafts[id]=record;
  else return;
- try{localStorage.setItem(draftStorageKey(),JSON.stringify(drafts));}
- catch(_){say("Không lưu được bản nháp: bộ nhớ trình duyệt đã đầy. Hãy bấm Lưu trước khi đóng trang.");}
+ draftCache=drafts;
+ recoveryWrite=recoveryWrite.then(()=>recoveryIO("put",drafts,"draft:"+adminSession.user.id)).catch(e=>{
+  console.warn("Kim Flora draft write:",e);
+  say("Không lưu được bản nháp dự phòng. Hãy bấm Lưu trước khi đóng trang.");
+ });
 });
 function installEditorDrafts(initial){
  const drafts=new Map(Object.entries(initial||{})), seen=new WeakMap();
@@ -592,6 +593,7 @@ $("adminLogin").onsubmit=async e=>{
   // Mở nội dung chính ngay sau khi xác thực; không chờ snapshot nhiều MB.
   const result=await api("admin-read",{key:"published/main"},data.session.access_token);
   editorSnapshot=await initializeAdminSnapshot(data.session.access_token);
+  await loadDrafts();
   showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("openAccountSettings").classList.remove("hidden");
   $("kfQuickBackup").classList.remove("hidden");
@@ -735,6 +737,7 @@ async function restoreAdminSession(){
   if(currentFrame){$("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");return;}
   const content=await api("admin-read",{key:"published/main"},session.access_token);
   editorSnapshot=await initializeAdminSnapshot(session.access_token);
+  await loadDrafts();
   showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("openAccountSettings").classList.remove("hidden");
   say("");
