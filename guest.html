@@ -577,10 +577,28 @@ function secureHTML(value,{readOnly=true,snapshot=null}={}){
 async function api(action,body={},bearer=null){
  const headers={"content-type":"application/json","apikey":key};
  if(bearer)headers.authorization="Bearer "+bearer;
- const r=await fetch(endpoint,{method:"POST",headers,body:JSON.stringify({action,...body})});
- let data={};try{data=await r.json()}catch{}
- if(!r.ok)throw new Error(data.error||"Máy chủ không phản hồi.");
- return data;
+ let lastError;
+ for(let attempt=0;attempt<3;attempt++){
+  try{
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),20000);
+   let r;
+   try{r=await fetch(endpoint,{method:"POST",headers,body:JSON.stringify({action,...body}),signal:controller.signal});}
+   finally{clearTimeout(timeout);}
+   let data={};try{data=await r.json()}catch{}
+   if(!r.ok){
+    const error=new Error(data.error||("Máy chủ trả lỗi "+r.status));
+    error.status=r.status;
+    throw error;
+   }
+   return data;
+  }catch(error){
+   lastError=error;
+   if(error.status&&![502,503,504,429].includes(error.status))throw error;
+   if(attempt<2)await new Promise(resolve=>setTimeout(resolve,700*(attempt+1)));
+  }
+ }
+ throw lastError;
 }
 function showContent(value,{readOnly=true,snapshot=null}={}){
  // Keep the authenticated portal mounted; topic navigation belongs to the iframe.
@@ -750,11 +768,13 @@ async function restoreAdminSession(){
   if(error||allowed!==true)return;
   adminSession=session;
   if(currentFrame){$("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");return;}
-  const [content,snapshot]=await Promise.all([
-   api("admin-read",{key:"published/main"},session.access_token),
-   initializeAdminSnapshot(session.access_token),
-   loadDrafts()
-  ]);
+  // The published document is required; snapshot and local drafts are optional.
+  // Do not block a valid admin session if a large snapshot fails to load.
+  const content=await api("admin-read",{key:"published/main"},session.access_token);
+  let snapshot={format:1,local:{},indexed:{}};
+  try{snapshot=await initializeAdminSnapshot(session.access_token);}
+  catch(error){console.warn("Optional snapshot unavailable",error);}
+  try{await loadDrafts();}catch(error){console.warn("Optional drafts unavailable",error);}
   editorSnapshot=snapshot;
   showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("openAccountSettings").classList.remove("hidden");
