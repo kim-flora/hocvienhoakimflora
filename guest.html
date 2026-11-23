@@ -598,16 +598,21 @@ $("adminLogin").onsubmit=async e=>{
   adminSession=data.session;
   $("adminPassword").value="";
   // Mở nội dung chính ngay sau khi xác thực; không chờ snapshot nhiều MB.
-  const [result,snapshot]=await Promise.all([
-   api("admin-read",{key:"published/main"},data.session.access_token),
-   initializeAdminSnapshot(data.session.access_token),
-   loadDrafts()
-  ]);
-  editorSnapshot=snapshot;
-  showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
+  // Authentication is complete here. Do not leave the login screen visible
+  // while the large lesson snapshot is loading.
+  $("loginPanel").classList.add("hidden");
+  $("contentPanel").classList.remove("hidden");
   $("openAccountSettings").classList.remove("hidden");
   $("kfQuickBackup").classList.remove("hidden");
+  say("Đã đăng nhập. Đang tải dữ liệu bài học, vui lòng chờ…");
+  const result=await api("admin-read",{key:"published/main"},data.session.access_token);
+  // Snapshot may be tens of MB. Keep the portal responsive and show progress.
+  say("Đang khôi phục nội dung chỉnh sửa từ máy chủ…");
+  const snapshot=await initializeAdminSnapshot(data.session.access_token);
+  editorSnapshot=snapshot;
+  showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   say("");
+  void loadDrafts().catch(err=>console.warn("Tải bản nháp:",err));
   // Nạp dữ liệu chỉnh sửa và danh sách khách ở nền, không chặn đăng nhập.
 
   void listGuests().catch(err=>console.warn("Tải danh sách Guest:",err));
