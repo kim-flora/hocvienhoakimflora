@@ -598,9 +598,12 @@ $("adminLogin").onsubmit=async e=>{
   adminSession=data.session;
   $("adminPassword").value="";
   // Mở nội dung chính ngay sau khi xác thực; không chờ snapshot nhiều MB.
-  const result=await api("admin-read",{key:"published/main"},data.session.access_token);
-  editorSnapshot=await initializeAdminSnapshot(data.session.access_token);
-  await loadDrafts();
+  const [result,snapshot]=await Promise.all([
+   api("admin-read",{key:"published/main"},data.session.access_token),
+   initializeAdminSnapshot(data.session.access_token),
+   loadDrafts()
+  ]);
+  editorSnapshot=snapshot;
   showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("openAccountSettings").classList.remove("hidden");
   $("kfQuickBackup").classList.remove("hidden");
@@ -742,9 +745,12 @@ async function restoreAdminSession(){
   if(error||allowed!==true)return;
   adminSession=session;
   if(currentFrame){$("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");return;}
-  const content=await api("admin-read",{key:"published/main"},session.access_token);
-  editorSnapshot=await initializeAdminSnapshot(session.access_token);
-  await loadDrafts();
+  const [content,snapshot]=await Promise.all([
+   api("admin-read",{key:"published/main"},session.access_token),
+   initializeAdminSnapshot(session.access_token),
+   loadDrafts()
+  ]);
+  editorSnapshot=snapshot;
   showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
   $("openAccountSettings").classList.remove("hidden");
   say("");
