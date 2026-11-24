@@ -27,6 +27,11 @@ function connectFrame(actions, selected) {
   }
   window.addEventListener("message", event => {
     const message = event.data;
+    if (event.source === parent && message?.channel === 'kf-module-saved') {
+      const body = document.querySelector('[data-kf-loaded="' + CSS.escape(message.key) + '"]');
+      if (body) body.innerHTML = message.body;
+      return;
+    }
     if (event.source !== parent || message?.channel !== "kf-module-result" || !pending.delete(message.key)) return;
     const node = document.querySelector('[data-kf-fragment="' + CSS.escape(message.key) + '"]');
     if (!node || message.error) return;
@@ -35,7 +40,17 @@ function connectFrame(actions, selected) {
     if (message.body !== null && template.content.firstElementChild) {
       template.content.firstElementChild.innerHTML = message.body;
     }
+    if (template.content.firstElementChild) template.content.firstElementChild.dataset.kfLoaded = message.key;
+    const detailsForLesson = node.parentElement;
     node.replaceWith(template.content);
+    if (message.editable) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = "Chỉnh sửa bài";
+      button.onclick = () => send("edit", message.key);
+      const section = detailsForLesson;
+      section.append(button);
+    }
   });
   document.addEventListener("click", event => {
     const control = event.target.closest("button[onclick]");
@@ -56,10 +71,11 @@ function connectFrame(actions, selected) {
   document.addEventListener("toggle", loadVisible, true);
 }
 
-export function attachPageNavigation(store, renderFrame, reportError) {
+export function attachPageNavigation(store, renderFrame, reportError, editLesson) {
   let frame, active, sequence = 0;
   const allowed = new Set(["root", ...Object.values(pageActions)]);
   const catalog = new Set();
+  const opened = new Map();
   let root;
   async function open(page) {
     const id = ++sequence;
@@ -70,6 +86,7 @@ export function attachPageNavigation(store, renderFrame, reportError) {
     const parts = page === "root" ? [] : await store.fragments(page);
     if (id !== sequence) return false;
     catalog.clear();
+    opened.clear();
     const moduleHtml = parts.map(part => {
       if (part.html !== undefined) return part.html;
       if (!part.child.startsWith(page + "/") || !/^\d+$/.test(part.child.slice(page.length + 1))) throw new Error("Mã bài không hợp lệ.");
@@ -94,12 +111,24 @@ export function attachPageNavigation(store, renderFrame, reportError) {
           url.searchParams.set("page", msg.key);
           history.pushState(null, "", url);
         }
+      } else if (msg.type === "edit" && editLesson && opened.has(msg.key)) {
+        const target = frame;
+        const lesson = opened.get(msg.key);
+        await editLesson(lesson, async html => {
+          const saved = await store.saveLesson(lesson, html);
+          if (frame === target) {
+            opened.set(msg.key, saved);
+            target.contentWindow.postMessage({channel:"kf-module-saved", key:msg.key, body:html},"*");
+          }
+        });
       } else if (msg.type === "lesson" && catalog.has(msg.key)) {
         const target = frame;
         const lesson = await store.openLesson(msg.key, "local");
-        if (target === frame) target.contentWindow.postMessage({
+        if (target !== frame) return;
+        opened.set(msg.key, lesson);
+        target.contentWindow.postMessage({
           channel: "kf-module-result", key: msg.key,
-          html: lesson.original.map(part => part.html).join(""), body: lesson.body
+          editable: Boolean(editLesson), html: lesson.original.map(part => part.html).join(""), body: lesson.body
         }, "*");
       }
     } catch (error) {
