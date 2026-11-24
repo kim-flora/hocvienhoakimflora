@@ -13,6 +13,14 @@ const pageActions = {
 
 function connectFrame(actions, selected, titles, editable, labels, tabs, reveal) {
   const send = (type, key) => parent.postMessage({ channel: "kf-module", type, key }, "*");
+  const editorActions = new WeakMap();
+  window.addEventListener("click", event => {
+    const action = editorActions.get(event.target.closest?.("button"));
+    if (!action) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    action();
+  }, true);
   const pending = new Set();
   function loadVisible() {
     for (const node of document.querySelectorAll("[data-kf-fragment]")) {
@@ -127,7 +135,7 @@ function connectFrame(actions, selected, titles, editable, labels, tabs, reveal)
           button.type = "button";
           button.textContent = buttonText;
           if(summary || group) button.style.cssText="font:inherit;font-size:12px;font-weight:700;color:#34445c;background:white;border:1px solid #cfdaeb;border-radius:8px;padding:7px 9px;cursor:pointer;margin:2px 4px;"+(action==="edit"?"margin-inline-start:auto":"");
-          button.onclick = event => {event.preventDefault();event.stopPropagation();parent.postMessage({channel:"kf-module",type:action,key,caption:isIntro?heading?.textContent:label?.textContent},"*");};
+          editorActions.set(button, () => parent.postMessage({channel:"kf-module",type:action,key,caption:isIntro?heading?.textContent:label?.textContent},"*"));
           if(isIntro && action==="rename" && heading)heading.after(button);else if(summary && label && action==="rename")label.after(button);else controls.append(button);
         }
       }
