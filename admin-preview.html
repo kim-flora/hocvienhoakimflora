@@ -995,6 +995,7 @@ function editLesson(lesson, save, append = false) {
   toolbar.append(title,submit,cancel);dialog.append(toolbar,status,editor);document.body.append(dialog);dialog.showModal();
 }
 
+let modularPreview=false;
 async function openModularPreview(){
  await attachPageNavigation(createLessonStore(client),html=>{
   showContent(html,{readOnly:true,moduleAdmin:true});
@@ -1003,6 +1004,8 @@ async function openModularPreview(){
    showAccountSettings();
    $("adminNewPassword").focus();
  });
+ modularPreview=true;
+ $("kfQuickBackup").classList.remove("hidden");
  say("");
  return true;
 }
@@ -1123,6 +1126,13 @@ $("kfImportHtml").onclick=async()=>{
 };
 $("kfQuickBackup").onclick=async()=>{
  try{
+  if(modularPreview){
+   const {data,error}=await client.rpc("kf_export_modular_backup");
+   if(error)throw error;
+   downloadJSON(data);
+   say("Đã tải bản sao lưu dữ liệu phân hệ.");
+   return;
+  }
   const snapshot=await readEditor();
   const current=await api("admin-read",{key:"published/main"},adminSession.access_token);
   const backup={...snapshot,websiteHTML:current.value?.html||""};
