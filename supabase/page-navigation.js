@@ -11,7 +11,7 @@ const pageActions = {
   openCompositionKnowledge: "compositionKnowledgePage"
 };
 
-function connectFrame(actions, selected, titles, editable, labels) {
+function connectFrame(actions, selected, titles, editable, labels, tabs) {
   const send = (type, key) => parent.postMessage({ channel: "kf-module", type, key }, "*");
   const pending = new Set();
   function loadVisible() {
@@ -53,6 +53,23 @@ function connectFrame(actions, selected, titles, editable, labels) {
     send("page", target);
   }, true);
   window.addEventListener("load", () => {
+    const buttons = Object.entries(actions).map(([name,key])=>[document.querySelector('button[onclick^="'+name+'("]'),key]).filter(([node])=>node);
+    const bar=buttons[0]?.[0].parentElement;
+    if(bar && editable){
+      function add(text,onclick){const b=document.createElement("button");b.type="button";b.className=buttons[0][0].className;b.textContent=text;b.onclick=onclick;bar.append(b);return b;}
+      for(const [key,entry] of Object.entries(tabs).sort((a,b)=>a[1].position-b[1].position)){
+        const found=buttons.find(pair=>pair[1]===key);
+        if(found)found[0].textContent=entry.title;
+        else if(key.startsWith("tab-"))buttons.push([add(entry.title,()=>send("page",key)),key]);
+      }
+      add("+ Thêm tab",()=>send("addTab","root"));
+      add("Đổi tên tab",()=>{
+        const select=document.createElement("select");select.add(new Option("Chọn tab cần đổi tên",""));
+        for(const [node,key] of buttons)select.add(new Option(node.textContent,key));
+        select.onchange=()=>{if(select.value)parent.postMessage({channel:"kf-module",type:"renameTab",key:select.value,caption:select.selectedOptions[0].textContent,revision:tabs[select.value]?.revision||0},"*");select.remove();};
+        bar.append(select);select.focus();
+      });
+    }
     if (selected === "compositionKnowledgePage") {
       for (const node of document.querySelectorAll("[data-kf-fragment]")) {
         const title = titles[node.dataset.kfFragment.split("/")[1]];
@@ -86,10 +103,10 @@ function connectFrame(actions, selected, titles, editable, labels) {
         if(label && labels[key]) label.textContent=labels[key].title;
         const isIntro=key===selected+"/intro";
         if (summary) summary.append(host); else (page.querySelector(".knowledge-top-actions")||node.parentElement).prepend(host);
-        for (const [action,label] of [["edit","Chỉnh sửa nội dung"],["append","Thêm nội dung"],["rename",isIntro?"Sửa tiêu đề lớn":"Sửa tiêu đề thư mục"],...(isIntro?[["add","+ Thêm mục mới"]]:[])]) {
+        for (const [action,buttonText] of [["edit","Chỉnh sửa nội dung"],["append","Thêm nội dung"],["rename",isIntro?"Sửa tiêu đề lớn":"Sửa tiêu đề thư mục"],...(isIntro?[["add","+ Thêm mục mới"]]:[])]) {
           const button = document.createElement("button");
           button.type = "button";
-          button.textContent = label;
+          button.textContent = buttonText;
           button.style.cssText = "font:inherit;padding:.35em .65em;margin:.2em;cursor:pointer";
           button.onclick = event => {event.preventDefault();event.stopPropagation();parent.postMessage({channel:"kf-module",type:action,key,caption:isIntro?heading?.textContent:label?.textContent},"*");};
           controls.append(button);
@@ -109,6 +126,8 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
   let root, currentLabels={};
   async function open(page) {
     const id = ++sequence;
+    const tabs=editLesson?await store.tabTitles():{};
+    for(const key of Object.keys(tabs))allowed.add(key);
     if (!allowed.has(page)) throw new Error("Trang không tồn tại.");
     root ??= store.fragments("root").catch(error => { root = undefined; throw error; });
     const rootParts = await root;
@@ -131,7 +150,7 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
     if(id!==sequence)return false;
     currentLabels=labels;
     for(const key of Object.keys(labels)) if(key.startsWith(page+"/added-")) catalog.add(key);
-    const bridge = "<script>(" + connectFrame.toString() + ")(" + JSON.stringify(pageActions) + "," + JSON.stringify(page) + "," + JSON.stringify(titles).replace(/</g,"\\u003c") + "," + Boolean(editLesson) + "," + JSON.stringify(labels).replace(/</g,"\\u003c") + ")<" + "/script>";
+    const bridge = "<script>(" + connectFrame.toString() + ")(" + JSON.stringify(pageActions) + "," + JSON.stringify(page) + "," + JSON.stringify(titles).replace(/</g,"\\u003c") + "," + Boolean(editLesson) + "," + JSON.stringify(labels).replace(/</g,"\\u003c") + "," + JSON.stringify(tabs).replace(/</g,"\\u003c") + ")<" + "/script>";
     active = page;
     frame = renderFrame(html.replace(/<head\b[^>]*>/i, match => match + bridge));
     return true;
@@ -142,7 +161,13 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
     const msg = event.data;
     if (!frame || event.source !== frame.contentWindow || msg?.channel !== "kf-module") return;
     try {
-      if ((msg.type==="rename" || msg.type==="add") && editLesson && catalog.has(msg.key)){
+      if(editLesson && (msg.type==="addTab" || msg.type==="renameTab" && allowed.has(msg.key) && msg.key!=="root")){
+        const adding=msg.type==="addTab", title=window.prompt(adding?"Tên tab mới":"Đổi tên tab",adding?"":msg.caption);
+        if(!title?.trim())return;
+        if(adding){await store.addTab(title);root=undefined;}
+        else await store.setLabel(msg.key,msg.key,title,msg.revision);
+        await open(active);
+      } else if ((msg.type==="rename" || msg.type==="add") && editLesson && catalog.has(msg.key)){
         const page=active;
         const key=msg.type==="add"?null:msg.key===page+"/intro"?page:msg.key;
         const title=window.prompt(key?"Sửa tiêu đề":"Tiêu đề mục mới",key?String(msg.caption||""):"");
