@@ -766,23 +766,8 @@ function createLessonStore(client) {
     return rpc("kf_read_page_fragment", { p_key: key });
   }
 
-  async function openLesson(key, area) {
-    const [parts, preferred] = await Promise.all([
-      fragments(key),
-      rpc("kf_read_lesson_edit", { p_key: key, p_area: area })
-    ]);
-    let edit = preferred;
-    if (edit === null && area === "local") {
-      const indexed = await rpc("kf_read_lesson_edit", { p_key: key, p_area: "indexed" });
-      if (indexed !== null) {
-        area = "indexed";
-        edit = indexed;
-      }
-    }
-    return {
-      key, area, original: parts, body: edit?.body ?? null,
-      revision: edit?.revision ?? 0
-    };
+  function openLesson(key, area) {
+    return rpc("kf_open_lesson", { p_key: key, p_area: area });
   }
 
   async function saveLesson(lesson, html) {
