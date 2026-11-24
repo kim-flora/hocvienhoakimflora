@@ -64,9 +64,11 @@ export function attachPageNavigation(store, renderFrame, reportError) {
   async function open(page) {
     const id = ++sequence;
     if (!allowed.has(page)) throw new Error("Trang không tồn tại.");
-    root ??= await store.fragments("root");
+    root ??= store.fragments("root").catch(error => { root = undefined; throw error; });
+    const rootParts = await root;
+    if (id !== sequence) return false;
     const parts = page === "root" ? [] : await store.fragments(page);
-    if (id !== sequence) return;
+    if (id !== sequence) return false;
     catalog.clear();
     const moduleHtml = parts.map(part => {
       if (part.html !== undefined) return part.html;
@@ -74,10 +76,11 @@ export function attachPageNavigation(store, renderFrame, reportError) {
       catalog.add(part.child);
       return '<div class="knowledge-content" data-kf-fragment="' + part.child + '"></div>';
     }).join("");
-    const html = root.map(part => part.html ?? (part.child === page ? moduleHtml : "")).join("");
+    const html = rootParts.map(part => part.html ?? (part.child === page ? moduleHtml : "")).join("");
     const bridge = "<script>(" + connectFrame.toString() + ")(" + JSON.stringify(pageActions) + "," + JSON.stringify(page) + ")<" + "/script>";
     active = page;
     frame = renderFrame(html.replace(/<head\b[^>]*>/i, match => match + bridge));
+    return true;
   }
   const fromUrl = () => new URL(location.href).searchParams.get("page") || "root";
   window.addEventListener("popstate", () => open(fromUrl()).catch(reportError));
@@ -86,8 +89,7 @@ export function attachPageNavigation(store, renderFrame, reportError) {
     if (!frame || event.source !== frame.contentWindow || msg?.channel !== "kf-module") return;
     try {
       if (msg.type === "page" && allowed.has(msg.key) && msg.key !== active) {
-        await open(msg.key);
-        if (active === msg.key) {
+        if (await open(msg.key)) {
           const url = new URL(location.href);
           url.searchParams.set("page", msg.key);
           history.pushState(null, "", url);
