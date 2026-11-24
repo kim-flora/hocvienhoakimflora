@@ -614,13 +614,13 @@ async function api(action,body={},bearer=null){
 }
 async function openModularPreview(){
  if(new URLSearchParams(location.search).get("preview")!=="modules")return false;
- const [{createLessonStore},{attachPageNavigation}]=await Promise.all([
-  import("./supabase/lesson-store.js"),import("./supabase/page-navigation.js")
+ const [{createLessonStore},{attachPageNavigation},{editLesson}]=await Promise.all([
+  import("./supabase/lesson-store.js"),import("./supabase/page-navigation.js"),import("./supabase/edit-lesson.js")
  ]);
  await attachPageNavigation(createLessonStore(client),html=>{
   showContent(html,{readOnly:true});
   return currentFrame;
- },error=>say(error.message||"Không tải được bài học."));
+ },error=>say(error.message||"Không tải được bài học."),editLesson);
  say("");
  return true;
 }
