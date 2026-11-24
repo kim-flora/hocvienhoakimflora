@@ -879,9 +879,10 @@ function attachPageNavigation(store, renderFrame, reportError, editLesson, openP
       } else if ((msg.type === "edit" || msg.type === "append") && editLesson && catalog.has(msg.key)) {
         const target = frame;
         await openEditor("local");
-        async function openEditor(area) {
+        async function openEditor(area, beforeOpen) {
           const lesson = await store.openLesson(msg.key,area);
-          if(target!==frame)return;
+          if(target!==frame)throw new Error("Trang bài học đã thay đổi.");
+          if(beforeOpen && beforeOpen()===false)return;
           await editLesson(lesson, async html => {
             await store.saveLesson(lesson,html);
             await refreshLesson();
@@ -1045,10 +1046,24 @@ function editLesson(lesson, save, append = false, history) {
     otherArea.textContent=lesson.area==="local"?"Mở bản indexed":"Mở bản local ưu tiên";
     const currentArea=document.createElement("span");
     currentArea.textContent="Đang sửa bản "+lesson.area;
-    otherArea.onclick=()=>{
-      if(busy||(changed&&!window.confirm("Bỏ phần nội dung chưa lưu?")))return;
-      dialog.remove();
-      history.switchArea(lesson.area==="local"?"indexed":"local").catch(error=>say(error.message));
+    otherArea.onclick=async()=>{
+      if(busy)return;
+      busy=true;
+      submit.disabled=cancel.disabled=otherArea.disabled=true;
+      status.textContent="Đang mở phiên bản…";
+      try{
+        await history.switchArea(lesson.area==="local"?"indexed":"local",()=>{
+          status.textContent="";
+          if(changed&&!window.confirm("Bỏ phần nội dung chưa lưu?"))return false;
+          dialog.remove();
+        });
+      }catch(error){
+        status.textContent="Chưa mở được phiên bản khác. Nội dung đang sửa vẫn ở đây.";
+      }finally{
+        busy=false;
+        submit.disabled=!changed;
+        cancel.disabled=otherArea.disabled=false;
+      }
     };
     toolbar.append(currentArea,otherArea,versions,revisions);
   }
