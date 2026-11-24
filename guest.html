@@ -77,6 +77,12 @@ const KF_PENDING_KEY="kf_editor_unsynced_v1";
 const KF_INFLIGHT_KEY="kf_editor_inflight_v1";
 const freshPending=()=>({local:{},indexed:{},removeLocal:[],removeIndexed:[]});
 let pending=freshPending(),syncBusy=false,syncTimer=null;
+let syncFailures=0,syncRetryAt=0,loginInProgress=false;
+function scheduleSync(delay=850){
+ clearTimeout(syncTimer);
+ syncTimer=setTimeout(()=>void flushPending(),Math.max(delay,syncRetryAt-Date.now()));
+}
+
 try{
  const restored=JSON.parse(localStorage.getItem(KF_PENDING_KEY)||"null");
  if(restored&&typeof restored==="object"){
@@ -153,11 +159,11 @@ function queuePatch(area,key,value,removed=false){
  }
  preservePending();
  setSyncStatus("Đang đồng bộ…");
- clearTimeout(syncTimer);
- syncTimer=setTimeout(()=>void flushPending(),850);
+ scheduleSync();
 }
 async function flushPending(){
  if(syncBusy||!adminSession)return;
+ if(Date.now()<syncRetryAt){scheduleSync();return;}
  syncBusy=true;
  try{
   await recoveryReady;
@@ -178,6 +184,7 @@ async function flushPending(){
    p_remove_local:batch.removeLocal,p_remove_indexed:batch.removeIndexed
   });
   if(error)throw error;
+  syncFailures=0;syncRetryAt=0;
   // On acknowledgement, atomically replace the journal with newer edits (if any).
   recoveryWrite=recoveryWrite.then(()=>hasPending()?recoveryIO("put",JSON.parse(JSON.stringify(pending))):recoveryIO("delete"));
   await recoveryWrite;
@@ -198,12 +205,14 @@ async function flushPending(){
     if(!(k in pending[area])&&!list.includes(k))list.push(k);
   }
   preservePending();
+  syncFailures++;
+  syncRetryAt=Date.now()+Math.min(300000,15000*2**Math.min(syncFailures-1,5));
   setSyncStatus("Chưa đồng bộ");
   say("Không đồng bộ được. Các thay đổi đang được giữ trên thiết bị này.");
   console.warn("Kim Flora sync:",e);
  }finally{
   syncBusy=false;
-  if(hasPending())syncTimer=setTimeout(()=>void flushPending(),5000);
+  if(hasPending())scheduleSync(850);
  }
 }
 window.addEventListener("message",e=>{
@@ -607,12 +616,13 @@ function showContent(value,{readOnly=true,snapshot=null}={}){
  $("viewer").replaceChildren(secureHTML(value||"<p>Chưa có nội dung được xuất bản trên máy chủ.</p>",{readOnly,snapshot}));
 }
 $("adminLogin").onsubmit=async e=>{
- e.preventDefault();say("Đang đăng nhập...");
+ e.preventDefault();if(loginInProgress||restoring)return;loginInProgress=true;say("Đang đăng nhập...");
  try{
   const {data,error}=await client.auth.signInWithPassword({email:$("adminEmail").value,password:$("adminPassword").value});
   if(error)throw error;
   const {data:allowed,error:rpcError}=await client.rpc("kf_is_admin");
-  if(rpcError||allowed!==true){await client.auth.signOut();throw new Error("Tài khoản không được cấp quyền quản trị.");}
+  if(rpcError)throw rpcError;
+  if(allowed!==true){await client.auth.signOut();throw new Error("Tài khoản không được cấp quyền quản trị.");}
   adminSession=data.session;
   $("adminPassword").value="";
   // Mở nội dung chính ngay sau khi xác thực; không chờ snapshot nhiều MB.
@@ -635,7 +645,7 @@ $("adminLogin").onsubmit=async e=>{
 
   void listGuests().catch(err=>console.warn("Tải danh sách Guest:",err));
   void flushPending();
- }catch(err){say(err.message)}
+ }catch(err){say(err.message)}finally{loginInProgress=false;}
 };
 
 $("createGuest").onclick=async()=>{
@@ -759,7 +769,7 @@ $("logout").onclick=async()=>{
 // Restore authenticated administrator after a reload or token refresh.
 let restoring=false;
 async function restoreAdminSession(){
- if(!adminMode||restoring)return;
+ if(!adminMode||restoring||loginInProgress)return;
  restoring=true;
  try{
   const {data:{session}}=await client.auth.getSession();
@@ -789,7 +799,7 @@ async function restoreAdminSession(){
 if(adminMode){
  await restoreAdminSession();
  client.auth.onAuthStateChange((event,session)=>{
-  if((event==="INITIAL_SESSION"||event==="SIGNED_IN")&&session&&!currentFrame)
+  if((event==="INITIAL_SESSION"||event==="SIGNED_IN")&&session&&!currentFrame&&!loginInProgress)
    setTimeout(()=>void restoreAdminSession(),0);
   if(event==="TOKEN_REFRESHED"&&session&&adminSession)adminSession=session;
  });
