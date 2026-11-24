@@ -36,5 +36,8 @@ export function createLessonStore(client) {
     return openLesson(lesson.key, lesson.area);
   }
 
-  return { fragments, openLesson, saveLesson, listRevisions, restoreRevision, compositionTitles: () => rpc("kf_composition_titles", {}) };
+  return { fragments, openLesson, saveLesson, listRevisions, restoreRevision,
+    labels: page=>rpc("kf_outline_labels",{p_page:page}),
+    setLabel: (page,key,title,revision)=>rpc("kf_edit_outline",{p_page:page,p_key:key,p_title:title,p_revision:revision}),
+    compositionTitles: () => rpc("kf_composition_titles", {}) };
 }
