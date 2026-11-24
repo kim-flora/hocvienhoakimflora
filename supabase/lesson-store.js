@@ -36,5 +36,5 @@ export function createLessonStore(client) {
     return openLesson(lesson.key, lesson.area);
   }
 
-  return { fragments, openLesson, saveLesson, listRevisions, restoreRevision };
+  return { fragments, openLesson, saveLesson, listRevisions, restoreRevision, compositionTitles: () => rpc("kf_composition_titles", {}) };
 }
