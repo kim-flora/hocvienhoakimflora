@@ -264,9 +264,10 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
       } else if ((msg.type === "edit" || msg.type === "append") && editLesson && catalog.has(msg.key)) {
         const target = frame;
         await openEditor("local");
-        async function openEditor(area) {
+        async function openEditor(area, beforeOpen) {
           const lesson = await store.openLesson(msg.key,area);
-          if(target!==frame)return;
+          if(target!==frame)throw new Error("Trang bài học đã thay đổi.");
+          if(beforeOpen && beforeOpen()===false)return;
           await editLesson(lesson, async html => {
             await store.saveLesson(lesson,html);
             await refreshLesson();
