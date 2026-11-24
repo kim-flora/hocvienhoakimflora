@@ -135,8 +135,12 @@ function connectFrame(actions, selected, titles, editable, labels, tabs, reveal)
           button.type = "button";
           button.textContent = buttonText;
           if(summary || group) button.style.cssText="font:inherit;font-size:12px;font-weight:700;color:#34445c;background:white;border:1px solid #cfdaeb;border-radius:8px;padding:7px 9px;cursor:pointer;margin:2px 4px;"+(action==="edit"?"margin-inline-start:auto":"");
-          editorActions.set(button, () => parent.postMessage({channel:"kf-module",type:action,key,caption:isIntro?heading?.textContent:label?.textContent},"*"));
-          if(isIntro && action==="rename" && heading)heading.after(button);else if(summary && label && action==="rename")label.after(button);else controls.append(button);
+          editorActions.set(button, () => parent.postMessage({channel:"kf-module",type:action,key,caption:isIntro?heading?.textContent:group?Array.from(group.childNodes).filter(node=>node!==button).map(node=>node.textContent).join("").trim():label?.textContent},"*"));
+          if(action==="rename" && label){
+            button.style.cssText += ";display:inline-flex;width:auto;max-width:100%;white-space:nowrap;vertical-align:middle;margin-inline-start:8px";
+            if(group)group.append(button);else label.after(button);
+          }else if(isIntro && action==="rename" && heading)heading.after(button);
+          else controls.append(button);
         }
       }
     }
