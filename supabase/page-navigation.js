@@ -44,12 +44,17 @@ function connectFrame(actions, selected, titles) {
     const detailsForLesson = node.parentElement;
     node.replaceWith(template.content);
     if (message.editable) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = "Chỉnh sửa bài";
-      button.onclick = () => send("edit", message.key);
-      const section = detailsForLesson;
-      section.append(button);
+      const host = document.createElement("div");
+      const controls = host.attachShadow({mode:"closed"});
+      for (const [action,label] of [["edit","Chỉnh sửa bài"],["append","Thêm nội dung"]]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.style.cssText = "font:inherit;color:inherit;padding:.35em .7em;margin:.25em;cursor:pointer";
+        button.onclick = () => send(action, message.key);
+        controls.append(button);
+      }
+      detailsForLesson.append(host);
     }
   });
   document.addEventListener("click", event => {
@@ -120,7 +125,7 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
           url.searchParams.set("page", msg.key);
           history.pushState(null, "", url);
         }
-      } else if (msg.type === "edit" && editLesson && opened.has(msg.key)) {
+      } else if ((msg.type === "edit" || msg.type === "append") && editLesson && opened.has(msg.key)) {
         const target = frame;
         const lesson = opened.get(msg.key);
         await editLesson(lesson, async html => {
@@ -129,7 +134,7 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
             opened.set(msg.key, saved);
             target.contentWindow.postMessage({channel:"kf-module-saved", key:msg.key, body:html},"*");
           }
-        });
+        }, msg.type === "append");
       } else if (msg.type === "lesson" && catalog.has(msg.key)) {
         const target = frame;
         const lesson = await store.openLesson(msg.key, "local");
