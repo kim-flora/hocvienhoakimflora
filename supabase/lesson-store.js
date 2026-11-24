@@ -11,10 +11,18 @@ export function createLessonStore(client) {
   }
 
   async function openLesson(key, area) {
-    const [parts, edit] = await Promise.all([
+    const [parts, preferred] = await Promise.all([
       fragments(key),
       rpc("kf_read_lesson_edit", { p_key: key, p_area: area })
     ]);
+    let edit = preferred;
+    if (edit === null && area === "local") {
+      const indexed = await rpc("kf_read_lesson_edit", { p_key: key, p_area: "indexed" });
+      if (indexed !== null) {
+        area = "indexed";
+        edit = indexed;
+      }
+    }
     return {
       key, area, original: parts, body: edit?.body ?? null,
       revision: edit?.revision ?? 0
