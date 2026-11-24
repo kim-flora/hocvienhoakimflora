@@ -62,13 +62,18 @@ function connectFrame(actions, selected, titles, editable, labels, tabs) {
         if(found)found[0].textContent=entry.title;
         else if(key.startsWith("tab-"))buttons.push([add(entry.title,()=>send("page",key)),key]);
       }
+      const password=add("Đổi mật khẩu",()=>send("password","root"));
+      password.style.cssText="background:#e2e8ff;color:#3231ae;border-color:#e2e8ff";
       add("+ Thêm tab",()=>send("addTab","root"));
-      add("Đổi tên tab",()=>{
+      const renameTab=add("Đổi tên tab",()=>{
         const select=document.createElement("select");select.add(new Option("Chọn tab cần đổi tên",""));
         for(const [node,key] of buttons)select.add(new Option(node.textContent,key));
         select.onchange=()=>{if(select.value)parent.postMessage({channel:"kf-module",type:"renameTab",key:select.value,caption:select.selectedOptions[0].textContent,revision:tabs[select.value]?.revision||0},"*");select.remove();};
         bar.append(select);select.focus();
       });
+      for(const node of [password.nextElementSibling,renameTab])node.style.cssText=password.style.cssText;
+      add("+ Tab",()=>send("addTab","root"));
+      add("Đổi tên",()=>renameTab.click());
     }
     if (selected === "compositionKnowledgePage") {
       for (const node of document.querySelectorAll("[data-kf-fragment]")) {
@@ -97,19 +102,20 @@ function connectFrame(actions, selected, titles, editable, labels, tabs) {
       for (const node of page.querySelectorAll("[data-kf-fragment]")) {
         const key = node.dataset.kfFragment;
         const host = document.createElement("span");
-        const controls = host.attachShadow({mode:"closed"});
+        const controls = host;
         const summary = node.closest("details")?.querySelector(":scope > summary");
         const label=summary?.querySelector(".knowledge-index + span") || summary?.querySelector("span");
         if(label && labels[key]) label.textContent=labels[key].title;
         const isIntro=key===selected+"/intro";
-        if (summary) summary.append(host); else (page.querySelector(".knowledge-top-actions")||node.parentElement).prepend(host);
-        for (const [action,buttonText] of [["edit","Chỉnh sửa nội dung"],["append","Thêm nội dung"],["rename",isIntro?"Sửa tiêu đề lớn":"Sửa tiêu đề thư mục"],...(isIntro?[["add","+ Thêm mục mới"]]:[])]) {
+        if (summary) summary.append(host); else (page.querySelector(".knowledge-top-actions")||node.parentElement).append(host);
+        host.style.display="contents";
+        for (const [action,buttonText] of (isIntro ? [["add","+ Thêm tiêu đề nội dung"],["edit","✎ Chỉnh sửa nội dung"],["add","+ Thêm mục mới"],["rename","Sửa tiêu đề lớn"]] : [["edit","✎ Chỉnh sửa"],["append","+ Thêm nội dung"],["rename","Sửa tiêu đề thư mục"]])) {
           const button = document.createElement("button");
           button.type = "button";
           button.textContent = buttonText;
-          button.style.cssText = "font:inherit;padding:.35em .65em;margin:.2em;cursor:pointer";
+          if(summary) button.style.cssText="font:inherit;padding:.35em .65em;margin:.2em;cursor:pointer";
           button.onclick = event => {event.preventDefault();event.stopPropagation();parent.postMessage({channel:"kf-module",type:action,key,caption:isIntro?heading?.textContent:label?.textContent},"*");};
-          controls.append(button);
+          if(isIntro && action==="rename" && heading)heading.after(button);else controls.append(button);
         }
       }
     }
@@ -118,7 +124,7 @@ function connectFrame(actions, selected, titles, editable, labels, tabs) {
   document.addEventListener("toggle", loadVisible, true);
 }
 
-export function attachPageNavigation(store, renderFrame, reportError, editLesson) {
+export function attachPageNavigation(store, renderFrame, reportError, editLesson, openPasswordSettings) {
   let frame, active, sequence = 0;
   const allowed = new Set(["root", ...Object.values(pageActions)]);
   const catalog = new Set();
@@ -161,7 +167,8 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
     const msg = event.data;
     if (!frame || event.source !== frame.contentWindow || msg?.channel !== "kf-module") return;
     try {
-      if(editLesson && (msg.type==="addTab" || msg.type==="renameTab" && allowed.has(msg.key) && msg.key!=="root")){
+      if(editLesson && msg.type==="password"){openPasswordSettings?.();}
+      else if(editLesson && (msg.type==="addTab" || msg.type==="renameTab" && allowed.has(msg.key) && msg.key!=="root")){
         const adding=msg.type==="addTab", title=window.prompt(adding?"Tên tab mới":"Đổi tên tab",adding?"":msg.caption);
         if(!title?.trim())return;
         if(adding){await store.addTab(title);root=undefined;}
