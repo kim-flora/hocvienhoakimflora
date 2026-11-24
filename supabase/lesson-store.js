@@ -37,5 +37,19 @@ export function createLessonStore(client) {
     return { ...lesson, body: html, revision };
   }
 
-  return { fragments, openLesson, saveLesson };
+  function listRevisions(lesson, before = null) {
+    return rpc("kf_list_lesson_revisions", {
+      p_key: lesson.key, p_area: lesson.area, p_before: before
+    });
+  }
+
+  async function restoreRevision(lesson, savedRevision) {
+    await rpc("kf_restore_lesson_revision", {
+      p_key: lesson.key, p_area: lesson.area,
+      p_saved_revision: savedRevision, p_current_revision: lesson.revision
+    });
+    return openLesson(lesson.key, lesson.area);
+  }
+
+  return { fragments, openLesson, saveLesson, listRevisions, restoreRevision };
 }
