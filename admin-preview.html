@@ -736,7 +736,7 @@ function connectFrame(actions, selected, titles, editable, labels, tabs, reveal)
         const isIntro=key===selected+"/intro";
         if (summary) summary.append(host); else if(group)group.after(host); else (page.querySelector(".knowledge-top-actions")||node.parentElement).append(host);
         host.style.display="contents";
-        for (const [action,buttonText] of (isIntro ? [["add","+ Thêm tiêu đề nội dung"],["edit","✎ Chỉnh sửa nội dung"],["add","+ Thêm mục mới"],["rename","Sửa tiêu đề lớn"]] : [["rename","Đổi tiêu đề"],["child","+ Thêm tiêu đề nội dung"],["edit","✎ Chỉnh sửa"]])) {
+        for (const [action,buttonText] of (isIntro ? [["add","+ Thêm tiêu đề nội dung"],["edit","✎ Chỉnh sửa nội dung"],["add","+ Thêm mục mới"],["rename","Sửa tiêu đề lớn"]] : [["rename","Đổi tiêu đề"],["edit","✎ Chỉnh sửa"]])) {
           const button = document.createElement("button");
           button.dataset.kfModuleAction = "";
           button.type = "button";
