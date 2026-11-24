@@ -11,7 +11,7 @@ const pageActions = {
   openCompositionKnowledge: "compositionKnowledgePage"
 };
 
-function connectFrame(actions, selected) {
+function connectFrame(actions, selected, titles) {
   const send = (type, key) => parent.postMessage({ channel: "kf-module", type, key }, "*");
   const pending = new Set();
   function loadVisible() {
@@ -62,6 +62,13 @@ function connectFrame(actions, selected) {
     send("page", target);
   }, true);
   window.addEventListener("load", () => {
+    if (selected === "compositionKnowledgePage") {
+      for (const node of document.querySelectorAll("[data-kf-fragment]")) {
+        const title = titles[node.dataset.kfFragment.split("/")[1]];
+        const label = node.closest("details")?.querySelector(":scope > summary > span.knowledge-index + span");
+        if (label && typeof title === "string") label.textContent = title;
+      }
+    }
     if (selected !== "root") {
       const action = Object.keys(actions).find(name => actions[name] === selected);
       if (action && typeof window[action] === "function") window[action]();
@@ -94,7 +101,9 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
       return '<div class="knowledge-content" data-kf-fragment="' + part.child + '"></div>';
     }).join("");
     const html = rootParts.map(part => part.html ?? (part.child === page ? moduleHtml : "")).join("");
-    const bridge = "<script>(" + connectFrame.toString() + ")(" + JSON.stringify(pageActions) + "," + JSON.stringify(page) + ")<" + "/script>";
+    const titles = page === "compositionKnowledgePage" ? await store.compositionTitles() : {};
+    if (id !== sequence) return false;
+    const bridge = "<script>(" + connectFrame.toString() + ")(" + JSON.stringify(pageActions) + "," + JSON.stringify(page) + "," + JSON.stringify(titles).replace(/</g,"\\u003c") + ")<" + "/script>";
     active = page;
     frame = renderFrame(html.replace(/<head\b[^>]*>/i, match => match + bridge));
     return true;
