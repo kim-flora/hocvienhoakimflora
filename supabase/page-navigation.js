@@ -56,7 +56,7 @@ function connectFrame(actions, selected, titles, editable, labels, tabs, reveal)
     const buttons = Object.entries(actions).map(([name,key])=>[document.querySelector('button[onclick^="'+name+'("]'),key]).filter(([node])=>node);
     const bar=buttons[0]?.[0].parentElement;
     if(bar && editable){
-      function add(text,onclick){const b=document.createElement("button");b.type="button";b.className=buttons[0][0].className;b.textContent=text;b.onclick=onclick;bar.append(b);return b;}
+      function add(text,onclick){const b=document.createElement("button");b.dataset.kfModuleAction="";b.type="button";b.className=buttons[0][0].className;b.textContent=text;b.onclick=onclick;bar.append(b);return b;}
       for(const [key,entry] of Object.entries(tabs).sort((a,b)=>a[1].position-b[1].position)){
         const found=buttons.find(pair=>pair[1]===key);
         if(found)found[0].textContent=entry.title;
@@ -123,6 +123,7 @@ function connectFrame(actions, selected, titles, editable, labels, tabs, reveal)
         host.style.display="contents";
         for (const [action,buttonText] of (isIntro ? [["add","+ Thêm tiêu đề nội dung"],["edit","✎ Chỉnh sửa nội dung"],["add","+ Thêm mục mới"],["rename","Sửa tiêu đề lớn"]] : [["rename","Đổi tiêu đề"],["child","+ Thêm tiêu đề nội dung"],["edit","✎ Chỉnh sửa"]])) {
           const button = document.createElement("button");
+          button.dataset.kfModuleAction = "";
           button.type = "button";
           button.textContent = buttonText;
           if(summary || group) button.style.cssText="font:inherit;font-size:12px;font-weight:700;color:#34445c;background:white;border:1px solid #cfdaeb;border-radius:8px;padding:7px 9px;cursor:pointer;margin:2px 4px;"+(action==="edit"?"margin-inline-start:auto":"");
