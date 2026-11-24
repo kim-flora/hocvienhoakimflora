@@ -11,7 +11,7 @@ const pageActions = {
   openCompositionKnowledge: "compositionKnowledgePage"
 };
 
-function connectFrame(actions, selected, titles, editable) {
+function connectFrame(actions, selected, titles, editable, labels) {
   const send = (type, key) => parent.postMessage({ channel: "kf-module", type, key }, "*");
   const pending = new Set();
   function loadVisible() {
@@ -66,6 +66,14 @@ function connectFrame(actions, selected, titles, editable) {
     }
     const page = document.getElementById(selected);
     if (page && editable) {
+      const heading=page.querySelector(".knowledge-hero h2,h2");
+      if(heading && labels[selected]) heading.textContent=labels[selected].title;
+      for(const [key,entry] of Object.entries(labels)){
+        if(!key.startsWith(selected+"/added-"))continue;
+        const folder=document.createElement("details"),summary=document.createElement("summary"),label=document.createElement("span"),body=document.createElement("div");
+        folder.className="knowledge-section";label.textContent=entry.title;summary.append(label);body.dataset.kfFragment=key;
+        folder.append(summary,body);(page.querySelector(".knowledge-list")||page).append(folder);
+      }
       const intro = document.createElement("div");
       intro.dataset.kfFragment = selected + "/intro";
       (page.querySelector(".knowledge-shell") || page).prepend(intro);
@@ -74,13 +82,16 @@ function connectFrame(actions, selected, titles, editable) {
         const host = document.createElement("span");
         const controls = host.attachShadow({mode:"closed"});
         const summary = node.closest("details")?.querySelector(":scope > summary");
-        if (summary) summary.append(host); else node.before(host);
-        for (const [action,label] of [["edit","Chỉnh sửa"],["append","Thêm nội dung"]]) {
+        const label=summary?.querySelector(".knowledge-index + span") || summary?.querySelector("span");
+        if(label && labels[key]) label.textContent=labels[key].title;
+        const isIntro=key===selected+"/intro";
+        if (summary) summary.append(host); else (page.querySelector(".knowledge-top-actions")||node.parentElement).prepend(host);
+        for (const [action,label] of [["edit","Chỉnh sửa nội dung"],["append","Thêm nội dung"],["rename",isIntro?"Sửa tiêu đề lớn":"Sửa tiêu đề thư mục"],...(isIntro?[["add","+ Thêm mục mới"]]:[])]) {
           const button = document.createElement("button");
           button.type = "button";
           button.textContent = label;
           button.style.cssText = "font:inherit;padding:.35em .65em;margin:.2em;cursor:pointer";
-          button.onclick = event => {event.preventDefault();event.stopPropagation();send(action,key);};
+          button.onclick = event => {event.preventDefault();event.stopPropagation();parent.postMessage({channel:"kf-module",type:action,key,caption:isIntro?heading?.textContent:label?.textContent},"*");};
           controls.append(button);
         }
       }
@@ -95,7 +106,7 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
   const allowed = new Set(["root", ...Object.values(pageActions)]);
   const catalog = new Set();
   const opened = new Map();
-  let root;
+  let root, currentLabels={};
   async function open(page) {
     const id = ++sequence;
     if (!allowed.has(page)) throw new Error("Trang không tồn tại.");
@@ -116,7 +127,11 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
     const html = rootParts.map(part => part.html ?? (part.child === page ? moduleHtml : "")).join("");
     const titles = page === "compositionKnowledgePage" ? await store.compositionTitles() : {};
     if (id !== sequence) return false;
-    const bridge = "<script>(" + connectFrame.toString() + ")(" + JSON.stringify(pageActions) + "," + JSON.stringify(page) + "," + JSON.stringify(titles).replace(/</g,"\\u003c") + "," + Boolean(editLesson) + ")<" + "/script>";
+    const labels = page==="root"?{}:await store.labels(page);
+    if(id!==sequence)return false;
+    currentLabels=labels;
+    for(const key of Object.keys(labels)) if(key.startsWith(page+"/added-")) catalog.add(key);
+    const bridge = "<script>(" + connectFrame.toString() + ")(" + JSON.stringify(pageActions) + "," + JSON.stringify(page) + "," + JSON.stringify(titles).replace(/</g,"\\u003c") + "," + Boolean(editLesson) + "," + JSON.stringify(labels).replace(/</g,"\\u003c") + ")<" + "/script>";
     active = page;
     frame = renderFrame(html.replace(/<head\b[^>]*>/i, match => match + bridge));
     return true;
@@ -127,7 +142,14 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
     const msg = event.data;
     if (!frame || event.source !== frame.contentWindow || msg?.channel !== "kf-module") return;
     try {
-      if (msg.type === "page" && allowed.has(msg.key) && msg.key !== active) {
+      if ((msg.type==="rename" || msg.type==="add") && editLesson && catalog.has(msg.key)){
+        const page=active;
+        const key=msg.type==="add"?null:msg.key===page+"/intro"?page:msg.key;
+        const title=window.prompt(key?"Sửa tiêu đề":"Tiêu đề mục mới",key?String(msg.caption||""):"");
+        if(!title?.trim())return;
+        await store.setLabel(page,key,title,currentLabels[key]?.revision||0);
+        if(active===page)await open(page);
+      } else if (msg.type === "page" && allowed.has(msg.key) && msg.key !== active) {
         if (await open(msg.key)) {
           const url = new URL(location.href);
           url.searchParams.set("page", msg.key);
