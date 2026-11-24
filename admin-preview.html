@@ -626,13 +626,13 @@ const pageActions = {
   openCompositionKnowledge: "compositionKnowledgePage"
 };
 
-function connectFrame(actions, selected, titles, editable, labels, tabs) {
+function connectFrame(actions, selected, titles, editable, labels, tabs, reveal) {
   const send = (type, key) => parent.postMessage({ channel: "kf-module", type, key }, "*");
   const pending = new Set();
   function loadVisible() {
     for (const node of document.querySelectorAll("[data-kf-fragment]")) {
       const details = node.closest("details");
-      if (!node.dataset.kfFragment.endsWith("/intro") && (!details?.open || !node.getClientRects().length)) continue;
+      if (!node.dataset.kfFragment.endsWith("/intro") && ((details && !details.open) || !node.getClientRects().length)) continue;
       const key = node.dataset.kfFragment;
       if (!pending.has(key)) {
         pending.add(key);
@@ -705,12 +705,23 @@ function connectFrame(actions, selected, titles, editable, labels, tabs) {
     if (page && editable) {
       const heading=page.querySelector(".knowledge-hero h2,h2");
       if(heading && labels[selected]) heading.textContent=labels[selected].title;
-      for(const [key,entry] of Object.entries(labels)){
+      const anchors=new Map();
+      const list=page.querySelector(".knowledge-list")||page;
+      function anchor(node){
+        const details=node.closest("details");
+        const container=document.createElement("div");
+        if(details)details.append(container);else node.after(container);
+        anchors.set(node.dataset.kfFragment,container);
+      }
+      for(const node of page.querySelectorAll("[data-kf-fragment]"))anchor(node);
+      const added=[];
+      for(const [key,entry] of Object.entries(labels).sort((a,b)=>String(a[1].created).localeCompare(String(b[1].created)))){
         if(!key.startsWith(selected+"/added-"))continue;
         const folder=document.createElement("details"),summary=document.createElement("summary"),label=document.createElement("span"),body=document.createElement("div");
         folder.className="knowledge-section";label.textContent=entry.title;summary.append(label);body.dataset.kfFragment=key;
-        folder.append(summary,body);(page.querySelector(".knowledge-list")||page).append(folder);
+        folder.append(summary,body);anchor(body);added.push({folder,entry});
       }
+      for(const {folder,entry} of added)(anchors.get(entry.parent)||list).append(folder);
       const intro = document.createElement("div");
       intro.dataset.kfFragment = selected + "/intro";
       (page.querySelector(".knowledge-shell") || page).prepend(intro);
@@ -719,20 +730,26 @@ function connectFrame(actions, selected, titles, editable, labels, tabs) {
         const host = document.createElement("span");
         const controls = host;
         const summary = node.closest("details")?.querySelector(":scope > summary");
-        const label=summary?.querySelector(".knowledge-index + span") || summary?.querySelector("span");
+        const group=!summary && node.previousElementSibling?.matches(".kf-curriculum-part") ? node.previousElementSibling : null;
+        const label=summary?.querySelector(".knowledge-index + span") || summary?.querySelector("span") || group;
         if(label && labels[key]) label.textContent=labels[key].title;
         const isIntro=key===selected+"/intro";
-        if (summary) summary.append(host); else (page.querySelector(".knowledge-top-actions")||node.parentElement).append(host);
+        if (summary) summary.append(host); else if(group)group.after(host); else (page.querySelector(".knowledge-top-actions")||node.parentElement).append(host);
         host.style.display="contents";
-        for (const [action,buttonText] of (isIntro ? [["add","+ Thêm tiêu đề nội dung"],["edit","✎ Chỉnh sửa nội dung"],["add","+ Thêm mục mới"],["rename","Sửa tiêu đề lớn"]] : [["edit","✎ Chỉnh sửa"],["append","+ Thêm nội dung"],["rename","Sửa tiêu đề thư mục"]])) {
+        for (const [action,buttonText] of (isIntro ? [["add","+ Thêm tiêu đề nội dung"],["edit","✎ Chỉnh sửa nội dung"],["add","+ Thêm mục mới"],["rename","Sửa tiêu đề lớn"]] : [["rename","Đổi tiêu đề"],["child","+ Thêm tiêu đề nội dung"],["edit","✎ Chỉnh sửa"]])) {
           const button = document.createElement("button");
           button.type = "button";
           button.textContent = buttonText;
-          if(summary) button.style.cssText="font:inherit;padding:.35em .65em;margin:.2em;cursor:pointer";
+          if(summary || group) button.style.cssText="font:inherit;font-size:12px;font-weight:700;color:#34445c;background:white;border:1px solid #cfdaeb;border-radius:8px;padding:7px 9px;cursor:pointer;margin:2px 4px;"+(action==="edit"?"margin-inline-start:auto":"");
           button.onclick = event => {event.preventDefault();event.stopPropagation();parent.postMessage({channel:"kf-module",type:action,key,caption:isIntro?heading?.textContent:label?.textContent},"*");};
-          if(isIntro && action==="rename" && heading)heading.after(button);else controls.append(button);
+          if(isIntro && action==="rename" && heading)heading.after(button);else if(summary && label && action==="rename")label.after(button);else controls.append(button);
         }
       }
+    }
+    if(reveal){
+      const node=page?.querySelector('[data-kf-fragment="'+CSS.escape(reveal)+'"]');
+      for(let el=node?.parentElement;el;el=el.parentElement)if(el.tagName==="DETAILS")el.open=true;
+      node?.closest("details")?.querySelector("summary")?.scrollIntoView({block:"center"});
     }
     loadVisible();
   });
@@ -745,7 +762,7 @@ function attachPageNavigation(store, renderFrame, reportError, editLesson, openP
   const catalog = new Set();
   const opened = new Map();
   let root, currentLabels={};
-  async function open(page) {
+  async function open(page,reveal=null) {
     const id = ++sequence;
     const tabs=editLesson?await store.tabTitles():{};
     for(const key of Object.keys(tabs))allowed.add(key);
@@ -771,7 +788,7 @@ function attachPageNavigation(store, renderFrame, reportError, editLesson, openP
     if(id!==sequence)return false;
     currentLabels=labels;
     for(const key of Object.keys(labels)) if(key.startsWith(page+"/added-")) catalog.add(key);
-    const bridge = "<script>(" + connectFrame.toString() + ")(" + JSON.stringify(pageActions) + "," + JSON.stringify(page) + "," + JSON.stringify(titles).replace(/</g,"\\u003c") + "," + Boolean(editLesson) + "," + JSON.stringify(labels).replace(/</g,"\\u003c") + "," + JSON.stringify(tabs).replace(/</g,"\\u003c") + ")<" + "/script>";
+    const bridge = "<script>(" + connectFrame.toString() + ")(" + JSON.stringify(pageActions) + "," + JSON.stringify(page) + "," + JSON.stringify(titles).replace(/</g,"\\u003c") + "," + Boolean(editLesson) + "," + JSON.stringify(labels).replace(/</g,"\\u003c") + "," + JSON.stringify(tabs).replace(/</g,"\\u003c") + "," + JSON.stringify(reveal).replace(/</g,"\\u003c") + ")<" + "/script>";
     active = page;
     frame = renderFrame(html.replace(/<head\b[^>]*>/i, match => match + bridge));
     return true;
@@ -789,6 +806,12 @@ function attachPageNavigation(store, renderFrame, reportError, editLesson, openP
         if(adding){await store.addTab(title);root=undefined;}
         else await store.setLabel(msg.key,msg.key,title,msg.revision);
         await open(active);
+      } else if(msg.type==="child" && editLesson && catalog.has(msg.key)){
+        const page=active;
+        const title=window.prompt("Tiêu đề nội dung mới trong mục này");
+        if(!title?.trim())return;
+        const key=await store.addChild(page,msg.key,title);
+        if(active===page)await open(page,key);
       } else if ((msg.type==="rename" || msg.type==="add") && editLesson && catalog.has(msg.key)){
         const page=active;
         const key=msg.type==="add"?null:msg.key===page+"/intro"?page:msg.key;
@@ -872,6 +895,7 @@ function createLessonStore(client) {
   return { fragments, openLesson, saveLesson, listRevisions, restoreRevision,
     tabTitles: ()=>rpc('kf_tab_titles',{}),
     addTab: title=>rpc('kf_add_tab',{p_title:title}),
+    addChild: (page,parent,title)=>rpc("kf_add_child_title",{p_page:page,p_parent:parent,p_title:title}),
     labels: page=>rpc("kf_outline_labels",{p_page:page}),
     setLabel: (page,key,title,revision)=>rpc("kf_edit_outline",{p_page:page,p_key:key,p_title:title,p_revision:revision}),
     compositionTitles: () => rpc("kf_composition_titles", {}) };
