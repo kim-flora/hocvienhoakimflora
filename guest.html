@@ -150,6 +150,9 @@ function preservePending(){
 function setSyncStatus(text){const node=$("kfSyncStatus");if(node)node.textContent=text;}
 function queuePatch(area,key,value,removed=false){
  if(!adminSession||!validKey(key)||!["local","indexed"].includes(area))return;
+ // The embedded editor writes some existing strings again during initialization.
+ // A pending change is already journaled; keep it intact on a duplicate event.
+ if(!removed && typeof value==="string" && editorSnapshot?.[area]?.[key]===value)return;
  const target=pending[area],removeList=area==="local"?pending.removeLocal:pending.removeIndexed;
  if(removed){delete target[key];if(!removeList.includes(key))removeList.push(key);}
  else{target[key]=value;const index=removeList.indexOf(key);if(index>=0)removeList.splice(index,1);}
