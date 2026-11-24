@@ -882,11 +882,17 @@ function attachPageNavigation(store, renderFrame, reportError, editLesson, openP
         if (target !== frame) return;
         await editLesson(lesson, async html => {
           const saved = await store.saveLesson(lesson, html);
-          if (frame === target) {
-            opened.set(msg.key, saved);
-            target.contentWindow.postMessage({channel:"kf-module-saved", key:msg.key, body:html},"*");
-          }
-        }, msg.type === "append");
+          updateLesson(saved);
+        }, msg.type === "append", {
+          list: () => store.listRevisions(lesson),
+          restore: async revision => updateLesson(await store.restoreRevision(lesson, revision))
+        });
+        function updateLesson(saved) {
+          if (frame !== target) return;
+          opened.delete(msg.key);
+          if(saved.body===null){void open(active).catch(reportError);return;}
+          target.contentWindow.postMessage({channel:"kf-module-saved",key:msg.key,body:saved.body},"*");
+        }
       } else if (msg.type === "lesson" && catalog.has(msg.key)) {
         const target = frame;
         const lesson = await store.openLesson(msg.key, "local");
@@ -952,7 +958,7 @@ function createLessonStore(client) {
     compositionTitles: () => rpc("kf_composition_titles", {}) };
 }
 
-function editLesson(lesson, save, append = false) {
+function editLesson(lesson, save, append = false, history) {
   if(document.querySelector("dialog[data-lesson-editor]")) return;
   const dialog=document.createElement("dialog");
   dialog.dataset.lessonEditor="";
@@ -992,7 +998,39 @@ function editLesson(lesson, save, append = false) {
   editor.srcdoc='<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data: https:; style-src \'unsafe-inline\'; form-action \'none\'; base-uri \'none\'"><body></body>';
   const toolbar=document.createElement("header");
   const title=document.createElement("strong");title.textContent="Chỉnh sửa nội dung";
-  toolbar.append(title,submit,cancel);dialog.append(toolbar,status,editor);document.body.append(dialog);dialog.showModal();
+  toolbar.append(title,submit,cancel);
+  if(history){
+    const revisions=document.createElement("select");
+    revisions.setAttribute("aria-label","Phiên bản đã lưu");
+    revisions.hidden=true;
+    const versions=document.createElement("button");
+    versions.type="button";
+    versions.textContent="Lịch sử chỉnh sửa";
+    versions.onclick=async()=>{
+      if(busy)return;
+      versions.disabled=true;
+      try{
+        const rows=await history.list();
+        revisions.replaceChildren(new Option("Chọn phiên bản để khôi phục",""));
+        for(const row of rows)revisions.add(new Option("Bản "+row.revision+" · "+new Date(row.archived_at).toLocaleString("vi-VN"),row.revision));
+        revisions.hidden=!rows.length;
+        status.textContent=rows.length?"":"Bài này chưa có phiên bản cũ.";
+      }catch(error){status.textContent="Không tải được lịch sử chỉnh sửa.";}
+      finally{versions.disabled=false;}
+    };
+    revisions.onchange=async()=>{
+      const revision=revisions.value;
+      revisions.value="";
+      if(!revision||busy||!window.confirm(changed?"Khôi phục phiên bản đã chọn và bỏ nội dung chưa lưu?":"Khôi phục phiên bản đã chọn?"))return;
+      busy=true;
+      submit.disabled=cancel.disabled=revisions.disabled=true;
+      try{await history.restore(Number(revision));dialog.close();}
+      catch(error){status.textContent=error.code==="40001"?"Bài đã thay đổi ở phiên khác. Hãy mở lại bài để khôi phục.":"Chưa khôi phục được phiên bản.";}
+      finally{busy=false;submit.disabled=!changed;cancel.disabled=revisions.disabled=false;}
+    };
+    toolbar.append(versions,revisions);
+  }
+  dialog.append(toolbar,status,editor);document.body.append(dialog);dialog.showModal();
 }
 
 let modularPreview=false;
