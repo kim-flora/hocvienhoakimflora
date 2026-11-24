@@ -263,20 +263,32 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
         }
       } else if ((msg.type === "edit" || msg.type === "append") && editLesson && catalog.has(msg.key)) {
         const target = frame;
-        const lesson = opened.get(msg.key) ?? await store.openLesson(msg.key,"local");
-        if (target !== frame) return;
-        await editLesson(lesson, async html => {
-          const saved = await store.saveLesson(lesson, html);
-          updateLesson(saved);
-        }, msg.type === "append", {
-          list: () => store.listRevisions(lesson),
-          restore: async revision => updateLesson(await store.restoreRevision(lesson, revision))
-        });
-        function updateLesson(saved) {
-          if (frame !== target) return;
+        await openEditor("local");
+        async function openEditor(area) {
+          const lesson = await store.openLesson(msg.key,area);
+          if(target!==frame)return;
+          await editLesson(lesson, async html => {
+            await store.saveLesson(lesson,html);
+            await refreshLesson();
+          }, msg.type==="append", {
+            list: () => store.listRevisions(lesson),
+            restore: async revision => {
+              await store.restoreRevision(lesson,revision);
+              await refreshLesson();
+            },
+            switchArea: openEditor
+          });
+        }
+        async function refreshLesson() {
+          if(target!==frame)return;
           opened.delete(msg.key);
-          if(saved.body===null){void open(active).catch(reportError);return;}
-          target.contentWindow.postMessage({channel:"kf-module-saved",key:msg.key,body:saved.body},"*");
+          try{
+            const saved=await store.openLesson(msg.key,"local");
+            if(target!==frame)return;
+            if(saved.body===null){void open(active).catch(reportError);return;}
+            opened.set(msg.key,saved);
+            target.contentWindow.postMessage({channel:"kf-module-saved",key:msg.key,body:saved.body},"*");
+          }catch(error){reportError(error);}
         }
       } else if (msg.type === "lesson" && catalog.has(msg.key)) {
         const target = frame;
