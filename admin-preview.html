@@ -637,6 +637,8 @@ function connectFrame(actions, selected, titles, editable, labels, tabs, reveal)
     action();
   }, true);
   const pending = new Set();
+  const titleUpdates = new Map();
+  const tabButtons = new Map();
   function loadVisible() {
     for (const node of document.querySelectorAll("[data-kf-fragment]")) {
       const details = node.closest("details");
@@ -650,6 +652,15 @@ function connectFrame(actions, selected, titles, editable, labels, tabs, reveal)
   }
   window.addEventListener("message", event => {
     const message = event.data;
+    if(event.source===parent && message?.channel==="kf-module-title"){
+      if(message.tab){
+        tabs[message.key]={...tabs[message.key],title:message.title,revision:message.revision};
+        const button=tabButtons.get(message.key);
+        if(button)button.textContent=message.title;
+      }
+      titleUpdates.get(message.key)?.(message.title);
+      return;
+    }
     if (event.source === parent && message?.channel === 'kf-module-saved') {
       const body = document.querySelector('[data-kf-loaded="' + CSS.escape(message.key) + '"]');
       if (body) body.innerHTML = message.body;
@@ -685,6 +696,7 @@ function connectFrame(actions, selected, titles, editable, labels, tabs, reveal)
         if(found)found[0].textContent=entry.title;
         else if(key.startsWith("tab-"))buttons.push([add(entry.title,()=>send("page",key)),key]);
       }
+      for(const [button,key] of buttons)tabButtons.set(key,button);
       const password=add("Đổi mật khẩu",()=>send("password","root"));
       password.style.cssText="background:#e2e8ff;color:#3231ae;border-color:#e2e8ff";
       add("+ Thêm tab",()=>send("addTab","root"));
@@ -744,13 +756,22 @@ function connectFrame(actions, selected, titles, editable, labels, tabs, reveal)
         const isIntro=key===selected+"/intro";
         if (summary) summary.append(host); else if(group)group.after(host); else (page.querySelector(".knowledge-top-actions")||node.parentElement).append(host);
         host.style.display="contents";
-        for (const [action,buttonText] of (isIntro ? [["add","+ Thêm tiêu đề nội dung"],["edit","✎ Chỉnh sửa nội dung"],["add","+ Thêm mục mới"],["rename","Sửa tiêu đề lớn"]] : [["rename","Đổi tiêu đề"],["edit","✎ Chỉnh sửa"]])) {
+        for (const [action,buttonText] of (isIntro ? [["add","+ Thêm tiêu đề nội dung"],["edit","✎ Chỉnh sửa nội dung"],["rename","Đổi tiêu đề"]] : [["rename","Đổi tiêu đề"],["edit","✎ Chỉnh sửa nội dung"]])) {
           const button = document.createElement("button");
           button.dataset.kfModuleAction = "";
           button.type = "button";
           button.textContent = buttonText;
           if(summary || group) button.style.cssText="font:inherit;font-size:12px;font-weight:700;color:#34445c;background:white;border:1px solid #cfdaeb;border-radius:8px;padding:7px 9px;cursor:pointer;margin:2px 4px;"+(action==="edit"?"margin-inline-start:auto":"");
           editorActions.set(button, () => parent.postMessage({channel:"kf-module",type:action,key,caption:isIntro?heading?.textContent:group?Array.from(group.childNodes).filter(node=>node!==button).map(node=>node.textContent).join("").trim():label?.textContent},"*"));
+          if(action==="rename"){
+            const titleNode=isIntro?heading:label;
+            if(titleNode)titleUpdates.set(isIntro?selected:key,title=>{
+              if(group)group.replaceChildren(document.createTextNode(title),button);
+              else titleNode.textContent=title;
+              const folder=node.closest("details");
+              if(folder?.hasAttribute("data-title"))folder.dataset.title=title.toLocaleLowerCase("vi");
+            });
+          }
           if(action==="rename" && label){
             button.style.cssText += ";display:inline-flex;width:auto;max-width:100%;white-space:nowrap;vertical-align:middle;margin-inline-start:8px";
             if(group)group.append(button);else label.after(button);
@@ -816,9 +837,18 @@ function attachPageNavigation(store, renderFrame, reportError, editLesson, openP
       else if(editLesson && (msg.type==="addTab" || msg.type==="renameTab" && allowed.has(msg.key) && msg.key!=="root")){
         const adding=msg.type==="addTab", title=window.prompt(adding?"Tên tab mới":"Đổi tên tab",adding?"":msg.caption);
         if(!title?.trim())return;
-        if(adding){await store.addTab(title);root=undefined;}
-        else await store.setLabel(msg.key,msg.key,title,msg.revision);
-        await open(active);
+        if(adding){
+          await store.addTab(title);root=undefined;
+          await open(active);
+        }else{
+          const target=frame;
+          await store.setLabel(msg.key,msg.key,title,msg.revision);
+          if(target===frame){
+            const entry={title:title.trim(),revision:msg.revision+1};
+            if(active===msg.key)currentLabels[msg.key]=entry;
+            target.contentWindow.postMessage({channel:"kf-module-title",key:msg.key,tab:true,...entry},"*");
+          }
+        }
       } else if(msg.type==="child" && editLesson && catalog.has(msg.key)){
         const page=active;
         const title=window.prompt("Tiêu đề nội dung mới trong mục này");
@@ -830,8 +860,16 @@ function attachPageNavigation(store, renderFrame, reportError, editLesson, openP
         const key=msg.type==="add"?null:msg.key===page+"/intro"?page:msg.key;
         const title=window.prompt(key?"Sửa tiêu đề":"Tiêu đề mục mới",key?String(msg.caption||""):"");
         if(!title?.trim())return;
-        await store.setLabel(page,key,title,currentLabels[key]?.revision||0);
-        if(active===page)await open(page);
+        const target=frame, revision=currentLabels[key]?.revision||0;
+        await store.setLabel(page,key,title,revision);
+        if(target===frame){
+          if(!key)await open(page);
+          else{
+            const entry={title:title.trim(),revision:revision+1};
+            currentLabels[key]={...currentLabels[key],...entry};
+            target.contentWindow.postMessage({channel:"kf-module-title",key,...entry},"*");
+          }
+        }
       } else if (msg.type === "page" && allowed.has(msg.key) && msg.key !== active) {
         if (await open(msg.key)) {
           const url = new URL(location.href);
