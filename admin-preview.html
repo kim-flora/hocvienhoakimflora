@@ -927,8 +927,8 @@ function editLesson(lesson, save, append = false) {
   submit.type=cancel.type="button";
   submit.disabled=true;
   let changed=false,busy=false,previous="";
-  cancel.onclick=()=>dialog.close();
-  dialog.oncancel=e=>{if(busy)e.preventDefault();};
+  cancel.onclick=()=>{if(!changed || window.confirm("Bỏ phần nội dung chưa lưu?"))dialog.close();};
+  dialog.oncancel=e=>{if(busy || (changed && !window.confirm("Bỏ phần nội dung chưa lưu?")))e.preventDefault();};
   dialog.onclose=()=>dialog.remove();
   editor.onload=()=>{
     const body=editor.contentDocument.body;
