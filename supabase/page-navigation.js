@@ -267,11 +267,17 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
         if (target !== frame) return;
         await editLesson(lesson, async html => {
           const saved = await store.saveLesson(lesson, html);
-          if (frame === target) {
-            opened.set(msg.key, saved);
-            target.contentWindow.postMessage({channel:"kf-module-saved", key:msg.key, body:html},"*");
-          }
-        }, msg.type === "append");
+          updateLesson(saved);
+        }, msg.type === "append", {
+          list: () => store.listRevisions(lesson),
+          restore: async revision => updateLesson(await store.restoreRevision(lesson, revision))
+        });
+        function updateLesson(saved) {
+          if (frame !== target) return;
+          opened.delete(msg.key);
+          if(saved.body===null){void open(active).catch(reportError);return;}
+          target.contentWindow.postMessage({channel:"kf-module-saved",key:msg.key,body:saved.body},"*");
+        }
       } else if (msg.type === "lesson" && catalog.has(msg.key)) {
         const target = frame;
         const lesson = await store.openLesson(msg.key, "local");
