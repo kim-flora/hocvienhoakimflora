@@ -11,13 +11,13 @@ const pageActions = {
   openCompositionKnowledge: "compositionKnowledgePage"
 };
 
-function connectFrame(actions, selected, titles) {
+function connectFrame(actions, selected, titles, editable) {
   const send = (type, key) => parent.postMessage({ channel: "kf-module", type, key }, "*");
   const pending = new Set();
   function loadVisible() {
     for (const node of document.querySelectorAll("[data-kf-fragment]")) {
       const details = node.closest("details");
-      if (!details || !details.open || !node.getClientRects().length) continue;
+      if (!node.dataset.kfFragment.endsWith("/intro") && (!details?.open || !node.getClientRects().length)) continue;
       const key = node.dataset.kfFragment;
       if (!pending.has(key)) {
         pending.add(key);
@@ -41,21 +41,7 @@ function connectFrame(actions, selected, titles) {
       template.content.firstElementChild.innerHTML = message.body;
     }
     if (template.content.firstElementChild) template.content.firstElementChild.dataset.kfLoaded = message.key;
-    const detailsForLesson = node.parentElement;
     node.replaceWith(template.content);
-    if (message.editable) {
-      const host = document.createElement("div");
-      const controls = host.attachShadow({mode:"closed"});
-      for (const [action,label] of [["edit","Chỉnh sửa bài"],["append","Thêm nội dung"]]) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = label;
-        button.style.cssText = "font:inherit;color:inherit;padding:.35em .7em;margin:.25em;cursor:pointer";
-        button.onclick = () => send(action, message.key);
-        controls.append(button);
-      }
-      detailsForLesson.append(host);
-    }
   });
   document.addEventListener("click", event => {
     const control = event.target.closest("button[onclick]");
@@ -78,6 +64,27 @@ function connectFrame(actions, selected, titles) {
       const action = Object.keys(actions).find(name => actions[name] === selected);
       if (action && typeof window[action] === "function") window[action]();
     }
+    const page = document.getElementById(selected);
+    if (page && editable) {
+      const intro = document.createElement("div");
+      intro.dataset.kfFragment = selected + "/intro";
+      (page.querySelector(".knowledge-shell") || page).prepend(intro);
+      for (const node of page.querySelectorAll("[data-kf-fragment]")) {
+        const key = node.dataset.kfFragment;
+        const host = document.createElement("span");
+        const controls = host.attachShadow({mode:"closed"});
+        const summary = node.closest("details")?.querySelector(":scope > summary");
+        if (summary) summary.append(host); else node.before(host);
+        for (const [action,label] of [["edit","Chỉnh sửa"],["append","Thêm nội dung"]]) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = label;
+          button.style.cssText = "font:inherit;padding:.35em .65em;margin:.2em;cursor:pointer";
+          button.onclick = event => {event.preventDefault();event.stopPropagation();send(action,key);};
+          controls.append(button);
+        }
+      }
+    }
     loadVisible();
   });
   document.addEventListener("toggle", loadVisible, true);
@@ -99,6 +106,7 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
     if (id !== sequence) return false;
     catalog.clear();
     opened.clear();
+    if (page !== "root" && editLesson) catalog.add(page + "/intro");
     const moduleHtml = parts.map(part => {
       if (part.html !== undefined) return part.html;
       if (!part.child.startsWith(page + "/") || !/^\d+$/.test(part.child.slice(page.length + 1))) throw new Error("Mã bài không hợp lệ.");
@@ -108,7 +116,7 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
     const html = rootParts.map(part => part.html ?? (part.child === page ? moduleHtml : "")).join("");
     const titles = page === "compositionKnowledgePage" ? await store.compositionTitles() : {};
     if (id !== sequence) return false;
-    const bridge = "<script>(" + connectFrame.toString() + ")(" + JSON.stringify(pageActions) + "," + JSON.stringify(page) + "," + JSON.stringify(titles).replace(/</g,"\\u003c") + ")<" + "/script>";
+    const bridge = "<script>(" + connectFrame.toString() + ")(" + JSON.stringify(pageActions) + "," + JSON.stringify(page) + "," + JSON.stringify(titles).replace(/</g,"\\u003c") + "," + Boolean(editLesson) + ")<" + "/script>";
     active = page;
     frame = renderFrame(html.replace(/<head\b[^>]*>/i, match => match + bridge));
     return true;
@@ -125,9 +133,10 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
           url.searchParams.set("page", msg.key);
           history.pushState(null, "", url);
         }
-      } else if ((msg.type === "edit" || msg.type === "append") && editLesson && opened.has(msg.key)) {
+      } else if ((msg.type === "edit" || msg.type === "append") && editLesson && catalog.has(msg.key)) {
         const target = frame;
-        const lesson = opened.get(msg.key);
+        const lesson = opened.get(msg.key) ?? await store.openLesson(msg.key,"local");
+        if (target !== frame) return;
         await editLesson(lesson, async html => {
           const saved = await store.saveLesson(lesson, html);
           if (frame === target) {
