@@ -609,6 +609,18 @@ async function api(action,body={},bearer=null){
  }
  throw lastError;
 }
+async function openModularPreview(){
+ if(new URLSearchParams(location.search).get("preview")!=="modules")return false;
+ const [{createLessonStore},{attachPageNavigation}]=await Promise.all([
+  import("./supabase/lesson-store.js"),import("./supabase/page-navigation.js")
+ ]);
+ await attachPageNavigation(createLessonStore(client),html=>{
+  showContent(html,{readOnly:true});
+  return currentFrame;
+ },error=>say(error.message||"Không tải được bài học."));
+ say("");
+ return true;
+}
 function showContent(value,{readOnly=true,snapshot=null}={}){
  // Keep the authenticated portal mounted; topic navigation belongs to the iframe.
  if(adminMode&&adminSession)$("loginPanel").classList.add("hidden");
@@ -633,6 +645,7 @@ $("adminLogin").onsubmit=async e=>{
   $("openAccountSettings").classList.remove("hidden");
   $("kfQuickBackup").classList.remove("hidden");
   say("Đã đăng nhập. Đang tải dữ liệu bài học, vui lòng chờ…");
+  if(await openModularPreview())return;
   const result=await api("admin-read",{key:"published/main"},data.session.access_token);
   // Snapshot may be tens of MB. Keep the portal responsive and show progress.
   say("Đang khôi phục nội dung chỉnh sửa từ máy chủ…");
@@ -778,6 +791,7 @@ async function restoreAdminSession(){
   if(error||allowed!==true)return;
   adminSession=session;
   if(currentFrame){$("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");return;}
+  if(await openModularPreview())return;
   // The published document is required; snapshot and local drafts are optional.
   // Do not block a valid admin session if a large snapshot fails to load.
   const content=await api("admin-read",{key:"published/main"},session.access_token);
