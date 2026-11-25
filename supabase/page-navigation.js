@@ -230,7 +230,7 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
           await store.setLabel(msg.key,msg.key,title,msg.revision);
           if(target===frame){
             const entry={title:title.trim(),revision:msg.revision+1};
-            if(active===msg.key)currentLabels[msg.key]=entry;
+            if(active===msg.key)currentLabels[msg.key]={...currentLabels[msg.key],...entry};
             target.contentWindow.postMessage({channel:"kf-module-title",key:msg.key,tab:true,...entry},"*");
           }
         }
@@ -252,7 +252,7 @@ export function attachPageNavigation(store, renderFrame, reportError, editLesson
           else{
             const entry={title:title.trim(),revision:revision+1};
             currentLabels[key]={...currentLabels[key],...entry};
-            target.contentWindow.postMessage({channel:"kf-module-title",key,...entry},"*");
+            target.contentWindow.postMessage({channel:"kf-module-title",key,tab:key===page,...entry},"*");
           }
         }
       } else if (msg.type === "page" && allowed.has(msg.key) && msg.key !== active) {
