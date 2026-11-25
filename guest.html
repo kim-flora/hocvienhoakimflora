@@ -620,7 +620,13 @@ async function openModularPreview(){
  await attachPageNavigation(createLessonStore(client),html=>{
   showContent(html,{readOnly:true});
   return currentFrame;
- },error=>say(error.message||"Không tải được bài học."),editLesson);
+ },error=>say(error.message||"Không tải được bài học."),(lesson,save,append,options)=>{
+  const userId=adminSession.user.id;
+  return editLesson(lesson,save,append,{
+   ...options,
+   drafts:(action,value,key)=>recoveryIO(action,value,"module-draft:"+userId+":"+key)
+  });
+ });
  say("");
  return true;
 }
