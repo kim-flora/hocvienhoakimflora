@@ -150,6 +150,9 @@ function preservePending(){
 function setSyncStatus(text){const node=$("kfSyncStatus");if(node)node.textContent=text;}
 function queuePatch(area,key,value,removed=false){
  if(!adminSession||!validKey(key)||!["local","indexed"].includes(area))return;
+ // The embedded editor writes some existing strings again during initialization.
+ // A pending change is already journaled; keep it intact on a duplicate event.
+ if(!removed && typeof value==="string" && editorSnapshot?.[area]?.[key]===value)return;
  const target=pending[area],removeList=area==="local"?pending.removeLocal:pending.removeIndexed;
  if(removed){delete target[key];if(!removeList.includes(key))removeList.push(key);}
  else{target[key]=value;const index=removeList.indexOf(key);if(index>=0)removeList.splice(index,1);}
@@ -609,6 +612,18 @@ async function api(action,body={},bearer=null){
  }
  throw lastError;
 }
+async function openModularPreview(){
+ if(new URLSearchParams(location.search).get("preview")!=="modules")return false;
+ const [{createLessonStore},{attachPageNavigation},{editLesson}]=await Promise.all([
+  import("./supabase/lesson-store.js"),import("./supabase/page-navigation.js"),import("./supabase/edit-lesson.js")
+ ]);
+ await attachPageNavigation(createLessonStore(client),html=>{
+  showContent(html,{readOnly:true});
+  return currentFrame;
+ },error=>say(error.message||"Không tải được bài học."),editLesson);
+ say("");
+ return true;
+}
 function showContent(value,{readOnly=true,snapshot=null}={}){
  // Keep the authenticated portal mounted; topic navigation belongs to the iframe.
  if(adminMode&&adminSession)$("loginPanel").classList.add("hidden");
@@ -633,6 +648,7 @@ $("adminLogin").onsubmit=async e=>{
   $("openAccountSettings").classList.remove("hidden");
   $("kfQuickBackup").classList.remove("hidden");
   say("Đã đăng nhập. Đang tải dữ liệu bài học, vui lòng chờ…");
+  if(await openModularPreview())return;
   const result=await api("admin-read",{key:"published/main"},data.session.access_token);
   // Snapshot may be tens of MB. Keep the portal responsive and show progress.
   say("Đang khôi phục nội dung chỉnh sửa từ máy chủ…");
@@ -778,6 +794,7 @@ async function restoreAdminSession(){
   if(error||allowed!==true)return;
   adminSession=session;
   if(currentFrame){$("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");return;}
+  if(await openModularPreview())return;
   // The published document is required; snapshot and local drafts are optional.
   // Do not block a valid admin session if a large snapshot fails to load.
   const content=await api("admin-read",{key:"published/main"},session.access_token);
