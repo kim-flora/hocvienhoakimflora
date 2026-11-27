@@ -643,7 +643,7 @@ new MutationObserver(()=>{if(editor&&(!editor.isConnected||!editor.isContentEdit
 }
 async function api(action,body={},bearer=null){
  const headers={"content-type":"application/json","apikey":key};
- if(bearer)headers.authorization="Bearer "+bearer;
+ if(bearer){const {data:{session}}=await client.auth.getSession();headers.authorization="Bearer "+(session?.access_token||bearer);}
  let lastError;
  for(let attempt=0;attempt<3;attempt++){
   try{
@@ -654,6 +654,7 @@ async function api(action,body={},bearer=null){
    finally{clearTimeout(timeout);}
    let data={};try{data=await r.json()}catch{}
    if(!r.ok){
+    if(bearer&&attempt===0&&(r.status===401||r.status===403)){const {data,error}=await client.auth.refreshSession();if(!error&&data.session){adminSession=data.session;headers.authorization="Bearer "+data.session.access_token;continue;}}
     const error=new Error(data.error||("Máy chủ trả lỗi "+r.status));
     error.status=r.status;
     throw error;
@@ -704,7 +705,7 @@ $("adminLogin").onsubmit=async e=>{
 
   void listGuests().catch(err=>console.warn("Tải danh sách Guest:",err));
   void flushPending();
- }catch(err){say(err.message)}finally{loginInProgress=false;}
+ }catch(err){if(!currentFrame){$("contentPanel").classList.add("hidden");$("loginPanel").classList.remove("hidden");}say(err.message)}finally{loginInProgress=false;}
 };
 
 $("createGuest").onclick=async()=>{
