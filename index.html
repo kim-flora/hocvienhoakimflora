@@ -2162,13 +2162,16 @@
 
     <!-- GIAO DIỆN CHÍNH -->
     <div class="header">
-        <h1 class="kf-brand" id="kfBrand">
+        <h1 class="kf-brand" id="kfBrand" aria-label="Kim Flora Studio">
             <span class="kf-brand-flower" aria-hidden="true">
                 <i></i><i></i><i></i><i></i><i></i>
             </span>
             <span class="kf-brand-wordmark">
                 <span class="kf-brand-name">Kim <em>Flora</em></span>
-                <span class="kf-brand-studio">Studio</span>
+                <span class="kf-brand-signature">
+                    <span class="kf-brand-studio">Studio</span>
+                    <span class="kf-brand-tagline">Màu sắc nở hoa</span>
+                </span>
             </span>
         </h1>
         <div class="header-actions">
@@ -11382,6 +11385,9 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             filtered.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'palette-formula-card';
+                if (/^#[a-f0-9]{6}$/i.test(item.main_flower_hex)) {
+                    card.style.setProperty('--kf-palette-title-color', item.main_flower_hex);
+                }
                 const isHot = item.sale === 'Rất dễ bán';
                 const hasOverride = !!getPresetOverrides()[item.id];
 
@@ -13147,7 +13153,7 @@ else insert();
  ['Vàng','Butter & Cream','#FFF5CB #F3D36A #DBAE42 #C8BF92 #F9F4E6'],['Vàng','Honey Harvest','#F7E5AA #E8C15F #C78E36 #906B37 #C7C6A5'],['Vàng','Lemon Sorbet','#FFF8D6 #F0E578 #C5CE76 #A4B49A #F6F5EB'],['Vàng','Golden Ochre','#F4E6C4 #D7B35D #B58A42 #795B36 #E4D0BA'],
  ['Đen','Noir & Pearl','#F4EFE7 #C9C4BB #888985 #383B3C #17191B'],['Đen','Black Cherry','#E5CCD1 #A46C7D #633647 #32232E #18171B'],['Đen','Obsidian & Moss','#D5D8C8 #9DAB90 #586A58 #303B34 #161D1A'],['Đen','Midnight Gold','#E9D9B5 #B59B67 #77706A #353334 #171719'],
  ['Nâu đỏ','Terracotta Rose','#F2D6C5 #D8A18B #B86D58 #844B40 #C1AC91'],['Nâu đỏ','Oxblood & Linen','#EAD7CA #CB9A89 #9B4D48 #632F32 #382627'],['Nâu đỏ','Burnt Cinnamon','#F0DBC1 #D19C68 #AE6A43 #80452F #563D30'],['Nâu đỏ','Mahogany Blush','#EAD0C9 #C68F86 #A25C54 #733A36 #49302F']];
- const library=el('details');library.style.cssText='margin-top:10px;padding:8px;border:1px solid #dbe3ee;border-radius:8px';library.append(el('summary','Bộ phối mới theo tone · '+themes.length+' bộ'));const filter=el('select');['Tất cả','Hồng','Tím','Xanh','Trắng','Vàng','Đen','Nâu đỏ'].forEach(v=>filter.append(el('option',v)));library.append(filter);const list=el('div');library.append(list);function showThemes(){list.replaceChildren();themes.filter(t=>filter.value==='Tất cả'||t[0]===filter.value).forEach(([tone,name,colors])=>{const c=el('div');c.style.cssText='margin:8px 0;padding:6px;border-bottom:1px solid #dbe3ee';c.append(el('b',tone+' · '+name));const band=el('div');band.style.cssText='display:flex;height:30px;margin:5px 0;border-radius:5px;overflow:hidden';const values=colors.split(' ');values.forEach(h=>{const x=el('div');x.style.cssText='flex:1;background:'+h;x.title=h;band.append(x);});c.append(band,el('small',colors),el('br'),btn('Nạp bộ màu',()=>{cancelPaletteEdit(false);load(values.map(h=>row(h)));activeRoleNotice.textContent='Đã nạp: '+name;}));list.append(c);});}filter.onchange=showThemes;showThemes();document.getElementById('ageFormulasContainer').before(library);
+ const library=el('details');library.style.cssText='margin-top:10px;padding:8px;border:1px solid #dbe3ee;border-radius:8px';library.append(el('summary','Bộ phối mới theo tone · '+themes.length+' bộ'));const filter=el('select');['Tất cả','Hồng','Tím','Xanh','Trắng','Vàng','Đen','Nâu đỏ'].forEach(v=>filter.append(el('option',v)));library.append(filter);const list=el('div');library.append(list);function showThemes(){list.replaceChildren();themes.filter(t=>filter.value==='Tất cả'||t[0]===filter.value).forEach(([tone,name,colors])=>{const c=el('div');c.style.cssText='margin:8px 0;padding:6px;border-bottom:1px solid #dbe3ee';const title=el('b',tone+' · '+name);title.className='kf-tone-title';c.append(title);const band=el('div');band.style.cssText='display:flex;height:30px;margin:5px 0;border-radius:5px;overflow:hidden';const values=colors.split(' ');title.style.setProperty('--kf-palette-title-color',values[0]);values.forEach(h=>{const x=el('div');x.style.cssText='flex:1;background:'+h;x.title=h;band.append(x);});c.append(band,el('small',colors),el('br'),btn('Nạp bộ màu',()=>{cancelPaletteEdit(false);load(values.map(h=>row(h)));activeRoleNotice.textContent='Đã nạp: '+name;}));list.append(c);});}filter.onchange=showThemes;showThemes();document.getElementById('ageFormulasContainer').before(library);
  load(initial);renderSavedPalettes();
 };if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();})();</script>
 <style>
@@ -13180,6 +13186,7 @@ else insert();
 .header:has(.kf-brand) {
     background: #fffaf6;
     border: 1px solid #f0e4e3;
+    border-bottom-color: #d8a398;
     border-radius: 12px;
     padding: 8px 12px;
 }
@@ -13198,18 +13205,18 @@ else insert();
 .kf-brand-flower {
     position: relative;
     flex: none;
-    width: 34px;
-    height: 34px;
+    width: 42px;
+    height: 42px;
 }
 .kf-brand-flower i {
     position: absolute;
     top: 1px;
-    left: 11.5px;
-    width: 11px;
-    height: 15px;
+    left: 14px;
+    width: 14px;
+    height: 19px;
     border: 1px solid #35263a24;
     border-radius: 68% 68% 56% 56%;
-    transform-origin: 50% 16px;
+    transform-origin: 50% 20px;
 }
 .kf-brand-flower i:nth-child(1) { background: var(--petal-1); }
 .kf-brand-flower i:nth-child(2) { background: var(--petal-2); transform: rotate(72deg); }
@@ -13219,23 +13226,22 @@ else insert();
 .kf-brand-flower::after {
     content: '';
     position: absolute;
-    inset: 14px;
+    inset: 17px;
     background: #fffaf6;
     border: 1px solid #71506c55;
     border-radius: 50%;
 }
-.kf-brand-wordmark { display: flex; align-items: baseline; gap: 8px; }
+.kf-brand-wordmark { display: flex; align-items: center; gap: 10px; }
+.kf-brand-signature { display: grid; gap: 2px; }
 .kf-brand-name {
     font: 700 clamp(24px, 3vw, 30px)/1.1 Georgia, 'Times New Roman', serif;
     letter-spacing: -.045em;
-    color: #6b365c;
+    color: #7a4a3a;
 }
 .kf-brand-name em { font-family: inherit; font-style: italic; }
-@supports (background-clip: text) and (color: color-mix(in srgb, black, white)) {
+@supports (background-clip: text) {
     .kf-brand-name {
-        background: linear-gradient(105deg,
-            color-mix(in srgb, var(--petal-1) 32%, #4a233c),
-            color-mix(in srgb, var(--petal-4) 26%, #492356));
+        background: linear-gradient(105deg, #7a4a3a, #bf7566);
         background-clip: text;
         color: transparent;
     }
@@ -13246,24 +13252,38 @@ else insert();
     text-transform: uppercase;
     color: #6d606c;
 }
+.kf-brand-tagline { font: 500 10px/1.25 system-ui, sans-serif; color: #785d57; }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
     .kf-brand-flower { transition: transform 220ms ease; }
-    .kf-brand:hover .kf-brand-flower { transform: rotate(14deg); }
+    .kf-brand:hover .kf-brand-flower { transform: rotate(18deg); }
 }
 @media (forced-colors: active) {
     .kf-brand-name { color: CanvasText; }
     .kf-brand-flower i { border-color: CanvasText; }
+}
+#tab-age-palette .age-custom-toolbar .palette-action-btn.primary {
+    background: #92534f;
+}
+#tab-age-palette .age-custom-toolbar .palette-action-btn.primary:hover {
+    background: #79423e;
+}
+.layout .tab-button.active {
+    background: #f5e1da;
+    color: #743d35;
+}
+.palette-formula-card .palette-title, .kf-tone-title {
+    color: color-mix(in srgb, var(--kf-palette-title-color, #926561) 40%, #251b20);
 }
 .kf-dropdown-nav{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:6px}
 .header > .header-actions[hidden]{display:none!important}
 .kf-dropdown{position:relative}
 .kf-dropdown summary{list-style:none;cursor:pointer;padding:8px 11px;border-radius:8px;color:#1e1b4b;font-size:13px;font-weight:750;white-space:nowrap}
 .kf-dropdown summary::-webkit-details-marker{display:none}
-.kf-dropdown summary::after{content:' ⌄';color:#6d45b8}
-.kf-dropdown[open]>summary,.kf-dropdown summary:hover,.kf-dropdown.kf-active>summary{background:#f2edf9;color:#6d45b8}
+.kf-dropdown summary::after{content:' ⌄';color:#86534c}
+.kf-dropdown[open]>summary,.kf-dropdown summary:hover,.kf-dropdown.kf-active>summary{background:#f5e1da;color:#743d35}
 .kf-dropdown-panel{position:absolute;top:calc(100% + 4px);right:0;z-index:100;max-width:min(280px,85vw);min-width:170px;width:max-content;padding:5px;border:1px solid #e7e3eb;border-radius:10px;background:#fff;box-shadow:0 9px 24px #22133924}
 .kf-dropdown-panel button{display:block;width:100%;padding:8px 10px;border:0;border-radius:7px;background:#fff;color:#211a2c;text-align:left;font:inherit;font-size:13px;cursor:pointer}
-.kf-dropdown-panel button:hover,.kf-dropdown-panel button:focus-visible{background:#f2edf9;color:#6d45b8}
+.kf-dropdown-panel button:hover,.kf-dropdown-panel button:focus-visible{background:#f5e1da;color:#743d35}
 @media(max-width:760px){
   .header:has(>.kf-dropdown-nav){flex-wrap:wrap}
   .kf-dropdown-nav{width:100%;justify-content:space-between;gap:2px}
