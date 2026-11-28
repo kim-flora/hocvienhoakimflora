@@ -130,6 +130,7 @@ function preservePending(){
 function setSyncStatus(text){const node=$("kfSyncStatus");if(node)node.textContent=text;}
 function queuePatch(area,key,value,removed=false){
  if(!adminSession||!validKey(key)||!["local","indexed"].includes(area))return;
+ if(!removed && typeof value==="string" && editorSnapshot?.[area]?.[key]===value)return;
  const target=pending[area],removeList=area==="local"?pending.removeLocal:pending.removeIndexed;
  if(removed){delete target[key];if(!removeList.includes(key))removeList.push(key);}
  else{target[key]=value;const index=removeList.indexOf(key);if(index>=0)removeList.splice(index,1);}
@@ -263,7 +264,8 @@ async function initializeAdminSnapshot(accessToken){
   ({value:server}=await api("admin-read",{key:"published/snapshot"},accessToken));
  }finally{clearTimeout(timeout);}
  await recoveryReady;
- const base=server?.format===1?server:{format:1,local:{},indexed:{}};
+ if(server?.format!==1||!server.local||!server.indexed||typeof server.local!=="object"||typeof server.indexed!=="object"||Array.isArray(server.local)||Array.isArray(server.indexed))throw new Error("Dữ liệu chỉnh sửa không hợp lệ; không mở chế độ chỉnh sửa.");
+ const base=server;
  const snapshot={...base,local:{...(base.local||{}),...pending.local},indexed:{...(base.indexed||{}),...pending.indexed}};
  for(const key of pending.removeLocal)delete snapshot.local[key];
  for(const key of pending.removeIndexed)delete snapshot.indexed[key];
@@ -772,39 +774,29 @@ function showContent(value,{readOnly=true,snapshot=null}={}){
  $("contentPanel").classList.remove("hidden");
 }
 async function loadAdminStudio(session){
- say("Đang tải tài liệu…");
- let html;
- try{
-  const content=await api("admin-read",{key:"published/main"},session.access_token);
-  html=content?.value?.html;
- }catch(error){
-  throw new Error("Không tải được tài liệu từ máy chủ. "+error.message);
- }
- if(typeof html!=="string"||!html.trim()){
-  throw new Error("Máy chủ chưa trả về nội dung tài liệu đã xuất bản.");
- }
- let previewOpened=false;
- function showPreview(){
-  if(previewOpened)return;
+ say("Đã xác thực. Đang tải tài liệu và dữ liệu chỉnh sửa…");
+ // Independent reads run concurrently. Never initialize an editable iframe
+ // until the authoritative snapshot and local recovery have completed.
+ const htmlTask=api("admin-read",{key:"published/main"},session.access_token).then(content=>{
+  const html=content?.value?.html;
+  if(typeof html!=="string"||!html.trim())throw new Error("Máy chủ chưa trả về nội dung tài liệu đã xuất bản.");
+  return html;
+ });
+ const snapshotTask=initializeAdminSnapshot(session.access_token);
+ const draftTask=loadDrafts().catch(error=>console.warn("Optional drafts unavailable",error));
+ const [documentResult,snapshotResult]=await Promise.allSettled([htmlTask,snapshotTask,draftTask]);
+ if(documentResult.status!=="fulfilled")throw new Error("Không tải được tài liệu từ máy chủ. "+(documentResult.reason?.message||""));
+ if(!adminSession||idleEnding)return;
+ const html=documentResult.value;
+ if(snapshotResult.status!=="fulfilled"){
+  console.warn("Restore admin editing data",snapshotResult.reason);
   showContent(html,{readOnly:true});
-  previewOpened=true;
   $("openAccountSettings").classList.add("hidden");
   $("kfQuickBackup").classList.add("hidden");
- }
- say("Đang tải dữ liệu chỉnh sửa…");
- const previewTimer=setTimeout(()=>{
-  try{showPreview();say("Đang xem tài liệu. Dữ liệu chỉnh sửa vẫn đang tải…");}
-  catch(error){console.warn("Studio preview",error);}
- },2000);
- try{
-  editorSnapshot=await initializeAdminSnapshot(session.access_token);
-  try{await loadDrafts();}catch(error){console.warn("Optional drafts unavailable",error);}
- }catch(error){
-  console.warn("Restore admin editing data",error);
-  showPreview();
   say("Đang mở tài liệu ở chế độ xem vì chưa tải được dữ liệu chỉnh sửa. Tải lại trang để thử bật chỉnh sửa.");
   return;
- }finally{clearTimeout(previewTimer);}
+ }
+ editorSnapshot=snapshotResult.value;
  showContent(html,{readOnly:false,snapshot:editorSnapshot});
  $("openAccountSettings").classList.remove("hidden");
  $("kfQuickBackup").classList.remove("hidden");
