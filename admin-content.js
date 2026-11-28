@@ -1,12 +1,13 @@
 const partSize = 3000000;
 
-export async function readAdminContent(client, key) {
+export async function readAdminContent(client, key, onProgress) {
+  const deadline = AbortSignal.timeout(45000);
   async function readPart(offset, version) {
     const { data, error } = await client.rpc("kf_read_admin_content_part", {
       p_key: key,
       p_offset: offset,
       p_version: version,
-    }).abortSignal(AbortSignal.timeout(60000));
+    }).abortSignal(deadline);
     if (error) throw new Error("Máy chủ chưa gửi được tài liệu quản trị.", { cause: error });
     return data;
   }
@@ -18,12 +19,17 @@ export async function readAdminContent(client, key) {
     }
 
     const parts = [first.part];
+    const total = Math.ceil(first.length / partSize);
+    onProgress?.(parts.length, total);
     let versionChanged = false;
     for (let offset = partSize; offset < first.length && !versionChanged; offset += partSize * 3) {
       const offsets = [offset, offset + partSize, offset + partSize * 2].filter(start => start < first.length);
       const batch = await Promise.all(offsets.map(start => readPart(start, first.version)));
       versionChanged = batch.some(part => part?.version !== first.version || typeof part.part !== "string");
-      if (!versionChanged) parts.push(...batch.map(part => part.part));
+      if (!versionChanged) {
+        parts.push(...batch.map(part => part.part));
+        onProgress?.(parts.length, total);
+      }
     }
     if (!versionChanged) return JSON.parse(parts.join(""));
   }

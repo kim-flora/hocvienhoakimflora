@@ -24,7 +24,7 @@ import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
 import {captureLocalSnapshot,downloadSnapshotFile} from "./supabase/kim-flora-sync.js";
 import {colorCurriculumScript} from "./color-curriculum.js?v=3";
 import {applyEditorFontSize,editorFontSizes} from "./editor-font-size.js";
-import {readAdminContent} from "./admin-content.js";
+import {readAdminContent} from "./admin-content.js?v=2";
 const url="https://kqoyujqlkanwpdedqljr.supabase.co";
 const key="sb_publishable_jgSqB-1vyxcnojsbKJ3Tmg_8PsoZrvX";
 const client=createClient(url,key);
@@ -34,6 +34,7 @@ const adminMode=true;
 $("adminLogin").classList.remove("hidden");
 $("loginTitle").textContent="Đăng nhập quản trị";
 $("loginInfo").textContent="Đăng nhập bằng tài khoản quản trị Kim Flora.";
+let adminDocumentReady=false;
 let adminSession=null,currentFrame=null,visibleText="",editorSnapshot=null,guestSnapshot=null;
 const KF_IDLE_KEY="kf-admin-last-activity-v1",KF_IDLE_MS=6*60*60*1000;
 let idleEnding=false;
@@ -250,9 +251,14 @@ $("kfRecoverComposition").onclick=async()=>{
  }catch(e){$("kfRecoverInfo").textContent="Chưa khôi phục: "+e.message;}
 };
 
-async function initializeAdminSnapshot(accessToken){
- const {value:server}=await api("admin-read",{key:"published/snapshot"},accessToken);
- await recoveryReady;
+async function initializeAdminSnapshot(onProgress){
+ const server=await readAdminContent(client,"published/snapshot",onProgress);
+ let recoveryTimeout;
+ try{
+  await Promise.race([recoveryReady,new Promise((_,reject)=>{
+   recoveryTimeout=setTimeout(()=>reject(new Error("Không đọc được bản chỉnh sửa trên thiết bị.")),5000);
+  })]);
+ }finally{clearTimeout(recoveryTimeout);}
  const base=server?.format===1?server:{format:1,local:{},indexed:{}};
  const snapshot={...base,local:{...(base.local||{}),...pending.local},indexed:{...(base.indexed||{}),...pending.indexed}};
  for(const key of pending.removeLocal)delete snapshot.local[key];
@@ -647,9 +653,9 @@ $("adminLogin").onsubmit=async e=>{
   adminSession=data.session;
   localStorage.setItem(KF_IDLE_KEY,String(Date.now()));
   $("adminPassword").value="";
-  await openAdminDocument(data.session.access_token);
+  await openAdminDocument();
  }catch(err){
-  if(adminSession&&!currentFrame)showAdminLoadFailure(err);
+  if(adminSession&&!adminDocumentReady)showAdminLoadFailure(err);
   else say(err.message);
  }finally{loginInProgress=false;}
 };
@@ -795,16 +801,29 @@ $("logout").onclick=async()=>{
  if(adminSession){await client.auth.signOut({scope:"local"});adminSession=null;}
  location.reload();
 };
-async function openAdminDocument(accessToken){
+async function openAdminDocument(){
  $("retryAdminContent").classList.add("hidden");
  $("loginPanel").classList.add("hidden");
- say("Đang tải tài liệu và các chỉnh sửa…");
- const [content,snapshot]=await Promise.all([
-  api("admin-read",{key:"published/main"},accessToken),
-  initializeAdminSnapshot(accessToken)
- ]);
- editorSnapshot=snapshot;
- showContent(content.value?.html||"",{readOnly:false,snapshot});
+ let finished=0,total=0,snapshotReady=false;
+ const progress=()=>say((currentFrame?"Đang xem bản gốc. ":"")+
+  (total?"Đang tải bản chỉnh sửa: "+finished+"/"+total+" phần…":"Đang tải tài liệu và bản chỉnh sửa…"));
+ progress();
+ const snapshotRequest=initializeAdminSnapshot((done,count)=>{
+  finished=done;total=count;progress();
+ }).then(snapshot=>{snapshotReady=true;return snapshot;});
+ const mainRequest=readAdminContent(client,"published/main").then(content=>{
+  if(!snapshotReady&&!currentFrame){
+   showContent(content.html,{readOnly:true});
+   progress();
+  }
+  return content;
+ });
+ const [main,edits]=await Promise.allSettled([mainRequest,snapshotRequest]);
+ if(main.status==="rejected")throw main.reason;
+ if(edits.status==="rejected")throw edits.reason;
+ editorSnapshot=edits.value;
+ showContent(main.value.html,{readOnly:false,snapshot:editorSnapshot});
+ adminDocumentReady=true;
  $("openAccountSettings").classList.remove("hidden");
  $("kfQuickBackup").classList.remove("hidden");
  say("");
@@ -815,10 +834,14 @@ async function openAdminDocument(accessToken){
 
 function showAdminLoadFailure(error){
  console.warn("Tải tài liệu quản trị",error);
- $("contentPanel").classList.add("hidden");
- $("loginPanel").classList.remove("hidden");
+ if(!currentFrame){
+  $("contentPanel").classList.add("hidden");
+  $("loginPanel").classList.remove("hidden");
+ }
  $("retryAdminContent").classList.remove("hidden");
- say("Chưa tải được tài liệu. Bạn có thể thử tải lại bằng phiên đăng nhập hiện tại.");
+ say(currentFrame
+  ?"Đang xem bản gốc. Chưa tải được các chỉnh sửa. Bấm Thử tải lại tài liệu để tiếp tục."
+  :"Chưa tải được tài liệu. Bạn có thể thử tải lại bằng phiên đăng nhập hiện tại.");
 }
 
 let restoring=false;
@@ -844,15 +867,15 @@ async function restoreAdminSession(){
    return;
   }
   adminSession=session;
-  if(currentFrame)return;
-  await openAdminDocument(session.access_token);
+  if(adminDocumentReady)return;
+  await openAdminDocument();
  }catch(error){showAdminLoadFailure(error);}
  finally{restoring=false;}
 }
 if(adminMode){
  await restoreAdminSession();
  client.auth.onAuthStateChange((event,session)=>{
-  if((event==="INITIAL_SESSION"||event==="SIGNED_IN")&&session&&!currentFrame&&!loginInProgress)
+  if((event==="INITIAL_SESSION"||event==="SIGNED_IN")&&session&&!adminDocumentReady&&!loginInProgress)
    setTimeout(()=>void restoreAdminSession(),0);
   if(event==="TOKEN_REFRESHED"&&session&&adminSession)adminSession=session;
  });

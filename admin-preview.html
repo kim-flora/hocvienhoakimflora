@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kim Flora · Quản trị</title>
 <link rel="stylesheet" href="./portal.css"></head>
-<body><main class="wrap"><header class="site-header"><h1>Kim Flora</h1><nav><a class="portal-link" href="./guest.html?load=parts">Cổng quản trị chính</a><a class="portal-link" href="./view.html">Cổng học viên</a></nav></header>
+<body><main class="wrap"><header class="site-header"><h1>Kim Flora</h1><nav><a class="portal-link" href="./guest.html?load=progress">Cổng quản trị chính</a><a class="portal-link" href="./view.html">Cổng học viên</a></nav></header>
 <section class="card" id="loginPanel" aria-labelledby="loginTitle"><h2 id="loginTitle">Đăng nhập quản trị</h2>
 <p id="loginInfo">Đăng nhập bằng tài khoản quản trị Kim Flora.</p>
 <form id="adminLogin" class="hidden"><label for="adminEmail">Email quản trị</label><input type="email" id="adminEmail" required autocomplete="username"><label for="adminPassword">Mật khẩu quản trị</label><input type="password" id="adminPassword" required autocomplete="current-password"><div><button type="submit">Đăng nhập quản trị</button><button type="button" class="secondary" id="forgotAdminPassword">Quên mật khẩu?</button></div></form><form id="resetAdminPassword" class="hidden"><h3>Đặt lại mật khẩu quản trị</h3><p>Hãy nhập mật khẩu mới sau khi mở liên kết trong email khôi phục.</p><label for="recoveryPassword">Mật khẩu mới</label><input id="recoveryPassword" type="password" autocomplete="new-password" minlength="12" required><label for="recoveryConfirm">Nhập lại mật khẩu mới</label><input id="recoveryConfirm" type="password" autocomplete="new-password" minlength="12" required><div><button type="submit">Lưu mật khẩu mới</button></div></form></section>
@@ -1072,7 +1072,7 @@ async function openModularPreview(){
  }catch(error){
   console.warn("Không tải được bản quản trị phân hệ",error);
   say("Đang mở tài liệu trong cổng quản trị chính…");
-  location.replace("./guest.html?load=parts");
+  location.replace("./guest.html?load=progress");
   return true;
  }
  modularPreview=true;
