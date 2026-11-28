@@ -10,8 +10,11 @@
 <section id="contentPanel" class="hidden" aria-labelledby="pageBrand"><header class="lesson-header"><h2 id="pageBrand" title="Kim Flora Studio">Kim Flora Studio</h2><div class="lesson-actions"><span id="kfSyncStatus" role="status" aria-live="polite"></span><button id="kfQuickBackup" type="button" class="secondary hidden">Sao lưu website</button><button id="openAccountSettings" class="secondary hidden" type="button">Cài đặt tài khoản</button><button id="logout" type="button" class="secondary">Đăng xuất</button></div></header><article id="viewer"></article></section>
 <section id="adminPanel" class="card hidden"><header><h2>Cài đặt tài khoản</h2><button id="returnToLessons" type="button" class="secondary">← Quay lại tài liệu</button></header><hr><h3>Quản lý mật khẩu truy cập Guest</h3>
 <p>Cấp tên đăng nhập và mật khẩu riêng cho từng học viên để xem tài liệu. Mã gắn với trình duyệt dùng lần đầu, tự hết hạn và được xóa sau 30 ngày kể từ ngày cấp. Bạn có thể thu hồi sớm.</p>
-<label for="guestLabel">Tên đăng nhập học viên</label><input id="guestLabel" maxlength="120" placeholder="Ví dụ: Học viên A">
-<button id="createGuest" type="button">Tạo mật khẩu Guest</button><div id="newPassword" aria-live="polite"></div>
+<form id="createGuestForm" class="guest-create-form">
+<label for="guestLabel">Tên đăng nhập học viên</label><input id="guestLabel" maxlength="120" placeholder="Ví dụ: Học viên A" required>
+<label for="guestAccessPassword">Mật khẩu học viên</label><input id="guestAccessPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="12–128 ký tự" required>
+<button id="createGuest" type="submit">Cấp quyền Guest</button>
+</form>
 <h3>Danh sách mật khẩu Guest</h3><div id="customerList"></div>
 <h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><hr><h3>Xuất bản thay đổi</h3><p>Thay đổi đã lưu trong khung tài liệu sẽ tự đồng bộ lên website khi có kết nối. Chỉ khi hiện “Đã lưu lên website” mới xác nhận máy chủ đã nhận dữ liệu.</p><button id="kfRecoverComposition" type="button" class="secondary">Sao chép bài Bố cục đã sửa từ website vào quản trị</button><span id="kfRecoverInfo" role="status"></span> <label for="kfImportHtmlFile" style="font-size:13px;font-weight:700;display:block;margin-top:14px">Nhập file index.html mới từ Kim Flora Studio</label><input id="kfImportHtmlFile" type="file" accept=".html,.htm,text/html" style="max-width:100%;margin:6px 0"><button id="kfImportHtml" type="button" class="secondary">Sao chép HTML vào trang quản trị</button><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
 </main>
@@ -1082,20 +1085,19 @@ $("adminLogin").onsubmit=async e=>{
 };
 
 const guestExpiryFormat=new Intl.DateTimeFormat("vi-VN",{dateStyle:"short",timeStyle:"short",timeZone:"Asia/Ho_Chi_Minh"});
-$("createGuest").onclick=async()=>{
+$("createGuestForm").onsubmit=async event=>{
+ event.preventDefault();
  const button=$("createGuest");
  if(button.disabled)return;
  const label=$("guestLabel").value.trim();
  if(!label)return say("Nhập tên đăng nhập học viên trước.");
+ const password=$("guestAccessPassword").value;
+ if(password.trim().length<12||password.length>128)return say("Mật khẩu học viên cần từ 12 đến 128 ký tự.");
  button.disabled=true;
  try{
-  const result=await api("create-guest",{label},adminSession?.access_token);
-  $("newPassword").replaceChildren();
-  const p=document.createElement("p");
-  p.textContent="Tên đăng nhập: "+label+" · Mật khẩu: "+result.password+" (chỉ hiển thị lần này)";
-  if(result.expires_at)p.append(" · Hết hạn "+guestExpiryFormat.format(new Date(result.expires_at)));
-  $("newPassword").append(p);
-  $("guestLabel").value="";
+  const result=await api("create-guest",{label,password},adminSession?.access_token);
+  $("createGuestForm").reset();
+  say("Đã cấp quyền Guest cho "+label+". Hết hạn "+guestExpiryFormat.format(new Date(result.expires_at))+".");
   await listGuests();
  }catch(err){say(err.message);}
  finally{button.disabled=false;}

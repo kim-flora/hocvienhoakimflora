@@ -168,3 +168,5 @@ button:disabled { cursor: wait; opacity: .7; }
   .lesson-actions button { padding-inline: .625rem; }
 }
 .portal-notice { margin: 1rem auto; width: min(calc(100% - 2rem), 30rem); }
+
+.guest-create-form button { display: block; margin-top: .75rem; }

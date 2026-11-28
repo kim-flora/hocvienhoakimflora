@@ -22,6 +22,7 @@ async function hashPassword(password:string,salt:string){
 function equal(a:string,b:string){const x=enc.encode(a),y=enc.encode(b);let diff=x.length^y.length;for(let i=0;i<Math.max(x.length,y.length);i++)diff|=(x[i]||0)^(y[i]||0);return diff===0;}
 async function rpc(action:string,p:Record<string,unknown>){
  const {data,error}=await service.rpc("kf_server_guest",{action,p});
+ if(error?.code==="23505"&&action==="create-guest")return {duplicate:true};
  if(error)throw new Error("Server data unavailable");
  return data;
 }
@@ -36,6 +37,7 @@ async function isAdmin(req:Request){
 }
 const validDevice=(device:string)=>/^[a-f0-9]{64}$/.test(device);
 const normalizeName=(name:string)=>name.trim().normalize("NFC").toLocaleLowerCase("vi");
+const guestLookup=(name:string,password:string)=>hmac("guest-login:"+JSON.stringify([normalizeName(name),password]));
 async function validGuest(session:string,device:string){
  if(!/^[a-f0-9]{64}$/.test(session)||!validDevice(device))return false;
  const result=await rpc("session-valid",{token_digest:await digest(session),device_digest:await digest(device)});
@@ -43,12 +45,16 @@ async function validGuest(session:string,device:string){
 }
 async function login(name:string,password:string,device:string,req:Request){
  if(!name.trim()||name.length>120||!validDevice(device))return out(400,{error:"Nhập tên học viên và bật bộ nhớ trình duyệt để đăng nhập."});
- if(password.length<16||password.length>256)return out(401,{error:"Mật khẩu không hợp lệ."});
+ if(password.length<12||password.length>256)return out(401,{error:"Mật khẩu không hợp lệ."});
  // Use edge-provided IP if trustworthy; fall back to common client bucket rather than trust arbitrary forwarded headers.
  const clientTag=req.headers.get("cf-connecting-ip")||"unidentified";
  const limit=await rpc("attempt",{client_digest:await hmac("attempt:"+clientTag)});
  if(limit.limited)return out(429,{error:"Thử quá nhiều lần. Vui lòng thử lại sau."});
- const match=await rpc("credential",{lookup_digest:await hmac("password:"+password)});
+ let match=await rpc("credential",{lookup_digest:await guestLookup(name,password)});
+ // Previously issued passwords were random and indexed without a name.
+ if(!match.id&&/^[a-f0-9]{48}$/.test(password)){
+  match=await rpc("credential",{lookup_digest:await hmac("password:"+password)});
+ }
  const calculated=await hashPassword(password,match.password_salt||"00000000000000000000000000000000");
  if(!match.id||match.revoked||!equal(calculated,match.password_hash||"")||normalizeName(name)!==normalizeName(match.label))return out(401,{error:"Tên hoặc mật khẩu không đúng, đã hết hạn hoặc đã bị thu hồi."});
  const session=random(32);
@@ -85,9 +91,17 @@ Deno.serve(async req=>{
   if(action==="create-guest"){
    const label=String(b.label||"").trim();
    if(label.length<1||label.length>120)return out(400,{error:"Tên khách không hợp lệ."});
-   const password=random(24), salt=random(16);
-   const guest=await rpc("create-guest",{label,lookup_digest:await hmac("password:"+password),password_hash:await hashPassword(password,salt),password_salt:salt});
-   return out(200,{password,expires_at:guest.expires_at});
+   const password=typeof b.password==="string"?b.password:"";
+   if(password.trim().length<12||password.length>128)return out(400,{error:"Mật khẩu học viên cần từ 12 đến 128 ký tự."});
+   if(/^[a-f0-9]{48}$/.test(password)){
+    const existing=await rpc("credential",{lookup_digest:await hmac("password:"+password)});
+    if(existing.id&&normalizeName(existing.label)===normalizeName(label))
+     return out(409,{error:"Tên và mật khẩu này đã được cấp. Vui lòng chọn mật khẩu khác."});
+   }
+   const salt=random(16);
+   const guest=await rpc("create-guest",{label,lookup_digest:await guestLookup(label,password),password_hash:await hashPassword(password,salt),password_salt:salt});
+   if(guest.duplicate)return out(409,{error:"Tên và mật khẩu này đã được cấp. Vui lòng chọn mật khẩu khác."});
+   return out(200,{expires_at:guest.expires_at});
   }
   if(action==="list-guests"){
    const guests=await rpc("list-guests",{});
