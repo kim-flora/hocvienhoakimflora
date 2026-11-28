@@ -1990,14 +1990,6 @@
             box-shadow:0 3px 12px rgba(15,23,42,.10);
             cursor:crosshair;
         }
-        .kf-adobe-wheel-stage::after {
-            content:'';
-            position:absolute;
-            inset:0;
-            border-radius:50%;
-            pointer-events:none;
-            box-shadow:inset 0 0 0 1px rgba(15,23,42,.10);
-        }
         .kf-adobe-adjustments { display:grid; gap:7px; margin-top:8px; padding:8px; border:1px solid #dbe3ef; border-radius:8px; background:#f8fafc; }
         .kf-adobe-adjustments label { display:grid; grid-template-columns:95px minmax(0,1fr) 38px; gap:7px; align-items:center; font-size:11px; font-weight:700; color:#334155; }
         .kf-adobe-adjustments input[type=range] { width:100%; min-width:0; }
@@ -2229,7 +2221,7 @@
                     </select>
                 </div>
                 <div class="kf-adobe-wheel-stage">
-                    <canvas id="kfAdobeWheel" width="280" height="280"></canvas>
+                    <canvas id="kfAdobeWheel" width="280" height="280" aria-label="Vòng màu 360 ô, từ tông sáng ở tâm đến tông đậm ở rìa"></canvas>
                 </div>
 
                 <div id="kfAdobeHarmonyResult" class="kf-adobe-harmony-result"></div>
@@ -11561,42 +11553,83 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             });
         }
 
-        function kfAdobePointForHex(hex, radius) {
-            const hsl=kfAdobeHexToHsl(hex);
-            const angle=(hsl.h-90)*Math.PI/180;
-            const rr=radius*kfAdobeClamp(hsl.s,0,100)/100;
-            return {x:140+Math.cos(angle)*rr, y:140+Math.sin(angle)*rr};
+        const kfWheelCenter = 140;
+        const kfWheelRadius = 131;
+        const kfWheelHub = 19;
+        const kfWheelSectors = 36;
+        const kfWheelStep = 360 / kfWheelSectors;
+        // Mỗi vòng dùng một cặp độ sáng và bão hòa, từ pastel tới màu đậm.
+        const kfWheelTones = [
+            [95, 82], [90, 83], [84, 85], [77, 87], [69, 89],
+            [61, 92], [53, 94], [46, 90], [38, 87], [30, 84]
+        ];
+        const kfWheelRingWidth = (kfWheelRadius - kfWheelHub) / kfWheelTones.length;
+
+        function kfWheelCellHex(sector, ring) {
+            const [lightness, saturation] = kfWheelTones[ring];
+            return kfAdobeHslToHex(sector * kfWheelStep, saturation, lightness);
+        }
+
+        function kfAdobePointForHex(hex) {
+            const {h, s, l} = kfAdobeHexToHsl(hex);
+            if (s === 0) return {x: kfWheelCenter, y: kfWheelCenter};
+            const ring = kfWheelTones.reduce((nearest, [lightness], index) =>
+                Math.abs(lightness - l) < Math.abs(kfWheelTones[nearest][0] - l) ? index : nearest, 0);
+            const angle = Math.round(h / kfWheelStep) * kfWheelStep * Math.PI / 180;
+            const radius = kfWheelHub + (ring + 0.5) * kfWheelRingWidth;
+            return {
+                x: kfWheelCenter + Math.cos(angle) * radius,
+                y: kfWheelCenter + Math.sin(angle) * radius
+            };
+        }
+
+        function kfDrawWheelGrid(ctx) {
+            const center = kfWheelCenter;
+            kfWheelTones.forEach((_, ring) => {
+                const inner = kfWheelHub + ring * kfWheelRingWidth;
+                const outer = inner + kfWheelRingWidth;
+                for (let sector = 0; sector < kfWheelSectors; sector++) {
+                    const start = (sector - 0.5) * kfWheelStep * Math.PI / 180;
+                    const end = start + kfWheelStep * Math.PI / 180;
+                    ctx.beginPath();
+                    ctx.arc(center, center, outer, start, end);
+                    ctx.arc(center, center, inner, end, start, true);
+                    ctx.closePath();
+                    ctx.fillStyle = kfWheelCellHex(sector, ring);
+                    ctx.fill();
+                }
+            });
+
+            ctx.beginPath();
+            for (let ring = 0; ring <= kfWheelTones.length; ring++) {
+                const radius = kfWheelHub + ring * kfWheelRingWidth;
+                ctx.moveTo(center + radius, center);
+                ctx.arc(center, center, radius, 0, 2 * Math.PI);
+            }
+            for (let sector = 0; sector < kfWheelSectors; sector++) {
+                const angle = (sector - 0.5) * kfWheelStep * Math.PI / 180;
+                const x = Math.cos(angle), y = Math.sin(angle);
+                ctx.moveTo(center + x * kfWheelHub, center + y * kfWheelHub);
+                ctx.lineTo(center + x * kfWheelRadius, center + y * kfWheelRadius);
+            }
+            ctx.lineWidth = 0.95;
+            ctx.strokeStyle = 'rgba(255, 255, 255, .88)';
+            ctx.stroke();
         }
 
         let kfWheelBackground;
         function kfAdobeDrawWheel(colors) {
-            if(!kfAdobeCtx)return;
-            const size=280, pixelSize=560;
-            const cx=size/2, cy=size/2, radius=size/2-2;
+            if (!kfAdobeCtx) return;
             if (!kfWheelBackground) {
-                const image=kfAdobeCtx.createImageData(pixelSize,pixelSize);
-                const data=image.data;
-
-                for(let y=0;y<pixelSize;y++){
-                    for(let x=0;x<pixelSize;x++){
-                        const lx=x/2, ly=y/2;
-                        const dx=lx-cx, dy=ly-cy;
-                        const rr=Math.sqrt(dx*dx+dy*dy);
-                        const idx=(y*pixelSize+x)*4;
-                        if(rr>radius){ data[idx+3]=0; continue; }
-
-                        const sat=kfAdobeClamp(rr/radius,0,1);
-                        const hue=((Math.atan2(dy,dx)*180/Math.PI)+90+360)%360;
-                        const rgb=kfAdobeHexToRgb(kfAdobeHslToHex(hue,sat*100,50));
-                        data[idx]=rgb.r; data[idx+1]=rgb.g; data[idx+2]=rgb.b; data[idx+3]=255;
-                    }
-                }
-                kfWheelBackground = image;
+                kfAdobeCtx.fillStyle = '#fff';
+                kfAdobeCtx.fillRect(0, 0, 280, 280);
+                kfDrawWheelGrid(kfAdobeCtx);
+                kfWheelBackground = kfAdobeCtx.getImageData(0, 0, kfAdobeCanvas.width, kfAdobeCanvas.height);
             }
-            kfAdobeCtx.putImageData(kfWheelBackground,0,0);
-            const points=colors.map(c=>kfAdobePointForHex(c.hex,radius));
+            kfAdobeCtx.putImageData(kfWheelBackground, 0, 0);
+            const points = colors.map(color => kfAdobePointForHex(color.hex));
 
-            // Đường nối theo bộ phối — tạo cảm giác giống bánh xe Adobe.
+            // Nối các màu trong chế độ phối.
             if(points.length>1){
                 kfAdobeCtx.save();
                 kfAdobeCtx.strokeStyle='rgba(255,255,255,.96)';
@@ -11609,19 +11642,19 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                 kfAdobeCtx.restore();
             }
 
-            // Điểm màu: viền trắng + viền xám, giống marker của công cụ phối màu.
+            // Hiển thị màu thật của điểm neo, kể cả màu nhập từ HEX hoặc Pantone.
             colors.forEach((c,i)=>{
                 const p=points[i];
                 const isBase=i===kfAdobeSelectedSwatchIndex;
                 kfAdobeCtx.beginPath();
-                kfAdobeCtx.arc(p.x,p.y,isBase?9:8,0,Math.PI*2);
+                kfAdobeCtx.arc(p.x,p.y,isBase?7:6,0,Math.PI*2);
                 kfAdobeCtx.fillStyle=c.hex;
                 kfAdobeCtx.fill();
-                kfAdobeCtx.lineWidth=isBase?3:2;
+                kfAdobeCtx.lineWidth=isBase?2.5:1.75;
                 kfAdobeCtx.strokeStyle='#fff';
                 kfAdobeCtx.stroke();
                 kfAdobeCtx.beginPath();
-                kfAdobeCtx.arc(p.x,p.y,(isBase?9:8)+1.7,0,Math.PI*2);
+                kfAdobeCtx.arc(p.x,p.y,(isBase?7:6)+1.7,0,Math.PI*2);
                 kfAdobeCtx.strokeStyle='rgba(15,23,42,.38)';
                 kfAdobeCtx.lineWidth=1;
                 kfAdobeCtx.stroke();
@@ -11722,11 +11755,13 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
         }
 
         function kfMoveWheelColor(point, index) {
-            const dx = point.x - 140, dy = point.y - 140;
-            const sat = Math.min(100, Math.hypot(dx, dy) / 138 * 100);
-            const hue = (Math.atan2(dy, dx) * 180 / Math.PI + 450) % 360;
-            const light = kfAdobeHexToHsl(kfAdobeHarmonyCurrent[index].hex).l;
-            const color = kfAdobeHslToHex(hue, sat, light);
+            const dx = point.x - kfWheelCenter, dy = point.y - kfWheelCenter;
+            const radius = Math.hypot(dx, dy);
+            const angle = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+            const sector = Math.round(angle / kfWheelStep) % kfWheelSectors;
+            const ring = Math.min(kfWheelTones.length - 1, Math.floor((radius - kfWheelHub) / kfWheelRingWidth));
+            const color = ring < 0 ? '#FFFFFF' : kfWheelCellHex(sector, ring);
+            if (kfAdobeHarmonyCurrent[index].hex === color) return;
             if (index === 0) {
                 kfAdobeSetBase(color);
                 return;
@@ -11744,15 +11779,16 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             if (!event.isPrimary || event.button !== 0) return;
             const point = kfWheelPosition(event);
             const distances = kfAdobeHarmonyCurrent.map(({hex}) => {
-                const anchor = kfAdobePointForHex(hex, 138);
+                const anchor = kfAdobePointForHex(hex);
                 return Math.hypot(anchor.x - point.x, anchor.y - point.y);
             });
             const nearest = Math.min(...distances);
-            if (nearest > 12 && Math.hypot(point.x - 140, point.y - 140) > 138) return;
-            const index = nearest <= 12 ? distances.indexOf(nearest) : 0;
+            const onAnchor = kfAdobeHarmonySelect.value !== 'free' && nearest <= 9;
+            if (!onAnchor && Math.hypot(point.x - kfWheelCenter, point.y - kfWheelCenter) > kfWheelRadius) return;
+            const index = onAnchor ? distances.indexOf(nearest) : 0;
             kfDraggedColor = {index, pointerId: event.pointerId};
             kfAdobeCanvas.setPointerCapture(event.pointerId);
-            if (nearest > 12) kfMoveWheelColor(point, index);
+            if (!onAnchor) kfMoveWheelColor(point, index);
             else {
                 kfAdobeSelectedSwatchIndex = index;
                 kfAdobeSetAdjustmentSource(kfAdobeHarmonyCurrent[index].hex);
@@ -13103,7 +13139,7 @@ else insert();
 };if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();})();</script>
 <style>
 .kf-adobe-wheel-panel{padding:0;border:0;background:transparent}
-.kf-adobe-wheel-stage{max-width:250px;margin:0 auto}
+.kf-adobe-wheel-stage{width:min(280px,100%);margin:4px auto 2px}
 #kfAdobeWheel{touch-action:none}
 .kf-wheel-options{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:12px}
 .kf-wheel-options select{min-width:0;max-width:100%}
