@@ -2162,7 +2162,15 @@
 
     <!-- GIAO DIỆN CHÍNH -->
     <div class="header">
-        <h1>Kim Flora Studio</h1>
+        <h1 class="kf-brand" id="kfBrand">
+            <span class="kf-brand-flower" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i>
+            </span>
+            <span class="kf-brand-wordmark">
+                <span class="kf-brand-name">Kim <em>Flora</em></span>
+                <span class="kf-brand-studio">Studio</span>
+            </span>
+        </h1>
         <div class="header-actions">
             <button class="btn-color-knowledge" type="button" onclick="openColorKnowledge()">Phối màu &amp; Chọn màu</button>
             <button class="btn-visual-color-knowledge" type="button" onclick="openVisualColorKnowledge()">5 nhóm màu hình ảnh</button>
@@ -12954,7 +12962,12 @@ else insert();
      if (value) addColor(value);
      else alert('Mã HEX không hợp lệ!');
  };
+ const brand = document.getElementById('kfBrand');
  renderRolesList = function() {
+     // Cycle shorter palettes across the five petals.
+     for (let index = 0; index < 5; index++) {
+         brand.style.setProperty('--petal-' + (index + 1), hex(flowerRoles[index % flowerRoles.length].hex));
+     }
      box.replaceChildren();
      const toolbar = el('div');
      toolbar.className = 'kf-flex-tools';
@@ -13164,6 +13177,83 @@ else insert();
 .palette-details:not([open]){padding-block:4px;background:transparent;border:0}
 #savedPalettesArea:not([open]) .saved-palettes-head{display:none}
 #savedPalettesArea:not([open]) .saved-palettes-list{display:none}
+.header:has(.kf-brand) {
+    background: #fffaf6;
+    border: 1px solid #f0e4e3;
+    border-radius: 12px;
+    padding: 8px 12px;
+}
+.kf-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    white-space: nowrap;
+    --petal-1: #efb8a2;
+    --petal-2: #d49abd;
+    --petal-3: #b6a0d5;
+    --petal-4: #aab99c;
+    --petal-5: #e8c981;
+}
+.kf-brand-flower {
+    position: relative;
+    flex: none;
+    width: 34px;
+    height: 34px;
+}
+.kf-brand-flower i {
+    position: absolute;
+    top: 1px;
+    left: 11.5px;
+    width: 11px;
+    height: 15px;
+    border: 1px solid #35263a24;
+    border-radius: 68% 68% 56% 56%;
+    transform-origin: 50% 16px;
+}
+.kf-brand-flower i:nth-child(1) { background: var(--petal-1); }
+.kf-brand-flower i:nth-child(2) { background: var(--petal-2); transform: rotate(72deg); }
+.kf-brand-flower i:nth-child(3) { background: var(--petal-3); transform: rotate(144deg); }
+.kf-brand-flower i:nth-child(4) { background: var(--petal-4); transform: rotate(216deg); }
+.kf-brand-flower i:nth-child(5) { background: var(--petal-5); transform: rotate(288deg); }
+.kf-brand-flower::after {
+    content: '';
+    position: absolute;
+    inset: 14px;
+    background: #fffaf6;
+    border: 1px solid #71506c55;
+    border-radius: 50%;
+}
+.kf-brand-wordmark { display: flex; align-items: baseline; gap: 8px; }
+.kf-brand-name {
+    font: 700 clamp(24px, 3vw, 30px)/1.1 Georgia, 'Times New Roman', serif;
+    letter-spacing: -.045em;
+    color: #6b365c;
+}
+.kf-brand-name em { font-family: inherit; font-style: italic; }
+@supports (background-clip: text) and (color: color-mix(in srgb, black, white)) {
+    .kf-brand-name {
+        background: linear-gradient(105deg,
+            color-mix(in srgb, var(--petal-1) 32%, #4a233c),
+            color-mix(in srgb, var(--petal-4) 26%, #492356));
+        background-clip: text;
+        color: transparent;
+    }
+}
+.kf-brand-studio {
+    font: 700 9px/1.2 system-ui, sans-serif;
+    letter-spacing: .23em;
+    text-transform: uppercase;
+    color: #6d606c;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .kf-brand-flower { transition: transform 220ms ease; }
+    .kf-brand:hover .kf-brand-flower { transform: rotate(14deg); }
+}
+@media (forced-colors: active) {
+    .kf-brand-name { color: CanvasText; }
+    .kf-brand-flower i { border-color: CanvasText; }
+}
 .kf-dropdown-nav{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:6px}
 .header > .header-actions[hidden]{display:none!important}
 .kf-dropdown{position:relative}
