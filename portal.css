@@ -170,3 +170,4 @@ button:disabled { cursor: wait; opacity: .7; }
 .portal-notice { margin: 1rem auto; width: min(calc(100% - 2rem), 30rem); }
 
 .guest-create-form button { display: block; margin-top: .75rem; }
+#legacyPublishing > button { margin: .5rem .375rem .5rem 0; }

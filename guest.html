@@ -16,7 +16,7 @@
 <button id="createGuest" type="submit">Cấp quyền Guest</button>
 </form>
 <h3>Danh sách mật khẩu Guest</h3><div id="customerList"></div>
-<h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><hr><h3>Xuất bản thay đổi</h3><p>Thay đổi đã lưu trong khung tài liệu sẽ tự đồng bộ lên website khi có kết nối. Chỉ khi hiện “Đã lưu lên website” mới xác nhận máy chủ đã nhận dữ liệu.</p><button id="kfRecoverComposition" type="button" class="secondary">Sao chép bài Bố cục đã sửa từ website vào quản trị</button><span id="kfRecoverInfo" role="status"></span> <label for="kfImportHtmlFile" style="font-size:13px;font-weight:700;display:block;margin-top:14px">Nhập file index.html mới từ Kim Flora Studio</label><input id="kfImportHtmlFile" type="file" accept=".html,.htm,text/html" style="max-width:100%;margin:6px 0"><button id="kfImportHtml" type="button" class="secondary">Sao chép HTML vào trang quản trị</button><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
+<h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><hr><h3>Xuất bản thay đổi</h3><p>Thay đổi đã lưu trong khung tài liệu sẽ tự đồng bộ lên website khi có kết nối. Chỉ khi hiện “Đã lưu lên website” mới xác nhận máy chủ đã nhận dữ liệu.</p><button id="kfRecoverComposition" type="button" class="secondary">Khôi phục bài Bố cục từ thiết bị này</button><span id="kfRecoverInfo" role="status"></span> <label for="kfImportHtmlFile" style="font-size:13px;font-weight:700;display:block;margin-top:14px">Nhập file index.html mới từ Kim Flora Studio</label><input id="kfImportHtmlFile" type="file" accept=".html,.htm,text/html" style="max-width:100%;margin:6px 0"><button id="kfImportHtml" type="button" class="secondary">Sao chép HTML vào trang quản trị</button><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish" type="button">Đồng bộ ngay</button></section>
 </main>
 <script type="module">
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
@@ -47,7 +47,7 @@ const say=t=>$("message").textContent=t;
 const KF_PENDING_KEY="kf_editor_unsynced_v1";
 const KF_INFLIGHT_KEY="kf_editor_inflight_v1";
 const freshPending=()=>({local:{},indexed:{},removeLocal:[],removeIndexed:[]});
-let pending=freshPending(),syncBusy=false,syncTimer=null;
+let pending=freshPending(),inFlight=null,syncRun=null,syncTimer=null;
 let syncFailures=0,syncRetryAt=0,loginInProgress=false;
 function scheduleSync(delay=850){
  clearTimeout(syncTimer);
@@ -85,10 +85,8 @@ function recoveryIO(action,value,recordKey="pending"){
    const db=open.result,tx=db.transaction("records",action==="get"?"readonly":"readwrite");
    const store=tx.objectStore("records");
    const req=action==="get"?store.get(recordKey):action==="put"?store.put(value,recordKey):store.delete(recordKey);
-   req.onsuccess=()=>resolve(req.result);
-   req.onerror=()=>reject(req.error);
-   tx.oncomplete=()=>db.close();
-   tx.onabort=()=>db.close();
+   tx.oncomplete=()=>{db.close();resolve(req.result);};
+   tx.onabort=()=>{db.close();reject(tx.error||req.error);};
   };
  });
 }
@@ -109,9 +107,19 @@ const recoveryReady=(async()=>{
   }
  }catch(error){console.warn("Kim Flora recovery:",error);}
 })();
+function mergePending(older,newer){
+ const merged=freshPending();
+ for(const [area,removals] of [["local","removeLocal"],["indexed","removeIndexed"]]){
+  const values={...older?.[area],...newer[area]};
+  for(const key of newer[removals])delete values[key];
+  merged[area]=values;
+  merged[removals]=[...new Set([...(older?.[removals]||[]),...newer[removals]])].filter(key=>!(key in values));
+ }
+ return merged;
+}
 function preservePending(){
  // IndexedDB is the primary durable journal; do not duplicate multi-MB edits in localStorage.
- const backup=JSON.parse(JSON.stringify(pending));
+ const backup=JSON.parse(JSON.stringify(mergePending(inFlight,pending)));
  recoveryWrite=recoveryWrite.then(()=>recoveryIO("put",backup)).catch(e=>{
   console.warn("Kim Flora recovery backup:",e);
   setSyncStatus("Lỗi lưu dự phòng");
@@ -132,59 +140,53 @@ function queuePatch(area,key,value,removed=false){
  setSyncStatus("Đang đồng bộ…");
  scheduleSync();
 }
-async function flushPending(){
- if(syncBusy||!adminSession)return;
- if(Date.now()<syncRetryAt){scheduleSync();return;}
- syncBusy=true;
- try{
-  await recoveryReady;
-  await recoveryWrite;
- }catch(error){
-  syncBusy=false;
-  setSyncStatus("Lỗi lưu dự phòng");
-  say("Không kiểm tra được bản lưu dự phòng. Hãy sao lưu website trước khi đóng trang.");
-  return;
- }
- if(!hasPending()){syncBusy=false;return;}
- const batch=pending;
- // Recovery journal retains this exact batch until the server confirms it.
+function flushPending(){
+ if(!syncRun)syncRun=flushPendingBatch().finally(()=>{syncRun=null;});
+ return syncRun;
+}
+async function flushPendingBatch(){
+ if(!adminSession)return false;
+ if(Date.now()<syncRetryAt){scheduleSync();return false;}
+ await recoveryReady;
+ await recoveryWrite;
+ if(!hasPending())return true;
+
+ inFlight=pending;
  pending=freshPending();
  try{
   const {error}=await client.rpc("kf_patch_snapshot",{
-   p_local:batch.local,p_indexed:batch.indexed,
-   p_remove_local:batch.removeLocal,p_remove_indexed:batch.removeIndexed
+   p_local:inFlight.local,p_indexed:inFlight.indexed,
+   p_remove_local:inFlight.removeLocal,p_remove_indexed:inFlight.removeIndexed
   });
   if(error)throw error;
-  syncFailures=0;syncRetryAt=0;
-  // On acknowledgement, atomically replace the journal with newer edits (if any).
-  recoveryWrite=recoveryWrite.then(()=>hasPending()?recoveryIO("put",JSON.parse(JSON.stringify(pending))):recoveryIO("delete"));
-  await recoveryWrite;
-  try{localStorage.removeItem(KF_PENDING_KEY);localStorage.removeItem(KF_INFLIGHT_KEY);}catch(_){} 
-  if($("message").textContent.startsWith("Không đồng bộ"))say("");
-  setSyncStatus(hasPending()?"Đang đồng bộ…":"Đã lưu lên website");
- }catch(e){
-  // Preserve more recent local changes if they arrived during the failed request.
-  for(const area of ["local","indexed"]){
-   for(const [k,v] of Object.entries(batch[area])){
-    if(!(k in pending[area]) && !(area==="local"?pending.removeLocal:pending.removeIndexed).includes(k))
-      pending[area][k]=v;
-   }
-  }
-  for(const [area,removed] of [["local",batch.removeLocal],["indexed",batch.removeIndexed]]){
-   const list=area==="local"?pending.removeLocal:pending.removeIndexed;
-   for(const k of removed)
-    if(!(k in pending[area])&&!list.includes(k))list.push(k);
-  }
+ }catch(error){
+  pending=mergePending(inFlight,pending);
+  inFlight=null;
   preservePending();
   syncFailures++;
   syncRetryAt=Date.now()+Math.min(300000,15000*2**Math.min(syncFailures-1,5));
   setSyncStatus("Chưa đồng bộ");
   say("Không đồng bộ được. Các thay đổi đang được giữ trên thiết bị này.");
-  console.warn("Kim Flora sync:",e);
- }finally{
-  syncBusy=false;
-  if(hasPending())scheduleSync(850);
+  console.warn("Kim Flora sync:",error);
+  scheduleSync();
+  return false;
  }
+
+ inFlight=null;
+ syncFailures=0;
+ syncRetryAt=0;
+ try{
+  recoveryWrite=recoveryWrite.then(()=>hasPending()?recoveryIO("put",pending):recoveryIO("delete"));
+  await recoveryWrite;
+  try{localStorage.removeItem(KF_PENDING_KEY);localStorage.removeItem(KF_INFLIGHT_KEY);}catch(_){}
+ }catch(error){
+  recoveryWrite=Promise.resolve();
+  console.warn("Kim Flora recovery cleanup:",error);
+ }
+ if($("message").textContent.startsWith("Không đồng bộ"))say("");
+ setSyncStatus(hasPending()?"Đang đồng bộ…":"Đã lưu lên website");
+ if(hasPending())scheduleSync();
+ return true;
 }
 window.addEventListener("message",e=>{
  if(!adminSession||e.source!==currentFrame?.contentWindow||e.data?.type!=="kf-sync-change")return;
@@ -247,27 +249,13 @@ $("kfRecoverComposition").onclick=async()=>{
 
 async function initializeAdminSnapshot(accessToken){
  const {value:server}=await api("admin-read",{key:"published/snapshot"},accessToken);
+ await recoveryReady;
  const base=server?.format===1?server:{format:1,local:{},indexed:{}};
- // The original Studio and the admin portal share the same GitHub Pages origin.
- // Preserve every server-side edit and import only missing local composition edits.
- const browser=await captureLocalSnapshot().catch(()=>({format:1,local:{},indexed:{}}));
- const additions={local:{},indexed:{}};
- const merged={...base,format:1,local:{...(base.local||{})},indexed:{...(base.indexed||{})}};
- for(const area of ["local","indexed"]){
-  for(const [key,value] of Object.entries(browser[area]||{})){
-   if(!KF_COMPOSITION_RECOVERY_RE.test(key))continue;
-   if(Object.prototype.hasOwnProperty.call(merged[area],key))continue;
-   additions[area][key]=value;
-   merged[area][key]=value;
-  }
- }
- if(Object.keys(additions.local).length||Object.keys(additions.indexed).length){
-  const {error}=await client.rpc("kf_patch_snapshot",{p_local:additions.local,p_indexed:additions.indexed});
-  if(error)console.warn("Kim Flora composition import:",error);
- }
- return merged;
+ const snapshot={...base,local:{...(base.local||{}),...pending.local},indexed:{...(base.indexed||{}),...pending.indexed}};
+ for(const key of pending.removeLocal)delete snapshot.local[key];
+ for(const key of pending.removeIndexed)delete snapshot.indexed[key];
+ return snapshot;
 }
-
 
 // Cài đặt tài khoản chỉ xuất hiện khi quản trị viên chủ động mở.
 function showAccountSettings(){
@@ -762,7 +750,8 @@ $("kfImportHtml").onclick=async()=>{
   const verify=await api("admin-read",{key:"published/main"},adminSession.access_token);
   if(verify.value?.html!==html)throw new Error("Đã gửi dữ liệu nhưng không xác minh được bản nhập. Vui lòng kiểm tra trước khi thử lại.");
   showContent(html,{readOnly:false,snapshot:editorSnapshot});
-  say("");
+  showLessons();
+  say("Đã cập nhật HTML trên website.");
  }catch(err){say("Không nhập được HTML: "+err.message)}
  finally{$("kfImportHtml").disabled=false;}
 };
@@ -779,19 +768,17 @@ $("kfBackup").onclick=async()=>{
  catch(err){say(err.message);}
 };
 $("kfPublish").onclick=async()=>{
+ const button=$("kfPublish");
+ if(!adminSession||button.disabled)return;
+ button.disabled=true;
  try{
-  const snapshot=await readEditor();
-  downloadJSON(snapshot);
-  if(!confirm("Đã tạo bản sao lưu JSON. Xuất bản nội dung chỉnh sửa này cho học viên?"))return;
-  const {data:{user},error:authErr}=await client.auth.getUser();
-  if(authErr||!user)throw new Error("Phiên quản trị hết hạn.");
-  const {error}=await client.rpc("kf_patch_snapshot",{
-   p_local:snapshot.local,p_indexed:snapshot.indexed
-  });
-  if(error)throw error;
-  editorSnapshot=snapshot;
-  say("Đã xuất bản dữ liệu! Học viên sẽ xem bản mới từ lần đăng nhập tiếp theo.");
- }catch(err){say("Chưa xuất bản được: "+err.message);}
+  syncRetryAt=0;
+  do{
+   if(!await flushPending())return;
+  }while(hasPending());
+  say("Đã đồng bộ các chỉnh sửa lên website.");
+ }catch(err){say("Chưa đồng bộ được: "+err.message);}
+ finally{button.disabled=false;}
 };
 $("changeAdminPassword").onclick=async()=>{
  const password=$("adminNewPassword").value;
@@ -805,7 +792,8 @@ $("changeAdminPassword").onclick=async()=>{
  }catch(e){say("Chưa đổi được mật khẩu: "+e.message);}
 };
 $("logout").onclick=async()=>{
- 
+ await recoveryReady;
+ await recoveryWrite;
  localStorage.removeItem(KF_IDLE_KEY);
  if(adminSession){await client.auth.signOut({scope:"local"});adminSession=null;}
  location.reload();
@@ -824,12 +812,10 @@ async function restoreAdminSession(){
   if(error||allowed!==true)return;
   adminSession=session;
   if(currentFrame){$("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");return;}
-  // The published document is required; snapshot and local drafts are optional.
-  // Do not block a valid admin session if a large snapshot fails to load.
-  const content=await api("admin-read",{key:"published/main"},session.access_token);
-  let snapshot={format:1,local:{},indexed:{}};
-  try{snapshot=await initializeAdminSnapshot(session.access_token);}
-  catch(error){console.warn("Optional snapshot unavailable",error);}
+  const [content,snapshot]=await Promise.all([
+   api("admin-read",{key:"published/main"},session.access_token),
+   initializeAdminSnapshot(session.access_token)
+  ]);
   try{await loadDrafts();}catch(error){console.warn("Optional drafts unavailable",error);}
   editorSnapshot=snapshot;
   showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
@@ -838,6 +824,7 @@ async function restoreAdminSession(){
   say("");
 
   void listGuests().catch(err=>console.warn("Guest list",err));
+  void flushPending();
  }catch(err){
   console.warn("Restore admin session",err);
   say("Không tải được tài liệu. Phiên đăng nhập vẫn được giữ; vui lòng tải lại trang.");

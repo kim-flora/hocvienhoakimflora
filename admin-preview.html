@@ -16,7 +16,7 @@
 <button id="createGuest" type="submit">Cấp quyền Guest</button>
 </form>
 <h3>Danh sách mật khẩu Guest</h3><div id="customerList"></div>
-<h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><hr><h3>Xuất bản thay đổi</h3><p>Thay đổi đã lưu trong khung tài liệu sẽ tự đồng bộ lên website khi có kết nối. Chỉ khi hiện “Đã lưu lên website” mới xác nhận máy chủ đã nhận dữ liệu.</p><button id="kfRecoverComposition" type="button" class="secondary">Sao chép bài Bố cục đã sửa từ website vào quản trị</button><span id="kfRecoverInfo" role="status"></span> <label for="kfImportHtmlFile" style="font-size:13px;font-weight:700;display:block;margin-top:14px">Nhập file index.html mới từ Kim Flora Studio</label><input id="kfImportHtmlFile" type="file" accept=".html,.htm,text/html" style="max-width:100%;margin:6px 0"><button id="kfImportHtml" type="button" class="secondary">Sao chép HTML vào trang quản trị</button><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
+<h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><div id="legacyPublishing"><hr><h3>Xuất bản thay đổi</h3><p>Thay đổi đã lưu trong khung tài liệu sẽ tự đồng bộ lên website khi có kết nối. Chỉ khi hiện “Đã lưu lên website” mới xác nhận máy chủ đã nhận dữ liệu.</p><button id="kfRecoverComposition" type="button" class="secondary">Sao chép bài Bố cục đã sửa từ website vào quản trị</button><span id="kfRecoverInfo" role="status"></span> <label for="kfImportHtmlFile" style="font-size:13px;font-weight:700;display:block;margin-top:14px">Nhập file index.html mới từ Kim Flora Studio</label><input id="kfImportHtmlFile" type="file" accept=".html,.htm,text/html" style="max-width:100%;margin:6px 0"><button id="kfImportHtml" type="button" class="secondary">Sao chép HTML vào trang quản trị</button><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></div><button id="kfModularBackup" type="button" class="secondary hidden">Tải bản sao lưu bài học</button></section>
 </main>
 <script type="module">
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
@@ -1041,6 +1041,9 @@ async function openModularPreview(){
    $("adminNewPassword").focus();
  });
  modularPreview=true;
+ $("legacyPublishing").classList.add("hidden");
+ $("kfModularBackup").classList.remove("hidden");
+ $("openAccountSettings").classList.remove("hidden");
  $("kfQuickBackup").classList.remove("hidden");
  say("");
  return true;
@@ -1197,6 +1200,7 @@ $("kfQuickBackup").onclick=async()=>{
   downloadJSON(backup);
  }catch(err){say("Không sao lưu được: "+err.message)}
 };
+$("kfModularBackup").onclick=()=>$("kfQuickBackup").click();
 $("kfBackup").onclick=async()=>{
  try{const snapshot=await readEditor();downloadJSON(snapshot);say("Đã sao lưu dữ liệu chỉnh sửa.");}
  catch(err){say(err.message);}
