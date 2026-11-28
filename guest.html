@@ -701,6 +701,22 @@ async function listGuests(){
     catch(err){say(err.message);}
    };
    row.append(b);
+  }else{
+   const button=document.createElement("button");
+   button.type="button";
+   button.textContent="Xóa";
+   button.setAttribute("aria-label","Xóa mã Guest của "+guest.label);
+   button.onclick=async()=>{
+    if(!confirm("Xóa vĩnh viễn mã Guest của "+guest.label+"?"))return;
+    button.disabled=true;
+    try{
+     await api("delete-guest",{id:guest.id},adminSession?.access_token);
+     row.remove();
+     say("Đã xóa mã Guest của "+guest.label+".");
+    }catch(err){say(err.message);}
+    finally{button.disabled=false;}
+   };
+   row.append(button);
   }
   $("customerList").append(row);
  }

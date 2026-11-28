@@ -93,10 +93,11 @@ Deno.serve(async req=>{
    const guests=await rpc("list-guests",{});
    return out(200,{guests});
   }
-  if(action==="revoke-guest"){
+  if(action==="revoke-guest"||action==="delete-guest"){
    const id=String(b.id||"");
    if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return out(400,{error:"ID không hợp lệ."});
-   await rpc("revoke-guest",{id});
+   const result=await rpc(action,{id});
+   if(!result.ok)return out(409,{error:"Hãy thu hồi mã Guest trước khi xóa."});
    return out(200,{ok:true});
   }
   if(action==="admin-read"){
