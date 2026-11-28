@@ -249,7 +249,19 @@ $("kfRecoverComposition").onclick=async()=>{
 };
 
 async function initializeAdminSnapshot(accessToken){
- const {value:server}=await api("admin-read",{key:"published/snapshot"},accessToken);
+ let server;
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),90000);
+ try{
+  // This table already restricts SELECT to authenticated Kim Flora admins.
+  const {data,error}=await client.from("kf_content").select("content_value")
+   .eq("content_key","published/snapshot").abortSignal(controller.signal).maybeSingle();
+  if(error||!data)throw error||new Error("Không tìm thấy dữ liệu chỉnh sửa.");
+  server=data.content_value;
+ }catch(error){
+  console.warn("Read Studio snapshot through Data API",error);
+  ({value:server}=await api("admin-read",{key:"published/snapshot"},accessToken));
+ }finally{clearTimeout(timeout);}
  await recoveryReady;
  const base=server?.format===1?server:{format:1,local:{},indexed:{}};
  const snapshot={...base,local:{...(base.local||{}),...pending.local},indexed:{...(base.indexed||{}),...pending.indexed}};
