@@ -22,6 +22,7 @@
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
 import {captureLocalSnapshot,downloadSnapshotFile} from "./supabase/kim-flora-sync.js";
 import {colorCurriculumScript} from "./color-curriculum.js?v=2";
+import {applyEditorFontSize,editorFontSizes} from "./editor-font-size.js";
 const url="https://kqoyujqlkanwpdedqljr.supabase.co";
 const key="sb_publishable_jgSqB-1vyxcnojsbKJ3Tmg_8PsoZrvX";
 const client=createClient(url,key);
@@ -949,6 +950,27 @@ function editLesson(lesson, save, append = false, history) {
   submit.type=cancel.type="button";
   submit.disabled=true;
   let changed=false,busy=false,previous="";
+  let fontRange=null;
+  const fontSize=document.createElement("select");
+  fontSize.setAttribute("aria-label","Cỡ chữ");
+  fontSize.add(new Option("Cỡ chữ",""));
+  for(const size of editorFontSizes)fontSize.add(new Option(size+" px",size));
+  fontSize.onchange=()=>{
+    const size=Number(fontSize.value);
+    fontSize.selectedIndex=0;
+    if(!size||busy)return;
+    const body=editor.contentDocument?.body;
+    if(!body?.isContentEditable || !fontRange || fontRange.collapsed){
+      status.textContent="Bôi đen phần chữ bạn muốn đổi cỡ.";
+      return;
+    }
+    body.focus();
+    if(applyEditorFontSize(body,fontRange,size)){
+      fontRange=editor.contentDocument.getSelection().getRangeAt(0).cloneRange();
+      body.dispatchEvent(new Event("input",{bubbles:true}));
+      status.textContent="";
+    }
+  };
   cancel.onclick=()=>{if(!changed || window.confirm("Bỏ phần nội dung chưa lưu?"))dialog.close();};
   dialog.oncancel=e=>{if(busy || (changed && !window.confirm("Bỏ phần nội dung chưa lưu?")))e.preventDefault();};
   dialog.onclose=()=>dialog.remove();
@@ -959,6 +981,12 @@ function editLesson(lesson, save, append = false, history) {
     body.innerHTML=append ? "" : previous;
     body.contentEditable="true";
     body.oninput=()=>{changed=true;submit.disabled=false;};
+    editor.contentDocument.addEventListener("selectionchange",()=>{
+      const selection=editor.contentDocument.getSelection();
+      if(selection.rangeCount&&body.contains(selection.anchorNode)&&body.contains(selection.focusNode)){
+        fontRange=selection.getRangeAt(0).cloneRange();
+      }
+    });
   };
   submit.onclick=async()=>{
     if(!changed||busy)return;
@@ -972,7 +1000,7 @@ function editLesson(lesson, save, append = false, history) {
   editor.srcdoc='<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data: https:; style-src \'unsafe-inline\'; form-action \'none\'; base-uri \'none\'"><body></body>';
   const toolbar=document.createElement("header");
   const title=document.createElement("strong");title.textContent="Chỉnh sửa nội dung";
-  toolbar.append(title,submit,cancel);
+  toolbar.append(title,fontSize,submit,cancel);
   if(history){
     const revisions=document.createElement("select");
     revisions.setAttribute("aria-label","Phiên bản đã lưu");

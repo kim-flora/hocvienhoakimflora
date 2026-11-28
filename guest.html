@@ -22,6 +22,7 @@
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
 import {captureLocalSnapshot,downloadSnapshotFile} from "./supabase/kim-flora-sync.js";
 import {colorCurriculumScript} from "./color-curriculum.js?v=2";
+import {applyEditorFontSize,editorFontSizes} from "./editor-font-size.js";
 const url="https://kqoyujqlkanwpdedqljr.supabase.co";
 const key="sb_publishable_jgSqB-1vyxcnojsbKJ3Tmg_8PsoZrvX";
 const client=createClient(url,key);
@@ -532,7 +533,7 @@ function secureHTML(value,{readOnly=true,snapshot=null}={}){
  document.addEventListener('DOMContentLoaded',()=>{run();let pending=false;const queue=()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;run();});};new MutationObserver(queue).observe(document.body,{childList:true,subtree:true,characterData:true});document.addEventListener('focusout',queue);},{once:true});
 }).toString()+")();</scr"+"ipt>";
  const editorCSS="<style>.layout,.knowledge-page,#kfCustomPage{box-sizing:border-box!important;width:95%!important;max-width:none!important;margin-inline:auto!important}.kf-custom-card{max-width:none!important}.knowledge-content,.knowledge-deep-body,.kf-custom-content,.kf-custom-editor[contenteditable]{font-family:system-ui,sans-serif;line-height:1.65}:is(.knowledge-page,.knowledge-content,.knowledge-deep-body,.kf-custom-content,.kf-custom-editor) :is(h1,h2,h3,h4,h5,h6,.kf-sentence-heading){font-family:system-ui,Arial,sans-serif!important;letter-spacing:normal!important;word-spacing:normal!important;line-height:1.35;text-align:start}:is(.knowledge-page,.knowledge-content,.knowledge-deep-body,.kf-custom-content,.kf-custom-editor) :is(h1,h2,h3,h4,h5,h6,.kf-sentence-heading) :is(span,b,strong,em,i){font-family:inherit!important;letter-spacing:normal!important;word-spacing:normal!important}.knowledge-content h1{font-size:1.7em!important}.knowledge-content h2{font-size:1.45em!important}.knowledge-content h3{font-size:1.2em!important}html body img.kf-pasted-image,html body :is(.knowledge-content,.knowledge-deep-body,.kf-custom-content,.kf-custom-editor,[contenteditable=true]) img.kf-pasted-image{width:auto!important;height:auto!important;max-width:100%!important;max-height:none!important;aspect-ratio:auto!important;vertical-align:middle}.kf-format-tools{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px;margin:6px 0;background:#faf9f7;border:1px solid #d6d4d0;border-radius:8px}.kf-format-tools :is(button,select,label){font:500 13px/1.35 system-ui;color:#30333b;background:white;border:1px solid #d1d4da;border-radius:5px;padding:5px;margin:0}.kf-format-tools input[type=color]{width:25px;height:22px;vertical-align:middle;padding:0}.kf-doc-card{padding:1em;border:1px solid #d9d6d1;border-radius:8px;margin:.6em 0}.kf-doc-table td{border:1px solid #bbb;padding:.5em}</style>";
- const editorBoot=readOnly?"":"<scr"+"ipt>document.addEventListener('DOMContentLoaded',("+(function academyEditor(){
+ const editorBoot=readOnly?"":"<scr"+"ipt>const editorFontSizes="+JSON.stringify(editorFontSizes)+";const applyEditorFontSize="+applyEditorFontSize.toString()+";document.addEventListener('DOMContentLoaded',("+(function academyEditor(){
 const selector='[contenteditable="true"]';
 let editor,range,source;
 const bar=document.createElement('div');
@@ -546,6 +547,13 @@ function insert(html){command('insertHTML',html)}
 function button(label,act){const b=document.createElement('button');b.type='button';b.textContent=label;b.onmousedown=e=>e.preventDefault();b.onclick=act;bar.append(b)}
 function menu(label,options,act){const s=document.createElement('select');s.setAttribute('aria-label',label);s.add(new Option(label,''));for(const [value,title] of options)s.add(new Option(title,value));s.onchange=()=>{const v=s.value;s.selectedIndex=0;if(v)act(v)};bar.append(s)}
 menu('Kiểu đoạn',['p','h1','h2','h3','h4','h5','h6'].map((x,i)=>[x,i?'Tiêu đề '+i:'Văn bản']),v=>command('formatBlock',v));
+menu('Cỡ chữ',editorFontSizes.map(size=>[size,size+' px']),size=>{
+ if(!restore()||!applyEditorFontSize(editor,range,Number(size))){
+  alert('Bôi đen phần chữ bạn muốn đổi cỡ.');
+  return;
+ }
+ changed();
+});
 for(const [label,cmd] of [['Đậm','bold'],['Nghiêng','italic'],['Gạch chân','underline'],['• Danh sách','insertUnorderedList'],['1. Đánh số','insertOrderedList']])button(label,()=>command(cmd));
 for(const [label,cmd] of [['Màu chữ','foreColor'],['Màu nền','hiliteColor']]){const l=document.createElement('label'),i=document.createElement('input');l.textContent=label;i.type='color';i.onchange=()=>command(cmd,i.value);l.append(i);bar.append(l)}
 menu('Bảng',[['new','Chèn bảng'],['row','Thêm hàng dưới'],['col','Thêm cột bên phải'],['delrow','Xóa hàng'],['delcol','Xóa cột']],v=>{
