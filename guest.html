@@ -32,7 +32,7 @@ const adminMode=true;
 $("adminLogin").classList.remove("hidden");
 $("loginTitle").textContent="Đăng nhập quản trị";
 $("loginInfo").textContent="Đăng nhập bằng tài khoản quản trị Kim Flora.";
-let adminSession=null,currentFrame=null,visibleText="",editorSnapshot=null,guestSnapshot=null;
+let adminSession=null,currentFrame=null,editorSnapshot=null,guestSnapshot=null;
 const KF_IDLE_KEY="kf-admin-last-activity-v1",KF_IDLE_MS=6*60*60*1000;
 let idleEnding=false;
 function idleExpired(){const n=Number(localStorage.getItem(KF_IDLE_KEY));return !n||Date.now()-n>=KF_IDLE_MS;}
@@ -713,28 +713,29 @@ new MutationObserver(()=>{if(editor&&(!editor.isConnected||!editor.isContentEdit
 })();
 }).toString()+")();</scr"+"ipt>";
  const added=css+bootstrap+script+colorCurriculumScript+draftScript+headingCaseScript+editorCSS+editorBoot+dropdownStyle+dropdownScript;
- html=html.includes("</head>")?html.replace("</head>",added+"</head>"):added+html;
+ html=html.includes("</head>")?html.replace("</head>",()=>added+"</head>"):added+html;
  if(!html.includes("KF_FLEX_PALETTE_20261118")){const patch="<script>/* KF_FLEX_PALETTE_20261118 */\n(function(){const run=function(){\n if(typeof flowerRoles==='undefined'||typeof renderRolesList!=='function')return;\n const box=document.getElementById('rolesGroup');if(!box||box.dataset.kfFlexible)return;box.dataset.kfFlexible='1';\n if(box.previousElementSibling)box.previousElementSibling.textContent='Thiết kế & phân bổ màu sắc';\n const ids=['wrapper','sub_flower','link_flower','main_flower','light_color','deep_color','accent_color'];\n const roles=['Chủ đạo','Thứ cấp','Hỗ trợ','Chuyển tiếp','Điểm nhấn','Điểm nhấn phụ','Nền','Cân bằng','Liên kết'];\n const places=['Hoa chính','Hoa phụ','Hoa chèn','Hoa tạo đường nét','Lá chính','Lá phụ','Lá trang trí','Giấy gói trong','Giấy gói ngoài','Vải gói','Nơ','Ruy băng','Dây trang trí','Bình','Giỏ','Hộp','Chậu','Đế cắm','Cành khô','Quả','Vật liệu nghệ thuật'];\n const hex=h=>/^#[0-9a-f]{6}$/i.test(h||'')?h.toUpperCase():'#FFFFFF';\n const row=(h,id)=>({id:id||'c_'+Date.now()+'_'+Math.random().toString(36).slice(2),hex:hex(h),roles:[],placements:[],custom:'',percent:null,weight:''});\n const initial=flowerRoles.map(r=>row(r.hex,r.id));\n let ratio=false,drag=null;\n const clean=r=>({...row(r.hex,r.id),roles:Array.isArray(r.roles)?r.roles.filter(x=>roles.includes(x)):[],placements:Array.isArray(r.placements)?r.placements.filter(x=>places.includes(x)):[],custom:String(r.custom||''),percent:r.percent==null?null:Math.max(0,Math.min(100,Number(r.percent)||0)),weight:String(r.weight||'')});\n const data=()=>flowerRoles.map(clean);\n const legacy=(colors,preset=false)=>ids.filter(id=>/^#[0-9a-f]{6}$/i.test(colors?.[id]||'')).map(id=>({...row(colors[id],id),placements:preset?({wrapper:['Giấy gói ngoài'],sub_flower:['Hoa phụ'],link_flower:['Giấy gói trong'],main_flower:['Hoa chính'],light_color:['Ruy băng'],deep_color:['Nơ']}[id]||[]):[]}));\n function load(rows,enabled=false){flowerRoles.splice(0,flowerRoles.length,...(rows.length?rows.map(clean):[row()]));ratio=!!enabled;selectRole(flowerRoles[0].id);}\n const el=(tag,txt)=>{const x=document.createElement(tag);if(txt!==undefined)x.textContent=txt;return x;};\n const btn=(txt,fn)=>{const x=el('button',txt);x.type='button';x.className='palette-action-btn soft';x.onclick=fn;return x;};\n const preset=()=>paletteEditState?.type==='preset';\n function stats(h){const [r,g,b]=hex(h).slice(1).match(/../g).map(x=>parseInt(x,16)/255),max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min,l=(max+min)/2;let hue=0;if(d)hue=60*(max===r?((g-b)/d+6)%6:max===g?(b-r)/d+2:(r-g)/d+4);return {h:hue,l:l*100,s:d?100*d/(1-Math.abs(2*l-1)):0};}\n function update(){const strip=document.getElementById('kfFlexStrip'),status=document.getElementById('kfFlexStatus'),analysis=document.getElementById('kfFlexAnalysis');if(!strip||!status||!analysis)return;const total=flowerRoles.reduce((n,r)=>n+(Number(r.percent)||0),0);strip.replaceChildren();flowerRoles.forEach(r=>{const c=el('div');c.style.background=r.hex;c.style.flex=String(ratio&&total>0?(Number(r.percent)||0):1);c.title=r.hex;strip.append(c);});status.textContent=ratio?'Tổng tỷ trọng: '+total+'%'+(total===100&&flowerRoles.every(r=>r.percent!=null)?'':' (chưa đủ hoặc vượt 100%)'):'';const a=flowerRoles.map(r=>stats(r.hex)),range=k=>Math.round(Math.max(...a.map(v=>v[k]))-Math.min(...a.map(v=>v[k]))),hs=a.filter(v=>v.s>=12).map(v=>v.h).sort((x,y)=>x-y),spread=hs.length<2?0:360-Math.max(...hs.map((h,i)=>(hs[(i+1)%hs.length]-h+360)%360));analysis.replaceChildren();const rows=[['Hòa sắc',hs.length<2?'Ít biến thiên sắc tướng':spread<=65?'Sắc tướng gần nhau':'Sắc tướng phân bố rộng hơn'],['Tương phản','Chênh lệch sáng HSL '+range('l')+' điểm; bão hòa '+range('s')+' điểm'],['Cân bằng',ratio&&total===100?'Có tỷ trọng dự kiến; cần xem bố cục thực tế':'Chưa đủ dữ liệu tỷ trọng và vị trí không gian'],['Thứ bậc',flowerRoles.filter(r=>r.roles?.includes('Chủ đạo')).length+' màu chủ đạo; '+flowerRoles.filter(r=>r.roles?.includes('Điểm nhấn')).length+' màu điểm nhấn'],['Nhịp điệu','Cần biết sự lặp lại và vị trí trong bố cục'],['Thống nhất',spread<=65?'Sắc tướng gần nhau có thể tạo liên kết':'Cần xem màu liên kết và bố cục'],['Độ phức tạp',new Set(flowerRoles.map(r=>r.hex)).size+' màu khác nhau'],['Trọng lượng thị giác','Phụ thuộc diện tích, vị trí, chất liệu và tương phản']];rows.forEach(([k,v])=>{const p=el('div');p.append(el('b',k+': '),document.createTextNode(v));analysis.append(p);});}\n function move(id,to){if(preset())return;const i=flowerRoles.findIndex(r=>r.id===id);if(i<0||to<0||to>=flowerRoles.length)return;const [r]=flowerRoles.splice(i,1);flowerRoles.splice(to,0,r);renderRolesList();}\n renderRolesList=function(){box.replaceChildren();const toolbar=el('div');toolbar.className='kf-flex-tools';toolbar.style.cssText='display:flex;gap:5px;flex-wrap:wrap';toolbar.append(btn('+ Thêm màu',()=>{if(preset())return alert('Lưu thành bộ mới để thay đổi số màu của công thức gốc.');const r=row();flowerRoles.push(r);selectRole(r.id);}),btn('Bộ màu mới',()=>{cancelPaletteEdit(false);load([row()]);}));const check=el('input');check.type='checkbox';check.checked=ratio;check.onchange=()=>{ratio=check.checked;renderRolesList();};const lab=el('label');lab.append(check,' Dùng tỷ trọng');toolbar.append(lab);box.append(toolbar);const strip=el('div');strip.id='kfFlexStrip';strip.style.cssText='display:flex;height:27px;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden';box.append(strip);const status=el('div');status.id='kfFlexStatus';box.append(status);\n flowerRoles.forEach((r,i)=>{const c=el('div');c.className='role-card '+(r.id===selectedRoleId?'active':'');c.style.cssText='display:block;cursor:default';const head=el('div');head.style.cssText='display:flex;align-items:center;gap:4px;flex-wrap:wrap';const sw=el('span');sw.style.cssText='width:25px;height:25px;border:1px solid #cbd5e1;border-radius:5px;background:'+r.hex;const choose=btn('Màu '+(i+1)+' · '+r.hex,()=>selectRole(r.id));choose.style.flex='1';const grip=btn('↕',()=>{});grip.draggable=true;grip.title='Kéo đổi thứ tự';grip.ondragstart=e=>{drag=r.id;e.dataTransfer.setData('text/plain',r.id);};c.ondragover=e=>e.preventDefault();c.ondrop=e=>{e.preventDefault();if(drag)move(drag,i);drag=null;};head.append(sw,choose,grip,btn('↑',()=>move(r.id,i-1)),btn('↓',()=>move(r.id,i+1)),btn('×',()=>{if(preset()||flowerRoles.length===1)return;flowerRoles.splice(i,1);selectRole(flowerRoles[Math.min(i,flowerRoles.length-1)].id);}));c.append(head);\n function multi(title,opts,key){const d=el('details'),sum=el('summary',title+': '+(r[key]?.join(', ')||'Chưa chọn'));d.append(sum);opts.forEach(v=>{const l=el('label');l.style.cssText='display:inline-flex;gap:3px;margin:4px 8px 0 0;align-items:center';const x=el('input');x.type='checkbox';x.checked=r[key]?.includes(v);x.onchange=()=>{r[key]=x.checked?[...new Set([...(r[key]||[]),v])]:(r[key]||[]).filter(z=>z!==v);sum.textContent=title+': '+(r[key].join(', ')||'Chưa chọn');update();};l.append(x,v);d.append(l);});return d;}\n c.append(multi('Vai trò',roles,'roles'),multi('Phân bổ',places,'placements'));const input=el('input');input.type='text';input.placeholder='Vị trí khác (tùy chọn)';input.value=r.custom||'';input.style.cssText='width:100%;padding:5px;border:1px solid #cbd5e1;border-radius:5px';input.oninput=()=>r.custom=input.value;c.append(input);\n if(ratio){const l=el('label','Tỷ trọng (%) '),n=el('input');n.type='number';n.min=0;n.max=100;n.step=1;n.value=r.percent??'';n.style.width='65px';n.oninput=()=>{r.percent=n.value===''?null:Math.max(0,Math.min(100,Number(n.value)||0));update();};l.append(n);c.append(l);}\n const st=stats(r.hex),d=el('details');d.append(el('summary','Đặc tính màu'),el('div','Sáng HSL: '+Math.round(st.l)+'% · Bão hòa: '+Math.round(st.s)+'% · Sắc tướng: '+Math.round(st.h)+'°'));const w=el('select');['','Nhẹ','Trung bình','Nặng'].forEach(v=>{const o=el('option',v||'Trọng lượng: chưa xác định');o.value=v;w.append(o);});w.value=r.weight||'';w.onchange=()=>r.weight=w.value;d.append(w);const match=typeof meaningLibraryData!=='undefined'&&Array.isArray(meaningLibraryData)?meaningLibraryData.find(x=>hex(x.hex)===r.hex):null;if(match)d.append(el('div','Hồ sơ màu: '+match.name));c.append(d);box.append(c);});\n const det=el('details');det.append(el('summary','Phân tích bộ màu'));const a=el('div');a.id='kfFlexAnalysis';a.style.cssText='font-size:12px;line-height:1.55';det.append(a);box.append(det);update();};\n selectRole=function(id){const r=flowerRoles.find(x=>x.id===id)||flowerRoles[0];if(!r)return;selectedRoleId=r.id;activeRoleNotice.textContent='Đang chọn: Màu '+(flowerRoles.indexOf(r)+1);document.getElementById('hexTextInput').value=r.hex;document.getElementById('hexPicker').value=r.hex;renderRolesList();};\n applyHexColor=function(h){if(/^#[0-9a-f]{3}$/i.test(h))h='#'+h.slice(1).split('').map(x=>x+x).join('');if(!/^#[0-9a-f]{6}$/i.test(h))return;const r=flowerRoles.find(x=>x.id===selectedRoleId);if(!r)return;r.hex=hex(h);if(typeof kfAdobeSyncFromExistingHex==='function')kfAdobeSyncFromExistingHex(r.hex);selectRole(r.id);};\n const oldCommit=commitPaletteEdit,oldStartPreset=startEditPresetPalette,oldCustom=typeof applyAgeCustomPalette==='function'?applyAgeCustomPalette:null;\n function packed(){return {colors:Object.fromEntries(flowerRoles.map(r=>[r.id,r.hex])),flexColors:data(),flexRatio:ratio};}\n saveCurrentPaletteAsNew=function(){const items=getSavedPalettes();const seq='kimflora_saved_palette_sequence_v2';const n=Math.max(Number(kfReadLocal(seq,0))||0,...items.map(x=>Number(String(x.id).replace(/^KM/i,''))||0))+1,id='KM'+String(n).padStart(2,'0');const name=prompt('Đặt tên cho nhóm màu:', 'Bảng màu '+id);if(name===null)return;kfWriteLocal(seq,n);items.unshift({id,name:name.trim()||id,...packed(),created_at:new Date().toISOString()});setSavedPalettes(items);renderSavedPalettes();activeRoleNotice.textContent='Đã lưu bộ màu: '+id;openSavedPaletteArea(false);};\n applySavedPalette=function(id){const item=getSavedPalettes().find(x=>x.id===id);if(!item)return;cancelPaletteEdit(false);load(Array.isArray(item.flexColors)?item.flexColors:legacy(item.colors),item.flexRatio);activeRoleNotice.textContent='Đã nạp: '+item.name;};\n startEditSavedPalette=function(id){const item=getSavedPalettes().find(x=>x.id===id);if(!item)return;applySavedPalette(id);paletteEditState={type:'saved',id};showPaletteEditStatus('Đang sửa <b>'+escapeHtmlSafe(item.name)+'</b>');scrollToPaletteRoles();};\n commitPaletteEdit=function(){if(!paletteEditState)return;if(preset()){const key='kimflora_preset_flexible_v2',m=kfReadLocal(key,{});m[paletteEditState.id]=packed();kfWriteLocal(key,m);oldCommit();renderRolesList();return;}const items=getSavedPalettes(),i=items.findIndex(x=>x.id===paletteEditState.id);if(i>=0){items[i]={...items[i],...packed(),updated_at:new Date().toISOString()};setSavedPalettes(items);renderSavedPalettes();activeRoleNotice.textContent='Đã cập nhật: '+items[i].name;}cancelPaletteEdit(false);};\n applyFullPaletteFormula=function(f){cancelPaletteEdit(false);const saved=kfReadLocal('kimflora_preset_flexible_v2',{})[f.id];load(saved?.flexColors||legacy(formulaToSixColors(f),true),saved?.flexRatio);activeRoleNotice.textContent='Đã nạp: '+f.id;};\n startEditPresetPalette=function(id){oldStartPreset(id);showPaletteEditStatus('Đang sửa bộ '+escapeHtmlSafe(id)+' · Cập nhật để lưu thay đổi.');renderRolesList();};\n if(oldCustom)applyAgeCustomPalette=function(id){const item=getAgeCustomPalettes().find(x=>x.id===id);if(!item)return;cancelPaletteEdit(false);load(item.colors.map(c=>row(c.hex)));activeRoleNotice.textContent='Đã nạp: '+id;};\n const oldRestore=typeof restorePresetPalettes==='function'?restorePresetPalettes:null;if(oldRestore)restorePresetPalettes=function(){if(!confirm('Khôi phục các bộ phối gốc?'))return;try{localStorage.removeItem(KF_PRESET_OVERRIDES_KEY);localStorage.removeItem(KF_PRESET_DELETED_KEY);localStorage.removeItem('kimflora_preset_flexible_v2');}catch(e){}cancelPaletteEdit(false);renderAgeFormulas();};\n renderSavedPalettes=function(){const target=document.getElementById('savedPalettesContainer');if(!target)return;target.replaceChildren();getSavedPalettes().forEach(item=>{const card=el('div');card.className='saved-palette-card';card.append(el('b',item.id+' · '+item.name));const strip=el('div');strip.className='saved-color-strip';(item.flexColors||legacy(item.colors)).forEach(r=>{const chip=el('div');chip.className='saved-color-chip';const sw=el('div');sw.className='saved-color-swatch';sw.style.background=hex(r.hex);chip.append(sw,el('span',r.hex),el('small',(r.roles||[]).join(', ')));strip.append(chip);});card.append(strip,btn('Nạp lại',()=>applySavedPalette(item.id)));const actions=el('div');actions.className='saved-palette-actions';actions.append(btn('Sửa màu',()=>startEditSavedPalette(item.id)),btn('Nhân bản',()=>{applySavedPalette(item.id);saveCurrentPaletteAsNew();}),btn('Xóa',()=>deleteSavedPalette(item.id)));card.append(actions);target.append(card);});};\n const themes=[\n ['Hồng','Rose Milk','#F7E8E9 #EABAC7 #C887A0 #9B526E #F7F2E9'],['Hồng','Dusty Ballet','#ECD7D8 #CDA2A8 #B77C87 #79545F #D6D0BE'],['Hồng','Raspberry Veil','#F6DFE6 #E6A5B8 #C9577F #812B54 #BABCA6'],['Hồng','Peony & Peach','#F8D9D4 #EBA3AA #D8798C #F3BF9E #F8F1E4'],\n ['Tím','Lilac Mist','#EFE9F5 #CFC1E0 #A396C4 #74658F #DADDCB'],['Tím','Plum Velvet','#E3CCD9 #B892B2 #875879 #512C4C #F3E5D7'],['Tím','Iris & Ink','#DDD9EE #A2A0D3 #6B6CA6 #34385C #E8E4D8'],['Tím','Orchid Smoke','#E8D9E5 #BD9CBF #957897 #6B596D #B7C2BB'],\n ['Xanh','Sage Garden','#E9EDE3 #C5CFBB #93A58C #586C58 #F4E9D7'],['Xanh','Blue Porcelain','#EAF1F3 #B8D2DF #739CB7 #3C5A78 #F7F5ED'],['Xanh','Jade & Moss','#D5E5D8 #8DB5A1 #4D8975 #345548 #D9C8A4'],['Xanh','Petrol Blue','#D4E3E5 #84ABB0 #417B86 #244B5A #D9B79A'],\n ['Trắng','Ivory Linen','#FFFDF5 #F3EDDC #E1D7C3 #B8B6A4 #899584'],['Trắng','Pearl & Silver','#FAFAF8 #E8E9E8 #C7CBCA #9BA5A9 #E5DDCF'],['Trắng','Snow & Olive','#FFFFFF #F3F2E8 #DBDFCF #9B9F7F #58644D'],['Trắng','Cloud Cream','#FFFDF9 #F9F0E2 #EADAC9 #D1BFAF #C3CBC4'],\n ['Vàng','Butter & Cream','#FFF5CB #F3D36A #DBAE42 #C8BF92 #F9F4E6'],['Vàng','Honey Harvest','#F7E5AA #E8C15F #C78E36 #906B37 #C7C6A5'],['Vàng','Lemon Sorbet','#FFF8D6 #F0E578 #C5CE76 #A4B49A #F6F5EB'],['Vàng','Golden Ochre','#F4E6C4 #D7B35D #B58A42 #795B36 #E4D0BA'],\n ['Đen','Noir & Pearl','#F4EFE7 #C9C4BB #888985 #383B3C #17191B'],['Đen','Black Cherry','#E5CCD1 #A46C7D #633647 #32232E #18171B'],['Đen','Obsidian & Moss','#D5D8C8 #9DAB90 #586A58 #303B34 #161D1A'],['Đen','Midnight Gold','#E9D9B5 #B59B67 #77706A #353334 #171719'],\n ['Nâu đỏ','Terracotta Rose','#F2D6C5 #D8A18B #B86D58 #844B40 #C1AC91'],['Nâu đỏ','Oxblood & Linen','#EAD7CA #CB9A89 #9B4D48 #632F32 #382627'],['Nâu đỏ','Burnt Cinnamon','#F0DBC1 #D19C68 #AE6A43 #80452F #563D30'],['Nâu đỏ','Mahogany Blush','#EAD0C9 #C68F86 #A25C54 #733A36 #49302F']];\n const library=el('details');library.style.cssText='margin-top:10px;padding:8px;border:1px solid #dbe3ee;border-radius:8px';library.append(el('summary','Bộ phối mới theo tone · '+themes.length+' bộ'));const filter=el('select');['Tất cả','Hồng','Tím','Xanh','Trắng','Vàng','Đen','Nâu đỏ'].forEach(v=>filter.append(el('option',v)));library.append(filter);const list=el('div');library.append(list);function showThemes(){list.replaceChildren();themes.filter(t=>filter.value==='Tất cả'||t[0]===filter.value).forEach(([tone,name,colors])=>{const c=el('div');c.style.cssText='margin:8px 0;padding:6px;border-bottom:1px solid #dbe3ee';c.append(el('b',tone+' · '+name));const band=el('div');band.style.cssText='display:flex;height:30px;margin:5px 0;border-radius:5px;overflow:hidden';const values=colors.split(' ');values.forEach(h=>{const x=el('div');x.style.cssText='flex:1;background:'+h;x.title=h;band.append(x);});c.append(band,el('small',colors),el('br'),btn('Nạp bộ màu',()=>{cancelPaletteEdit(false);load(values.map(h=>row(h)));activeRoleNotice.textContent='Đã nạp: '+name;}));list.append(c);});}filter.onchange=showThemes;showThemes();box.parentElement.append(library);\n load(initial);renderSavedPalettes();\n};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();})();<\/script>";html=html.includes("</body>")?html.replace("</body>",()=>patch+"</body>"):html+patch;}
  if(adminMode)html=html.replace(/<\/body>/i,'<scr'+'ipt>(function(){let last=0;for(const e of ["pointerdown","keydown","wheel","touchstart"])addEventListener(e,()=>{const n=Date.now();if(n-last>1000){last=n;parent.postMessage({type:"kf-session-activity"},"*");}},{passive:true});})();<\/scr'+'ipt></body>');
  frame.srcdoc=html;
- currentFrame=frame;
- const doc=new DOMParser().parseFromString(html,"text/html");
- doc.querySelectorAll("script,style,noscript").forEach(x=>x.remove());
- visibleText=(doc.body?.textContent||"").replace(/\s+/g," ");
  return frame;
 }
 async function api(action,body={},bearer=null){
  const headers={"content-type":"application/json","apikey":key};
+ const timeoutMs=action==="admin-read"?90000:20000;
  if(bearer){const {data:{session}}=await client.auth.getSession();headers.authorization="Bearer "+(session?.access_token||bearer);}
  let lastError;
  for(let attempt=0;attempt<3;attempt++){
   try{
    const controller=new AbortController();
-   const timeout=setTimeout(()=>controller.abort(),20000);
-   let r;
-   try{r=await fetch(endpoint,{method:"POST",headers,body:JSON.stringify({action,...body}),signal:controller.signal});}
-   finally{clearTimeout(timeout);}
-   let data={};try{data=await r.json()}catch{}
+   const timeout=setTimeout(()=>controller.abort(),timeoutMs);
+   let r,data={};
+   try{
+    r=await fetch(endpoint,{method:"POST",headers,body:JSON.stringify({action,...body}),signal:controller.signal});
+    try{data=await r.json();}catch(error){if(r.ok||controller.signal.aborted)throw error;}
+   }catch(error){
+    if(controller.signal.aborted)throw new Error("Máy chủ phản hồi quá chậm.");
+    throw error;
+   }finally{clearTimeout(timeout);}
    if(!r.ok){
     if(bearer&&attempt===0&&(r.status===401||r.status===403)){const {data,error}=await client.auth.refreshSession();if(!error&&data.session){adminSession=data.session;headers.authorization="Bearer "+data.session.access_token;continue;}}
     const error=new Error(data.error||("Máy chủ trả lỗi "+r.status));
@@ -752,34 +753,46 @@ async function api(action,body={},bearer=null){
  throw lastError;
 }
 function showContent(value,{readOnly=true,snapshot=null}={}){
- // Keep the authenticated portal mounted; topic navigation belongs to the iframe.
- if(adminMode&&adminSession)$("loginPanel").classList.add("hidden");
- $("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");
- $("viewer").replaceChildren(secureHTML(value||"<p>Chưa có nội dung được xuất bản trên máy chủ.</p>",{readOnly,snapshot}));
+ const frame=secureHTML(value||"<p>Chưa có nội dung được xuất bản trên máy chủ.</p>",{readOnly,snapshot});
+ $("viewer").replaceChildren(frame);
+ currentFrame=frame;
+ $("loginPanel").classList.add("hidden");
+ $("contentPanel").classList.remove("hidden");
 }
 async function loadAdminStudio(session){
- say("Đang tải tài liệu và dữ liệu chỉnh sửa…");
- const [content,snapshot]=await Promise.allSettled([
-  api("admin-read",{key:"published/main"},session.access_token),
-  initializeAdminSnapshot(session.access_token)
- ]);
- if(content.status==="rejected"){
-  throw new Error("Không tải được tài liệu từ máy chủ. "+content.reason.message);
+ say("Đang tải tài liệu…");
+ let html;
+ try{
+  const content=await api("admin-read",{key:"published/main"},session.access_token);
+  html=content?.value?.html;
+ }catch(error){
+  throw new Error("Không tải được tài liệu từ máy chủ. "+error.message);
  }
- const html=content.value?.value?.html;
  if(typeof html!=="string"||!html.trim()){
   throw new Error("Máy chủ chưa trả về nội dung tài liệu đã xuất bản.");
  }
- if(snapshot.status==="rejected"){
-  console.warn("Restore admin editing data",snapshot.reason);
+ let previewOpened=false;
+ function showPreview(){
+  if(previewOpened)return;
   showContent(html,{readOnly:true});
+  previewOpened=true;
   $("openAccountSettings").classList.add("hidden");
   $("kfQuickBackup").classList.add("hidden");
+ }
+ say("Đang tải dữ liệu chỉnh sửa…");
+ const previewTimer=setTimeout(()=>{
+  try{showPreview();say("Đang xem tài liệu. Dữ liệu chỉnh sửa vẫn đang tải…");}
+  catch(error){console.warn("Studio preview",error);}
+ },2000);
+ try{
+  editorSnapshot=await initializeAdminSnapshot(session.access_token);
+  try{await loadDrafts();}catch(error){console.warn("Optional drafts unavailable",error);}
+ }catch(error){
+  console.warn("Restore admin editing data",error);
+  showPreview();
   say("Đang mở tài liệu ở chế độ xem vì chưa tải được dữ liệu chỉnh sửa. Tải lại trang để thử bật chỉnh sửa.");
   return;
- }
- try{await loadDrafts();}catch(error){console.warn("Optional drafts unavailable",error);}
- editorSnapshot=snapshot.value;
+ }finally{clearTimeout(previewTimer);}
  showContent(html,{readOnly:false,snapshot:editorSnapshot});
  $("openAccountSettings").classList.remove("hidden");
  $("kfQuickBackup").classList.remove("hidden");
