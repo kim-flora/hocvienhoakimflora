@@ -9,8 +9,8 @@
 <noscript><p class="portal-notice">Vui lòng bật JavaScript để đăng nhập.</p></noscript>
 <section id="contentPanel" class="hidden" aria-labelledby="pageBrand"><header class="lesson-header"><h2 id="pageBrand" title="Kim Flora Studio">Kim Flora Studio</h2><div class="lesson-actions"><span id="kfSyncStatus" role="status" aria-live="polite"></span><button id="kfQuickBackup" type="button" class="secondary hidden">Sao lưu website</button><button id="openAccountSettings" class="secondary hidden" type="button">Cài đặt tài khoản</button><button id="logout" type="button" class="secondary">Đăng xuất</button></div></header><article id="viewer"></article></section>
 <section id="adminPanel" class="card hidden"><header><h2>Cài đặt tài khoản</h2><button id="returnToLessons" type="button" class="secondary">← Quay lại tài liệu</button></header><hr><h3>Quản lý mật khẩu truy cập Guest</h3>
-<p>Tạo mật khẩu riêng để cấp quyền xem và sử dụng trang Guest. Khách không có quyền chỉnh sửa nội dung.</p>
-<label for="guestLabel">Tên gợi nhớ khách</label><input id="guestLabel" placeholder="Ví dụ: Học viên A">
+<p>Cấp tên đăng nhập và mật khẩu riêng cho từng học viên để xem tài liệu. Mã gắn với trình duyệt dùng lần đầu, tự hết hạn và được xóa sau 30 ngày kể từ ngày cấp. Bạn có thể thu hồi sớm.</p>
+<label for="guestLabel">Tên đăng nhập học viên</label><input id="guestLabel" maxlength="120" placeholder="Ví dụ: Học viên A">
 <button id="createGuest" type="button">Tạo mật khẩu Guest</button><div id="newPassword" aria-live="polite"></div>
 <h3>Danh sách mật khẩu Guest</h3><div id="customerList"></div>
 <h3>Đổi mật khẩu quản trị</h3><label for="adminNewPassword">Mật khẩu quản trị mới</label><input id="adminNewPassword" type="password" minlength="12" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự"><button id="changeAdminPassword" class="secondary">Đổi mật khẩu quản trị</button><hr><h3>Xuất bản thay đổi</h3><p>Thay đổi đã lưu trong khung tài liệu sẽ tự đồng bộ lên website khi có kết nối. Chỉ khi hiện “Đã lưu lên website” mới xác nhận máy chủ đã nhận dữ liệu.</p><button id="kfRecoverComposition" type="button" class="secondary">Sao chép bài Bố cục đã sửa từ website vào quản trị</button><span id="kfRecoverInfo" role="status"></span> <label for="kfImportHtmlFile" style="font-size:13px;font-weight:700;display:block;margin-top:14px">Nhập file index.html mới từ Kim Flora Studio</label><input id="kfImportHtmlFile" type="file" accept=".html,.htm,text/html" style="max-width:100%;margin:6px 0"><button id="kfImportHtml" type="button" class="secondary">Sao chép HTML vào trang quản trị</button><button id="kfBackup" class="secondary">Tải bản sao lưu JSON</button><button id="kfPublish">Xuất bản chỉnh sửa</button></section>
@@ -273,6 +273,7 @@ function showAccountSettings(){
  $("openAccountSettings").classList.add("hidden");
  window.scrollTo({top:0,behavior:"instant"});
  void refreshRecoveryInfo();
+ void listGuests().catch(err=>say(err.message));
 }
 function showLessons(){
  $("adminPanel").classList.add("hidden");
@@ -616,6 +617,7 @@ async function api(action,body={},bearer=null){
    }
    return data;
   }catch(error){
+   if(action==="create-guest")throw error;
    lastError=error;
    if(error.status&&![502,503,504,429].includes(error.status))throw error;
    if(attempt<2)await new Promise(resolve=>setTimeout(resolve,700*(attempt+1)));
@@ -663,18 +665,24 @@ $("adminLogin").onsubmit=async e=>{
  }catch(err){if(!currentFrame){$("contentPanel").classList.add("hidden");$("loginPanel").classList.remove("hidden");}say(err.message)}finally{loginInProgress=false;}
 };
 
+const guestExpiryFormat=new Intl.DateTimeFormat("vi-VN",{dateStyle:"short",timeStyle:"short",timeZone:"Asia/Ho_Chi_Minh"});
 $("createGuest").onclick=async()=>{
+ const button=$("createGuest");
+ if(button.disabled)return;
  const label=$("guestLabel").value.trim();
- if(!label)return say("Nhập tên khách trước.");
+ if(!label)return say("Nhập tên đăng nhập học viên trước.");
+ button.disabled=true;
  try{
   const result=await api("create-guest",{label},adminSession?.access_token);
   $("newPassword").replaceChildren();
   const p=document.createElement("p");
-  p.textContent="Mật khẩu Guest của "+label+": "+result.password+" (chỉ hiển thị lần này)";
+  p.textContent="Tên đăng nhập: "+label+" · Mật khẩu: "+result.password+" (chỉ hiển thị lần này)";
+  if(result.expires_at)p.append(" · Hết hạn "+guestExpiryFormat.format(new Date(result.expires_at)));
   $("newPassword").append(p);
   $("guestLabel").value="";
   await listGuests();
  }catch(err){say(err.message);}
+ finally{button.disabled=false;}
 };
 async function listGuests(){
  const r=await api("list-guests",{},adminSession?.access_token);
@@ -682,7 +690,8 @@ async function listGuests(){
  for(const guest of r.guests||[]){
   const row=document.createElement("div");row.className="customer";
   const title=document.createElement("span");
-  title.textContent=guest.label+(guest.revoked_at?" (Đã thu hồi)":"");
+  title.textContent=guest.label+" · "+(guest.revoked_at?"Đã thu hồi":guest.activated?"Đã kích hoạt":"Chưa kích hoạt");
+  if(guest.expires_at)title.append(" · Hết hạn "+guestExpiryFormat.format(new Date(guest.expires_at)));
   row.append(title);
   if(!guest.revoked_at){
    const b=document.createElement("button");b.textContent="Thu hồi";

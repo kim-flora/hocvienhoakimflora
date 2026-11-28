@@ -3,8 +3,8 @@
 <link rel="stylesheet" href="./portal.css"></head>
 <body><main class="wrap"><header class="site-header"><h1>Kim Flora</h1><nav><a class="portal-link" href="./guest.html">Cổng quản trị</a></nav></header>
 <section class="card" id="loginPanel" aria-labelledby="loginTitle"><h2 id="loginTitle">Đăng nhập học viên</h2>
-<p id="loginInfo">Nhập mật khẩu riêng do Kim Flora cấp. Không cần email.</p>
-<form id="guestLogin"><label for="guestPassword">Mật khẩu truy cập</label><input id="guestPassword" type="password" autocomplete="current-password" required minlength="16"><div><button type="submit">Vào xem tài liệu</button></div></form>
+<p id="loginInfo">Nhập tên học viên và mật khẩu do Kim Flora cấp. Sau lần đăng nhập đầu tiên, hãy dùng lại cùng trình duyệt.</p>
+<form id="guestLogin"><label for="guestName">Tên học viên</label><input id="guestName" autocomplete="username" required maxlength="120"><label for="guestPassword">Mật khẩu truy cập</label><input id="guestPassword" type="password" autocomplete="current-password" required minlength="16"><div><button type="submit">Vào xem tài liệu</button></div></form>
 <form id="adminLogin" class="hidden"><label for="adminEmail">Email quản trị</label><input type="email" id="adminEmail" required autocomplete="username"><label for="adminPassword">Mật khẩu quản trị</label><input type="password" id="adminPassword" required autocomplete="current-password"><div><button type="submit">Đăng nhập quản trị</button><button type="button" class="secondary" id="forgotAdminPassword">Quên mật khẩu?</button></div></form><form id="resetAdminPassword" class="hidden"><h3>Đặt lại mật khẩu quản trị</h3><p>Hãy nhập mật khẩu mới sau khi mở liên kết trong email khôi phục.</p><label for="recoveryPassword">Mật khẩu mới</label><input id="recoveryPassword" type="password" autocomplete="new-password" minlength="12" required><label for="recoveryConfirm">Nhập lại mật khẩu mới</label><input id="recoveryConfirm" type="password" autocomplete="new-password" minlength="12" required><div><button type="submit">Lưu mật khẩu mới</button></div></form></section>
 <p id="message" role="status"></p>
 <noscript><p class="portal-notice">Vui lòng bật JavaScript để đăng nhập.</p></noscript>
@@ -23,8 +23,23 @@ const adminMode=false;
 $("guestLogin").classList.remove("hidden");
 $("adminLogin").classList.add("hidden");
 $("loginTitle").textContent="Đăng nhập học viên";
-$("loginInfo").textContent="Nhập mật khẩu riêng do Kim Flora cấp. Không cần email.";
-let guestSession=null;try{guestSession=sessionStorage.getItem("kf_guest_session_v1")||null;}catch(_){}
+$("loginInfo").textContent="Nhập tên học viên và mật khẩu do Kim Flora cấp. Sau lần đăng nhập đầu tiên, hãy dùng lại cùng trình duyệt.";
+const guestSessionKey="kf_guest_session_v2";
+const guestDeviceKey="kf_guest_browser_token_v1";
+let guestSession=null;
+try{guestSession=sessionStorage.getItem(guestSessionKey);}catch(_){}
+function guestDevice(){
+ const saved=localStorage.getItem(guestDeviceKey);
+ if(saved&&/^[a-f0-9]{64}$/.test(saved))return saved;
+ const bytes=crypto.getRandomValues(new Uint8Array(32));
+ const device=Array.from(bytes,byte=>byte.toString(16).padStart(2,"0")).join("");
+ localStorage.setItem(guestDeviceKey,device);
+ return device;
+}
+function forgetGuestSession(){
+ guestSession=null;
+ try{sessionStorage.removeItem(guestSessionKey);}catch(_){}
+}
 let adminSession=null,currentFrame=null,visibleText="",editorSnapshot=null,guestSnapshot=null;
 const say=t=>$("message").textContent=t;
 
@@ -275,9 +290,13 @@ function secureHTML(value,{readOnly=true,snapshot=null}={}){
 async function api(action,body={},bearer=null){
  const headers={"content-type":"application/json","apikey":key};
  if(bearer)headers.authorization="Bearer "+bearer;
- const r=await fetch(endpoint,{method:"POST",headers,body:JSON.stringify({action,...body})});
+ const r=await fetch(endpoint,{method:"POST",headers,body:JSON.stringify({action,...body}),signal:action==="guest-status"?AbortSignal.timeout(10000):undefined});
  let data={};try{data=await r.json()}catch{}
- if(!r.ok)throw new Error(data.error||"Máy chủ không phản hồi.");
+ if(!r.ok){
+  const error=new Error(data.error||"Máy chủ không phản hồi.");
+  error.status=r.status;
+  throw error;
+ }
  return data;
 }
 function showContent(value,{readOnly=true,snapshot=null}={}){
@@ -286,23 +305,52 @@ function showContent(value,{readOnly=true,snapshot=null}={}){
  $("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");
  $("viewer").replaceChildren(secureHTML(value||"<p>Chưa có nội dung được xuất bản trên máy chủ.</p>",{readOnly,snapshot}));
 }
+const guestSubmit=$("guestLogin").querySelector('button[type="submit"]');
 $("guestLogin").onsubmit=async e=>{
- e.preventDefault();say("Đang kiểm tra mật khẩu...");
+ e.preventDefault();
+ if(guestSubmit.disabled)return;
+ guestSubmit.disabled=true;
+ say("Đang kiểm tra thông tin đăng nhập...");
  try{
-  const result=await api("login",{password:$("guestPassword").value});
+  let device;
+  try{device=guestDevice();}catch(_){throw new Error("Hãy bật bộ nhớ trình duyệt để đăng nhập.");}
+  const result=await api("login",{name:$("guestName").value,password:$("guestPassword").value,device});
   guestSession=result.session;
-  try{sessionStorage.setItem("kf_guest_session_v1",guestSession);}catch(_){}
+  try{sessionStorage.setItem(guestSessionKey,guestSession);}catch(_){}
   $("guestPassword").value="";
   await loadGuestContent();say("");
- }catch(err){guestSession=null;try{sessionStorage.removeItem("kf_guest_session_v1");}catch(_){}say(err.message);}
+ }catch(err){forgetGuestSession();say(err.message);}
+ finally{guestSubmit.disabled=false;}
 };
 async function loadGuestContent(){
+ const access={session:guestSession,device:guestDevice()};
  const [main,snapshot]=await Promise.all([
-  api("guest-read",{session:guestSession,key:"published/main"}),
-  api("guest-read",{session:guestSession,key:"published/snapshot"})
+  api("guest-read",{...access,key:"published/main"}),
+  api("guest-read",{...access,key:"published/snapshot"})
  ]);
  showContent(main.value?.html||"",{readOnly:true,snapshot:snapshot.value});
 }
+let checkingGuest=false;
+async function checkGuestSession(){
+ const session=guestSession;
+ if(!session||!currentFrame||checkingGuest)return;
+ checkingGuest=true;
+ try{await api("guest-status",{session,device:guestDevice()});}
+ catch(error){
+  if(guestSession===session&&error.status===401){
+   forgetGuestSession();
+   $("viewer").replaceChildren();
+   currentFrame=null;
+   $("contentPanel").classList.add("hidden");
+   $("loginPanel").classList.remove("hidden");
+   say(error.message);
+  }
+ }finally{checkingGuest=false;}
+}
+setInterval(checkGuestSession,30000);
+document.addEventListener("visibilitychange",()=>{
+ if(document.visibilityState==="visible")void checkGuestSession();
+});
 $("adminLogin").onsubmit=async e=>{
  e.preventDefault();say("Đang đăng nhập...");
  try{
@@ -405,7 +453,7 @@ $("changeAdminPassword").onclick=async()=>{
  }catch(e){say("Chưa đổi được mật khẩu: "+e.message);}
 };
 $("logout").onclick=async()=>{
- if(guestSession){try{await api("guest-logout",{session:guestSession});}catch(_){}guestSession=null;try{sessionStorage.removeItem("kf_guest_session_v1");}catch(_){}}
+ if(guestSession){try{await api("guest-logout",{session:guestSession,device:guestDevice()});}catch(_){}forgetGuestSession();}
  if(adminSession){await client.auth.signOut();adminSession=null;}
  location.reload();
 };
@@ -436,14 +484,11 @@ async function restoreAdminSession(){
  }finally{restoring=false;}
 }
 if(!adminMode&&guestSession){
- (async()=>{
-  try{await loadGuestContent();say("");}
-  catch(err){
-   guestSession=null;
-   try{sessionStorage.removeItem("kf_guest_session_v1");}catch(_){}
-   say("Phiên truy cập đã hết hạn. Vui lòng nhập lại mật khẩu.");
-  }
- })();
+ guestSubmit.disabled=true;
+ void loadGuestContent().then(()=>say("")).catch(err=>{
+  forgetGuestSession();
+  say(err.status===401?"Phiên truy cập đã hết hạn. Vui lòng đăng nhập lại.":err.message);
+ }).finally(()=>{guestSubmit.disabled=false;});
 }
 if(adminMode){
  await restoreAdminSession();
