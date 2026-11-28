@@ -141,7 +141,7 @@
             max-width: 1440px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 320px 350px 1fr;
+            grid-template-columns: minmax(0, 25fr) minmax(0, 30fr) minmax(0, 45fr);
             gap: 14px;
             align-items: start;
         }
@@ -2192,73 +2192,69 @@
     <div class="layout">
         <!-- CỘT 1: BÁNH XE MÀU & NHẬP MÃ -->
         <div class="card wheel-wrap">
-            <div class="card-title" style="width: 100%;">Bánh Xe &amp; Nhập Màu</div>
-            <div class="badge-target" id="activeRoleNotice">Đang chọn cho: Màu chủ đạo (giấy gói)</div>
-            
-            <canvas id="colorWheel" width="240" height="240"></canvas>
-
-            <div class="manual-input-box">
-                <div>
-                    <div class="input-title">Mã màu HEX:</div>
-                    <div class="input-row" style="margin-top: 3px;">
-                        <input type="color" id="hexPicker" value="#F3D36A" onchange="onColorPickerChange(this.value)">
-                        <input type="text" id="hexTextInput" placeholder="#FFFFFF hoặc FFFFFF" maxlength="9">
-                        <button class="btn-input-apply" onclick="applyCustomHex()">Gán</button>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="input-title">Mã màu Pantone (PMS / TCX):</div>
-                    <div class="input-row" style="margin-top: 3px;">
-                        <input type="text" id="pantoneInput" list="pantoneSuggestions" placeholder="Peach Fuzz, 185 C, Warm Red...">
-                        <datalist id="pantoneSuggestions"></datalist>
-                        <button class="btn-input-apply" onclick="applyPantoneCode()">Tìm</button>
-                    </div>
-                    <div id="pantoneFeedback" style="font-size: 11px; color: var(--muted); margin-top: 3px; display: none;"></div>
-                </div>
-            </div>
-
-            <!-- KHỐI MỚI: BÁNH XE PHỐI MÀU KIỂU ADOBE — TÁCH RIÊNG -->
-            <div class="kf-adobe-wheel-panel" aria-label="Bánh xe phối màu kiểu Adobe">
-                <div class="kf-adobe-wheel-head">
-                    <div>
-                        <div class="kf-adobe-wheel-title">Bánh Xe Phối Màu</div>
-                        <div class="kf-adobe-wheel-subtitle">Chọn màu gốc hoặc nhập HEX → tự tạo màu theo nguyên tắc phối đã chọn.</div>
-                    </div>
-                </div>
-
-                <div class="kf-adobe-base-row">
-                    <input type="color" id="kfAdobeBasePicker" class="kf-adobe-base-picker" value="#F3D36A" aria-label="Chọn màu gốc">
-                    <input type="text" id="kfAdobeBaseInput" class="kf-adobe-base-input" value="#F3D36A" maxlength="7" placeholder="#FFFFFF" aria-label="Mã HEX màu gốc">
-                    <button type="button" class="kf-adobe-base-btn" onclick="kfAdobeApplyBaseInput()">Áp dụng</button>
-                </div>
-
+            <div class="card-title">Bộ chọn màu</div>
+            <div class="badge-target" id="activeRoleNotice" aria-live="polite"></div>
+            <div class="kf-adobe-wheel-panel">
                 <div class="kf-adobe-harmony-row">
                     <label class="kf-adobe-harmony-label" for="kfAdobeHarmony">Nguyên tắc phối màu</label>
                     <select id="kfAdobeHarmony" aria-label="Nguyên tắc phối màu">
+                        <option value="free">Chọn màu tự do</option>
                         <option value="analogous">Analogous · Tương đồng</option>
                         <option value="monochromatic">Monochromatic · Đơn sắc</option>
                         <option value="triad">Triad · Bộ ba</option>
                         <option value="complementary">Complementary · Bổ túc</option>
                         <option value="split">Split complementary · Bổ túc bộ ba</option>
                         <option value="double-split">Double split complementary · Bổ túc kép</option>
-                        <option value="square">Square · Vuông</option>
+                        <option value="square">Tetradic · Bổ túc bốn màu</option>
                         <option value="compound">Compound · Hỗn hợp</option>
                         <option value="shades">Shades · Sắc độ</option>
                     </select>
                 </div>
 
+                <div class="kf-wheel-options">
+                    <label for="kfHarmonyCount">Số màu</label>
+                    <select id="kfHarmonyCount">
+                        <option>3</option><option selected>5</option><option>6</option>
+                    </select>
+                    <label for="kfColorMood">Cảm xúc</label>
+                    <select id="kfColorMood">
+                        <option value="">Chọn cảm xúc</option>
+                        <option value="#DDAAB9">Dịu nhẹ</option>
+                        <option value="#754255">Sang trọng</option>
+                        <option value="#526052">Trầm nghệ thuật</option>
+                        <option value="#F0AC43">Tươi sáng</option>
+                        <option value="#EBC3CD">Hàn Quốc nhẹ nhàng</option>
+                        <option value="#A94948">Cổ điển</option>
+                        <option value="#968050">Cao cấp</option>
+                    </select>
+                </div>
                 <div class="kf-adobe-wheel-stage">
                     <canvas id="kfAdobeWheel" width="280" height="280"></canvas>
                 </div>
 
                 <div id="kfAdobeHarmonyResult" class="kf-adobe-harmony-result"></div>
                 <div class="kf-adobe-adjustments">
-                    <label>Độ sáng/tối <input id="kfAdobeLightness" type="range" min="5" max="95" value="50"><span id="kfAdobeLightnessValue">50%</span></label>
+                    <label>Độ sáng/tối <input id="kfAdobeLightness" type="range" min="0" max="100" value="50"><span id="kfAdobeLightnessValue">50%</span></label>
                     <label>Độ đậm/nhạt <input id="kfAdobeSaturation" type="range" min="0" max="100" value="60"><span id="kfAdobeSaturationValue">60%</span></label>
-                    <button type="button" class="kf-adobe-base-btn" onclick="kfAdobeApplyAdjustments()">Áp dụng chỉnh màu</button>
+
                 </div>
-                <div id="kfAdobeStatus" class="kf-adobe-status">Màu gốc: #F3D36A · Chọn một nguyên tắc để xem bộ màu tự động.</div>
+                <div id="kfAdobeStatus" class="kf-adobe-status" aria-live="polite"></div>
+                <label for="hexTextInput">Mã màu HEX</label>
+                <div class="input-row">
+                    <input type="color" id="hexPicker" value="#F3D36A" aria-label="Chọn màu gốc">
+                    <input type="text" id="hexTextInput" maxlength="7" value="#F3D36A">
+                </div>
+                <label for="pantoneInput">Mã màu Pantone</label>
+                <div class="input-row">
+                    <input type="text" id="pantoneInput" list="pantoneSuggestions" placeholder="Mã Pantone">
+                    <datalist id="pantoneSuggestions"></datalist>
+                    <button type="button" class="palette-action-btn soft" onclick="applyPantoneCode()">Tìm</button>
+                </div>
+                <div id="pantoneFeedback" class="kf-adobe-status" role="status" style="display:none"></div>
+                <div class="palette-save-row">
+                    <button type="button" class="palette-action-btn success" onclick="applyCustomHex()">Áp dụng</button>
+                    <button type="button" class="palette-action-btn soft" id="kfAddWheelColor">Thêm vào bảng phối</button>
+                </div>
             </div>
         </div>
 
@@ -2270,7 +2266,7 @@
             <div class="palette-save-panel">
                 <div style="font-size:12px;font-weight:800;color:#1e1b4b;margin-bottom:7px;">Lưu & quản lý bộ màu đang chọn</div>
                 <div class="palette-save-row">
-                    <button class="palette-action-btn success" type="button" onclick="saveCurrentPaletteAsNew()">Lưu nhóm màu này</button>
+                    <button class="palette-action-btn success" type="button" onclick="saveCurrentPaletteAsNew()">Lưu bộ màu</button>
                     <button class="palette-action-btn soft" type="button" onclick="openSavedPaletteArea()">Xem bảng màu đã lưu</button>
                 </div>
                 <div id="paletteEditStatus" class="palette-edit-status"></div>
@@ -2293,15 +2289,15 @@
 
             <!-- TAB 1: 72 CÔNG THỨC PHỐI MÀU THEO LỨA TUỔI VÀ DỊP -->
             <div id="tab-age-palette">
-                <div class="saved-palettes-box" id="savedPalettesArea">
+                <details class="saved-palettes-box" id="savedPalettesArea">
+                    <summary>Bảng màu tui đã lưu</summary>
                     <div class="saved-palettes-head">
                         <div>
-                            <div style="font-size:13px;font-weight:800;color:#1e1b4b;">Bảng màu tui đã lưu</div>
                         </div>
                         <button class="palette-action-btn neutral" type="button" onclick="restorePresetPalettes()">Khôi phục 72 bộ gốc</button>
                     </div>
                     <div class="saved-palettes-list" id="savedPalettesContainer"></div>
-                </div>
+                </details>
 
                 <input type="text" class="search-bar" id="searchAgeFormula" placeholder="Tìm theo mã (P01-P72), loại hoa, cảm giác, đối tượng..." oninput="renderAgeFormulas()">
                 
@@ -2417,7 +2413,7 @@
 
             <!-- TAB RIÊNG: THƯ VIỆN PANTONE 1.089 MÃ -->
             <div id="tab-pantone" style="display: none;">
-                <details open id="pantoneLibraryDetails" class="pantone-library-panel" ontoggle="if(this.open){renderPantoneLibrary();}">
+                <details open id="pantoneLibraryDetails" class="pantone-library-panel" ontoggle="if(this.open && typeof renderPantoneLibrary === 'function'){renderPantoneLibrary();}">
                     <summary>Pantone 1.089 mã · tra theo HỌ MÀU × Sáng / Dịu / Trung tính / Pha xám / Đậm / Rực</summary>
                     <div class="pantone-note">
                         Bảng này giữ nguyên hệ 192 màu phía dưới và bổ sung thư viện Pantone riêng. Phân nhóm là cách phân loại thực hành theo cảm giác thị giác từ tài liệu nguồn, không phải hệ phân loại chính thức của Pantone. Ô màu trên web là mô phỏng gần đúng từ CMYK để tra cứu trên màn hình; khi cần màu chuẩn in ấn vẫn phải đối chiếu ấn phẩm Pantone hiện hành.
@@ -10586,48 +10582,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             });
         }
 
-        const canvas = document.getElementById('colorWheel');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const activeRoleNotice = document.getElementById('activeRoleNotice');
-
-        function drawWheel() {
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
-            const rings = 8;
-            const segs = 36;
-            const rOut = 110;
-            const rIn = 18;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            for (let ring = 0; ring < rings; ring++) {
-                const r1 = rIn + (rOut - rIn) * (ring / rings);
-                const r2 = rIn + (rOut - rIn) * ((ring + 1) / rings);
-                const l = 92 - (ring * 8);
-
-                for (let s = 0; s < segs; s++) {
-                    const a1 = (s * 2 * Math.PI) / segs;
-                    const a2 = ((s + 1) * 2 * Math.PI) / segs;
-                    const hue = (s / segs) * 360;
-
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, r2, a1, a2);
-                    ctx.arc(cx, cy, r1, a2, a1, true);
-                    ctx.closePath();
-
-                    ctx.fillStyle = `hsl(${hue}, 85%, ${l}%)`;
-                    ctx.fill();
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                }
-            }
-
-            ctx.beginPath();
-            ctx.arc(cx, cy, rIn, 0, 2 * Math.PI);
-            ctx.fillStyle = '#ffffff';
-            ctx.fill();
-        }
 
         function renderRolesList() {
             const wrap = document.getElementById('rolesGroup');
@@ -10926,7 +10881,10 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             renderSavedPalettes();
             if (doScroll) {
                 const el = document.getElementById('savedPalettesArea');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (el) {
+                    el.open = true;
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             }
         }
 
@@ -10980,21 +10938,10 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             activeRoleNotice.textContent = `Đã nạp bộ phối: ${formula.id} (${formula.style})`;
         }
 
-        function onColorPickerChange(val) {
-            document.getElementById('hexTextInput').value = val.toUpperCase();
-            applyHexColor(val.toUpperCase());
-        }
-
         function applyCustomHex() {
-            let val = (document.getElementById('hexTextInput').value || '').trim();
-            if (!val) return;
-            if (!val.startsWith('#')) val = '#' + val;
-            
-            if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(val)) {
-                applyHexColor(val.toUpperCase());
-            } else {
-                alert('Mã HEX không hợp lệ!');
-            }
+            const hex = kfAdobeNormalizeHex(document.getElementById('hexTextInput').value);
+            if (!hex) return alert('Mã HEX không hợp lệ!');
+            applyHexColor(hex);
         }
 
         function applyPantoneCode() {
@@ -11014,38 +10961,17 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                 if (matches.length) {
                     feedback.innerHTML = `Chưa có khớp chính xác. Gợi ý: ${matches.map(x => `<b>${pantoneDisplayCode(x)}</b>`).join(' · ')}`;
                 } else {
-                    feedback.innerHTML = `Không tìm thấy <b>${raw}</b> trong thư viện 1.089 mã PC/CMYK.`;
+                    feedback.innerHTML = `Không tìm thấy <b>${escapeHtmlSafe(raw)}</b> trong thư viện 1.089 mã PC/CMYK.`;
                 }
                 return;
             }
 
             const hex = item.kfCustom && item.hex ? item.hex : cmykToApproxHex(item.c, item.m, item.y, item.k);
             document.getElementById('pantoneInput').value = pantoneDisplayCode(item);
-            applyHexColor(hex);
+            kfAdobeSetBase(hex);
             feedback.style.display = 'block';
             feedback.innerHTML = `<b>${pantoneDisplayCode(item)}</b> · ${item.group} · C:${item.c} M:${item.m} Y:${item.y} K:${item.k} · HEX mô phỏng ${hex}`;
         }
-
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-            const cx = canvas.width / 2, cy = canvas.height / 2;
-            const dx = x - cx, dy = y - cy;
-            const radius = Math.sqrt(dx * dx + dy * dy);
-            const outer = 110;
-            const inner = 18;
-            if (radius > outer || radius < inner) return;
-            const segs = 36, rings = 8;
-            const angle = (Math.atan2(dy, dx) + Math.PI * 2) % (Math.PI * 2);
-            const seg = Math.min(segs - 1, Math.floor(angle / (Math.PI * 2) * segs));
-            const ring = Math.min(rings - 1, Math.floor((radius - inner) / (outer - inner) * rings));
-            const hue = seg / segs * 360;
-            const light = 92 - ring * 8;
-            const hex = kfAdobeHslToHex(hue, 85, light);
-            applyHexColor(hex);
-        });
-
 
         // MÁY TÍNH MẺ PHA – DÙNG TRỰC TIẾP 72 MÀU PHA CHẾ ĐÃ CÓ TRONG colorMapData
         function getMixColorData() {
@@ -11510,12 +11436,13 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                         </div>
                     </div>
 
-                    <div class="palette-details">
+                    <details class="palette-details" name="kf-palette-details">
+                        <summary>Xem chi tiết</summary>
                         <div><b>Gợi ý hoa:</b> ${item.main_flower_sugg} + ${item.sub_flower_sugg}</div>
                         <div><b>Tỷ lệ khối:</b> ${item.ratio} | <b>Dáng:</b> ${item.product}</div>
                         <div><b>Cảm xúc:</b> ${item.feeling}</div>
                         <div><b>Cần tránh:</b> <span style="color:#b91c1c;">${item.avoid}</span></div>
-                    </div>
+                    </details>
                 `;
                 box.appendChild(card);
             });
@@ -11527,8 +11454,8 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
         const kfAdobeCtx = kfAdobeCanvas ? kfAdobeCanvas.getContext('2d') : null;
         if (kfAdobeCanvas && kfAdobeCtx) { kfAdobeCanvas.width = 560; kfAdobeCanvas.height = 560; kfAdobeCtx.setTransform(2,0,0,2,0,0); }
         const kfAdobeHarmonySelect = document.getElementById('kfAdobeHarmony');
-        const kfAdobeBaseInput = document.getElementById('kfAdobeBaseInput');
-        const kfAdobeBasePicker = document.getElementById('kfAdobeBasePicker');
+        const kfAdobeBaseInput = document.getElementById('hexTextInput');
+        const kfAdobeBasePicker = document.getElementById('hexPicker');
         const kfAdobeResult = document.getElementById('kfAdobeHarmonyResult');
         const kfAdobeStatus = document.getElementById('kfAdobeStatus');
 
@@ -11624,7 +11551,14 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                 case 'compound': specs=[[0,0,0,'Màu chủ'],[30,-8,4,'Màu hỗ trợ'],[-15,-15,20,'Màu sáng'],[180,0,0,'Chuyển tiếp'],[180,-15,-20,'Màu sâu'],[210,8,-4,'Hoa chính'],[45,-20,-8,'Màu phụ nhấn']]; break;
                 case 'analogous': default: specs=[[-30,0,0,'Màu chủ'],[-15,0,0,'Màu hỗ trợ'],[-15,-18,22,'Màu sáng'],[0,0,0,'Chuyển tiếp'],[15,-15,-22,'Màu sâu'],[15,0,0,'Hoa chính'],[30,-15,-5,'Màu phụ nhấn']];
             }
-            return specs.map(([dh,ds,dl,role],i)=>({hex: i===2 ? baseHex : make(dh,ds,dl), role}));
+            if (rule === 'free') return [{hex: baseHex, role: 'Màu gốc'}];
+            const count = Number(document.getElementById('kfHarmonyCount').value);
+            const order = rule === 'analogous' ? [3, 0, 5, 1, 4, 6, 2]
+                : rule === 'complementary' ? [0, 1, 4, 2, 3, 5, 6] : [0, 1, 3, 5, 2, 4, 6];
+            return order.slice(0, count).map((index, position) => {
+                const [dh, ds, dl] = specs[index];
+                return {hex: position === 0 ? baseHex : make(dh, ds, dl), role: position === 0 ? 'Màu gốc' : 'Màu ' + (position + 1)};
+            });
         }
 
         function kfAdobePointForHex(hex, radius) {
@@ -11634,30 +11568,32 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             return {x:140+Math.cos(angle)*rr, y:140+Math.sin(angle)*rr};
         }
 
+        let kfWheelBackground;
         function kfAdobeDrawWheel(colors) {
             if(!kfAdobeCtx)return;
             const size=280, pixelSize=560;
             const cx=size/2, cy=size/2, radius=size/2-2;
-            const image=kfAdobeCtx.createImageData(pixelSize,pixelSize);
-            const data=image.data;
+            if (!kfWheelBackground) {
+                const image=kfAdobeCtx.createImageData(pixelSize,pixelSize);
+                const data=image.data;
 
-            for(let y=0;y<pixelSize;y++){
-                for(let x=0;x<pixelSize;x++){
-                    const lx=x/2, ly=y/2;
-                    const dx=lx-cx, dy=ly-cy;
-                    const rr=Math.sqrt(dx*dx+dy*dy);
-                    const idx=(y*pixelSize+x)*4;
-                    if(rr>radius){ data[idx+3]=0; continue; }
+                for(let y=0;y<pixelSize;y++){
+                    for(let x=0;x<pixelSize;x++){
+                        const lx=x/2, ly=y/2;
+                        const dx=lx-cx, dy=ly-cy;
+                        const rr=Math.sqrt(dx*dx+dy*dy);
+                        const idx=(y*pixelSize+x)*4;
+                        if(rr>radius){ data[idx+3]=0; continue; }
 
-                    const sat=kfAdobeClamp(rr/radius,0,1);
-                    const hue=((Math.atan2(dy,dx)*180/Math.PI)+90+360)%360;
-                    const rgb=kfAdobeHexToRgb(kfAdobeHslToHex(hue,sat*100,50));
-                    data[idx]=rgb.r; data[idx+1]=rgb.g; data[idx+2]=rgb.b; data[idx+3]=255;
+                        const sat=kfAdobeClamp(rr/radius,0,1);
+                        const hue=((Math.atan2(dy,dx)*180/Math.PI)+90+360)%360;
+                        const rgb=kfAdobeHexToRgb(kfAdobeHslToHex(hue,sat*100,50));
+                        data[idx]=rgb.r; data[idx+1]=rgb.g; data[idx+2]=rgb.b; data[idx+3]=255;
+                    }
                 }
+                kfWheelBackground = image;
             }
-            kfAdobeCtx.putImageData(image,0,0);
-
-            const basePoint=kfAdobePointForHex(kfAdobeBaseHex,radius);
+            kfAdobeCtx.putImageData(kfWheelBackground,0,0);
             const points=colors.map(c=>kfAdobePointForHex(c.hex,radius));
 
             // Đường nối theo bộ phối — tạo cảm giác giống bánh xe Adobe.
@@ -11676,7 +11612,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             // Điểm màu: viền trắng + viền xám, giống marker của công cụ phối màu.
             colors.forEach((c,i)=>{
                 const p=points[i];
-                const isBase=c.hex===kfAdobeBaseHex;
+                const isBase=i===kfAdobeSelectedSwatchIndex;
                 kfAdobeCtx.beginPath();
                 kfAdobeCtx.arc(p.x,p.y,isBase?9:8,0,Math.PI*2);
                 kfAdobeCtx.fillStyle=c.hex;
@@ -11692,9 +11628,6 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             });
         }
 
-        // Thứ tự 7 màu luôn khớp 7 vị trí trên bó hoa.
-        // Thứ tự ô phối màu đúng với thứ tự 7 vị trí đang hiển thị trong bảng vai trò.
-        const kfAdobeRoleMap=['wrapper','sub_flower','light_color','link_flower','deep_color','main_flower','accent_color'];
         let kfAdobeHarmonyCurrent=[];
         let kfAdobeSelectedSwatchIndex=0;
 
@@ -11702,8 +11635,8 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             if(!kfAdobeCanvas)return;
             const rule=kfAdobeHarmonySelect ? kfAdobeHarmonySelect.value : 'analogous';
             kfAdobeHarmonyCurrent=kfAdobeHarmonyColors(kfAdobeBaseHex,rule).map(c=>({...c}));
-            // Bánh xe Nguyên tắc phối màu hoạt động độc lập; không ghi đè 7 vị trí phối màu bó hoa.
-            kfAdobeSelectedSwatchIndex=2; // Màu gốc nằm ở ô thứ 3.
+            kfAdobeSelectedSwatchIndex=0;
+            document.getElementById('kfHarmonyCount').disabled = rule === 'free';
             kfAdobeDrawWheel(kfAdobeHarmonyCurrent);
             kfAdobeRenderSwatches();
             kfAdobeSetAdjustmentSource(kfAdobeHarmonyCurrent[kfAdobeSelectedSwatchIndex]?.hex || kfAdobeBaseHex);
@@ -11724,7 +11657,7 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
                 const selectedHex=kfAdobeHarmonyCurrent[i].hex;
                 kfAdobeSetAdjustmentSource(selectedHex);
                 kfAdobeDrawWheel(kfAdobeHarmonyCurrent);
-                kfAdobeRenderSwatches();
+                kfAdobeResult.querySelectorAll('button').forEach((button, index) => button.setAttribute('aria-pressed', index === i));
                 kfAdobeUpdateStatus();
             }));
         }
@@ -11741,99 +11674,104 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             if(!kfAdobeStatus)return;
             const selected=kfAdobeHarmonyCurrent[kfAdobeSelectedSwatchIndex];
             const ruleName=kfAdobeHarmonySelect ? kfAdobeHarmonySelect.options[kfAdobeHarmonySelect.selectedIndex].text : '';
-            kfAdobeStatus.innerHTML=`Đang chọn: <b>${selected?.role || 'Màu gốc'} ${selected?.hex || kfAdobeBaseHex}</b> · ${ruleName}`;
+            if (selected) {
+                kfAdobeBaseInput.value = selected.hex;
+                kfAdobeBasePicker.value = selected.hex;
+            }
+            const name = selected && typeof meaningLibraryData !== 'undefined'
+                ? meaningLibraryData.find(item => item.hex?.toUpperCase() === selected.hex)?.name : '';
+            kfAdobeStatus.textContent = [name || selected?.role, selected?.hex, ruleName].filter(Boolean).join(' · ');
         }
 
-        function kfAdobeSetBase(hex, rerender=true) {
+        function kfAdobeSetBase(hex) {
             const normalized=kfAdobeNormalizeHex(hex);
             if(!normalized)return false;
             kfAdobeBaseHex=normalized;
             if(kfAdobeBaseInput)kfAdobeBaseInput.value=normalized;
             if(kfAdobeBasePicker)kfAdobeBasePicker.value=normalized;
-            if(rerender)kfAdobeRender();
+            kfAdobeRender();
             return true;
         }
 
-        function kfAdobeApplyBaseInput() {
-            const value=kfAdobeNormalizeHex(kfAdobeBaseInput ? kfAdobeBaseInput.value : '');
-            if(!value){
-                alert('Mã HEX không hợp lệ! Ví dụ: #F3D36A');
+        function kfAdobeSyncFromExistingHex(hex) {
+            kfAdobeSetBase(hex);
+        }
+
+        kfAdobeBasePicker.addEventListener('input', event => kfAdobeSetBase(event.target.value));
+        kfAdobeBaseInput.addEventListener('keydown', event => {
+            if (event.key === 'Enter') kfAdobeSetBase(kfAdobeBaseInput.value);
+        });
+        kfAdobeBaseInput.addEventListener('change', () => {
+            const value = kfAdobeNormalizeHex(kfAdobeBaseInput.value);
+            if (value && value !== kfAdobeHarmonyCurrent[kfAdobeSelectedSwatchIndex]?.hex) kfAdobeSetBase(value);
+        });
+        kfAdobeHarmonySelect.addEventListener('change', kfAdobeRender);
+        document.getElementById('kfHarmonyCount').addEventListener('change', kfAdobeRender);
+        document.getElementById('kfColorMood').addEventListener('change', event => {
+            if (!event.target.value) return;
+            if (kfAdobeHarmonySelect.value === 'free') kfAdobeHarmonySelect.value = 'analogous';
+            kfAdobeSetBase(event.target.value);
+        });
+
+        function kfWheelPosition(event) {
+            const rect = kfAdobeCanvas.getBoundingClientRect();
+            return {
+                x: (event.clientX - rect.left) * 280 / rect.width,
+                y: (event.clientY - rect.top) * 280 / rect.height
+            };
+        }
+
+        function kfMoveWheelColor(point, index) {
+            const dx = point.x - 140, dy = point.y - 140;
+            const sat = Math.min(100, Math.hypot(dx, dy) / 138 * 100);
+            const hue = (Math.atan2(dy, dx) * 180 / Math.PI + 450) % 360;
+            const light = kfAdobeHexToHsl(kfAdobeHarmonyCurrent[index].hex).l;
+            const color = kfAdobeHslToHex(hue, sat, light);
+            if (index === 0) {
+                kfAdobeSetBase(color);
                 return;
             }
-            kfAdobeSetBase(value,true);
+            kfAdobeHarmonyCurrent[index].hex = color;
+            kfAdobeSelectedSwatchIndex = index;
+            kfAdobeSetAdjustmentSource(color);
+            kfAdobeDrawWheel(kfAdobeHarmonyCurrent);
+            kfAdobeRenderSwatches();
+            kfAdobeUpdateStatus();
         }
 
-        function kfAdobeSyncFromExistingHex(hex) {
-            if(kfAdobeNormalizeHex(hex)) kfAdobeSetBase(hex,true);
-        }
-
-        if(kfAdobeBasePicker){
-            kfAdobeBasePicker.addEventListener('input',e=>kfAdobeSetBase(e.target.value,true));
-            kfAdobeBasePicker.addEventListener('change',e=>kfAdobeSetBase(e.target.value,true));
-        }
-        if(kfAdobeBaseInput){
-            kfAdobeBaseInput.addEventListener('keydown',e=>{
-                if(e.key==='Enter') kfAdobeApplyBaseInput();
+        let kfDraggedColor = null;
+        kfAdobeCanvas.addEventListener('pointerdown', event => {
+            if (!event.isPrimary || event.button !== 0) return;
+            const point = kfWheelPosition(event);
+            const distances = kfAdobeHarmonyCurrent.map(({hex}) => {
+                const anchor = kfAdobePointForHex(hex, 138);
+                return Math.hypot(anchor.x - point.x, anchor.y - point.y);
             });
-            kfAdobeBaseInput.addEventListener('input',e=>{
-                const value=kfAdobeNormalizeHex(e.target.value);
-                if(value && kfAdobeBasePicker)kfAdobeBasePicker.value=value;
-            });
-        }
-        if(kfAdobeHarmonySelect){
-            kfAdobeHarmonySelect.addEventListener('change',kfAdobeRender);
-        }
-        if(kfAdobeCanvas){
-            const kfAdobePickFromWheel=(event)=>{
-                const rect=kfAdobeCanvas.getBoundingClientRect();
-                const scaleX=280/rect.width;
-                const scaleY=280/rect.height;
-                const x=(event.clientX-rect.left)*scaleX;
-                const y=(event.clientY-rect.top)*scaleY;
-                const cx=kfAdobeCanvas.width/2, cy=kfAdobeCanvas.height/2;
-                const radius=kfAdobeCanvas.width/2-2;
-                const dx=x-cx, dy=y-cy;
-                const rr=Math.sqrt(dx*dx+dy*dy);
-                if(rr>radius)return;
-                const hue=((Math.atan2(dy,dx)*180/Math.PI)+90+360)%360;
-                const sat=kfAdobeClamp(rr/radius,0,1)*100;
-                const hex=kfAdobeHslToHex(hue,sat,50);
-                kfAdobeSetBase(hex,true);
-                const lh=document.getElementById('kfAdobeLightness'), sh=document.getElementById('kfAdobeSaturation');
-                const hsl=kfAdobeHexToHsl(hex);
-                if(lh)lh.value=Math.round(hsl.l); if(sh)sh.value=Math.round(hsl.s);
-                const lv=document.getElementById('kfAdobeLightnessValue'), sv=document.getElementById('kfAdobeSaturationValue');
-                if(lv)lv.textContent=Math.round(hsl.l)+'%'; if(sv)sv.textContent=Math.round(hsl.s)+'%';
-            };
-            kfAdobeCanvas.addEventListener('click',kfAdobePickFromWheel);
-            kfAdobeCanvas.addEventListener('pointerdown',e=>{
-                if(e.pointerType==='touch')kfAdobePickFromWheel(e);
-            });
-        }
-
-
+            const nearest = Math.min(...distances);
+            if (nearest > 12 && Math.hypot(point.x - 140, point.y - 140) > 138) return;
+            const index = nearest <= 12 ? distances.indexOf(nearest) : 0;
+            kfDraggedColor = {index, pointerId: event.pointerId};
+            kfAdobeCanvas.setPointerCapture(event.pointerId);
+            if (nearest > 12) kfMoveWheelColor(point, index);
+            else {
+                kfAdobeSelectedSwatchIndex = index;
+                kfAdobeSetAdjustmentSource(kfAdobeHarmonyCurrent[index].hex);
+                kfAdobeDrawWheel(kfAdobeHarmonyCurrent);
+                kfAdobeRenderSwatches();
+                kfAdobeUpdateStatus();
+            }
+        });
+        kfAdobeCanvas.addEventListener('pointermove', event => {
+            if (kfDraggedColor?.pointerId === event.pointerId) {
+                kfMoveWheelColor(kfWheelPosition(event), kfDraggedColor.index);
+            }
+        });
+        kfAdobeCanvas.addEventListener('lostpointercapture', () => { kfDraggedColor = null; });
 
         let kfAdobeAdjustmentSourceHsl = null;
         function kfAdobeSetAdjustmentSource(hex){
             kfAdobeAdjustmentSourceHsl = kfAdobeHexToHsl(hex);
             kfAdobeSyncAdjustmentControls(hex);
-        }
-        function kfAdobeApplyAdjustments() {
-            if(!kfAdobeHarmonyCurrent.length)return;
-            const index=kfAdobeSelectedSwatchIndex;
-            const current=kfAdobeHarmonyCurrent[index];
-            if(!current)return;
-            const hsl=kfAdobeAdjustmentSourceHsl || kfAdobeHexToHsl(current.hex);
-            const light=Number(document.getElementById('kfAdobeLightness')?.value ?? hsl.l);
-            const sat=Number(document.getElementById('kfAdobeSaturation')?.value ?? hsl.s);
-            const adjusted=kfAdobeHslToHex(hsl.h,sat,light);
-            // Chỉ cập nhật ô đang chọn trong bánh xe phối màu độc lập.
-            kfAdobeHarmonyCurrent[index]={...current,hex:adjusted};
-            kfAdobeDrawWheel(kfAdobeHarmonyCurrent);
-            kfAdobeRenderSwatches();
-            kfAdobeUpdateStatus();
-            // Giữ màu vừa chỉnh làm mốc để thao tác tiếp không bị cộng dồn sai.
-            kfAdobeAdjustmentSourceHsl=kfAdobeHexToHsl(adjusted);
         }
         function kfAdobePreviewAdjustment(){
             if(!kfAdobeHarmonyCurrent.length)return;
@@ -11844,8 +11782,12 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
             const light=Number(document.getElementById('kfAdobeLightness')?.value ?? hsl.l);
             const sat=Number(document.getElementById('kfAdobeSaturation')?.value ?? hsl.s);
             const adjusted=kfAdobeHslToHex(hsl.h,sat,light);
-            // Xem trước màu trong bánh xe בלבד; không thay đổi bảng 7 vị trí bó hoa.
-            kfAdobeHarmonyCurrent[index]={...current,hex:adjusted};
+            if (index === 0) {
+                kfAdobeBaseHex = adjusted;
+                kfAdobeHarmonyCurrent = kfAdobeHarmonyColors(adjusted, kfAdobeHarmonySelect.value);
+            } else {
+                kfAdobeHarmonyCurrent[index] = {...current, hex: adjusted};
+            }
             kfAdobeDrawWheel(kfAdobeHarmonyCurrent);
             kfAdobeRenderSwatches();
             kfAdobeUpdateStatus();
@@ -12002,7 +11944,6 @@ Sản phẩm chìm → tăng tách biệt với nền.</p>
 
         // Khởi động
         try { loadVisualColorLibrary(); } catch(e) {}
-        drawWheel();
         renderRolesList();
         if (typeof kfAdobeSyncFromExistingHex === 'function') {
             const kfAdobeInitialRole = flowerRoles.find(r => r.id === selectedRoleId);
@@ -12930,22 +12871,214 @@ else insert();
  const clean=r=>({...row(r.hex,r.id),roles:Array.isArray(r.roles)?r.roles.filter(x=>roles.includes(x)):[],placements:Array.isArray(r.placements)?r.placements.filter(x=>places.includes(x)):[],custom:String(r.custom||''),percent:r.percent==null?null:Math.max(0,Math.min(100,Number(r.percent)||0)),weight:String(r.weight||'')});
  const data=()=>flowerRoles.map(clean);
  const legacy=(colors,preset=false)=>ids.filter(id=>/^#[0-9a-f]{6}$/i.test(colors?.[id]||'')).map(id=>({...row(colors[id],id),placements:preset?({wrapper:['Giấy gói ngoài'],sub_flower:['Hoa phụ'],link_flower:['Giấy gói trong'],main_flower:['Hoa chính'],light_color:['Ruy băng'],deep_color:['Nơ']}[id]||[]):[]}));
- function load(rows,enabled=false){flowerRoles.splice(0,flowerRoles.length,...(rows.length?rows.map(clean):[row()]));ratio=!!enabled;selectRole(flowerRoles[0].id);}
+ function load(rows,enabled=false){locked.clear();openColorDetails=null;flowerRoles.splice(0,flowerRoles.length,...(rows.length?rows.map(clean):[row()]));ratio=!!enabled;selectRole(flowerRoles[0].id);}
  const el=(tag,txt)=>{const x=document.createElement(tag);if(txt!==undefined)x.textContent=txt;return x;};
  const btn=(txt,fn)=>{const x=el('button',txt);x.type='button';x.className='palette-action-btn soft';x.onclick=fn;return x;};
  const preset=()=>paletteEditState?.type==='preset';
  function stats(h){const [r,g,b]=hex(h).slice(1).match(/../g).map(x=>parseInt(x,16)/255),max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min,l=(max+min)/2;let hue=0;if(d)hue=60*(max===r?((g-b)/d+6)%6:max===g?(b-r)/d+2:(r-g)/d+4);return {h:hue,l:l*100,s:d?100*d/(1-Math.abs(2*l-1)):0};}
- function update(){const strip=document.getElementById('kfFlexStrip'),status=document.getElementById('kfFlexStatus'),analysis=document.getElementById('kfFlexAnalysis');if(!strip||!status||!analysis)return;const total=flowerRoles.reduce((n,r)=>n+(Number(r.percent)||0),0);strip.replaceChildren();flowerRoles.forEach(r=>{const c=el('div');c.style.background=r.hex;c.style.flex=String(ratio&&total>0?(Number(r.percent)||0):1);c.title=r.hex;strip.append(c);});status.textContent=ratio?'Tổng tỷ trọng: '+total+'%'+(total===100&&flowerRoles.every(r=>r.percent!=null)?'':' (chưa đủ hoặc vượt 100%)'):'';const a=flowerRoles.map(r=>stats(r.hex)),range=k=>Math.round(Math.max(...a.map(v=>v[k]))-Math.min(...a.map(v=>v[k]))),hs=a.filter(v=>v.s>=12).map(v=>v.h).sort((x,y)=>x-y),spread=hs.length<2?0:360-Math.max(...hs.map((h,i)=>(hs[(i+1)%hs.length]-h+360)%360));analysis.replaceChildren();const rows=[['Hòa sắc',hs.length<2?'Ít biến thiên sắc tướng':spread<=65?'Sắc tướng gần nhau':'Sắc tướng phân bố rộng hơn'],['Tương phản','Chênh lệch sáng HSL '+range('l')+' điểm; bão hòa '+range('s')+' điểm'],['Cân bằng',ratio&&total===100?'Có tỷ trọng dự kiến; cần xem bố cục thực tế':'Chưa đủ dữ liệu tỷ trọng và vị trí không gian'],['Thứ bậc',flowerRoles.filter(r=>r.roles?.includes('Chủ đạo')).length+' màu chủ đạo; '+flowerRoles.filter(r=>r.roles?.includes('Điểm nhấn')).length+' màu điểm nhấn'],['Nhịp điệu','Cần biết sự lặp lại và vị trí trong bố cục'],['Thống nhất',spread<=65?'Sắc tướng gần nhau có thể tạo liên kết':'Cần xem màu liên kết và bố cục'],['Độ phức tạp',new Set(flowerRoles.map(r=>r.hex)).size+' màu khác nhau'],['Trọng lượng thị giác','Phụ thuộc diện tích, vị trí, chất liệu và tương phản']];rows.forEach(([k,v])=>{const p=el('div');p.append(el('b',k+': '),document.createTextNode(v));analysis.append(p);});}
+ function update(){const strip=document.getElementById('kfFlexStrip'),status=document.getElementById('kfFlexStatus'),analysis=document.getElementById('kfFlexAnalysis');if(!strip||!status||!analysis)return;const total=flowerRoles.reduce((n,r)=>n+(Number(r.percent)||0),0);strip.replaceChildren();flowerRoles.forEach(r=>{const c=el('div');c.style.background=r.hex;c.style.flex=String(ratio&&total>0?(Number(r.percent)||0):1);c.title=r.hex;strip.append(c);});status.textContent=ratio?'Tổng tỷ trọng: '+total+'%'+(total===100&&flowerRoles.every(r=>r.percent!=null||locked.has(r.id))?'':' (chưa đủ hoặc vượt 100%)'):'';const a=flowerRoles.map(r=>stats(r.hex)),range=k=>Math.round(Math.max(...a.map(v=>v[k]))-Math.min(...a.map(v=>v[k]))),hs=a.filter(v=>v.s>=12).map(v=>v.h).sort((x,y)=>x-y),spread=hs.length<2?0:360-Math.max(...hs.map((h,i)=>(hs[(i+1)%hs.length]-h+360)%360));analysis.replaceChildren();const rows=[['Hòa sắc',hs.length<2?'Ít biến thiên sắc tướng':spread<=65?'Sắc tướng gần nhau':'Sắc tướng phân bố rộng hơn'],['Tương phản','Chênh lệch sáng HSL '+range('l')+' điểm; bão hòa '+range('s')+' điểm'],['Cân bằng',ratio&&total===100?'Có tỷ trọng dự kiến; cần xem bố cục thực tế':'Chưa đủ dữ liệu tỷ trọng và vị trí không gian'],['Thứ bậc',flowerRoles.filter(r=>r.roles?.includes('Chủ đạo')).length+' màu chủ đạo; '+flowerRoles.filter(r=>r.roles?.includes('Điểm nhấn')).length+' màu điểm nhấn'],['Nhịp điệu','Cần biết sự lặp lại và vị trí trong bố cục'],['Thống nhất',spread<=65?'Sắc tướng gần nhau có thể tạo liên kết':'Cần xem màu liên kết và bố cục'],['Độ phức tạp',new Set(flowerRoles.map(r=>r.hex)).size+' màu khác nhau'],['Trọng lượng thị giác','Phụ thuộc diện tích, vị trí, chất liệu và tương phản']];rows.forEach(([k,v])=>{const p=el('div');p.append(el('b',k+': '),document.createTextNode(v));analysis.append(p);});}
  function move(id,to){if(preset())return;const i=flowerRoles.findIndex(r=>r.id===id);if(i<0||to<0||to>=flowerRoles.length)return;const [r]=flowerRoles.splice(i,1);flowerRoles.splice(to,0,r);renderRolesList();}
- renderRolesList=function(){box.replaceChildren();const toolbar=el('div');toolbar.className='kf-flex-tools';toolbar.style.cssText='display:flex;gap:5px;flex-wrap:wrap';toolbar.append(btn('+ Thêm màu',()=>{if(preset())return alert('Lưu thành bộ mới để thay đổi số màu của công thức gốc.');const r=row();flowerRoles.push(r);selectRole(r.id);}),btn('Bộ màu mới',()=>{cancelPaletteEdit(false);load([row()]);}));const check=el('input');check.type='checkbox';check.checked=ratio;check.onchange=()=>{ratio=check.checked;renderRolesList();};const lab=el('label');lab.append(check,' Dùng tỷ trọng');toolbar.append(lab);box.append(toolbar);const strip=el('div');strip.id='kfFlexStrip';strip.style.cssText='display:flex;height:27px;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden';box.append(strip);const status=el('div');status.id='kfFlexStatus';box.append(status);
- flowerRoles.forEach((r,i)=>{const c=el('div');c.className='role-card '+(r.id===selectedRoleId?'active':'');c.style.cssText='display:block;cursor:default';const head=el('div');head.style.cssText='display:flex;align-items:center;gap:4px;flex-wrap:wrap';const sw=el('span');sw.style.cssText='width:25px;height:25px;border:1px solid #cbd5e1;border-radius:5px;background:'+r.hex;const choose=btn('Màu '+(i+1)+' · '+r.hex,()=>selectRole(r.id));choose.style.flex='1';const grip=btn('↕',()=>{});grip.draggable=true;grip.title='Kéo đổi thứ tự';grip.ondragstart=e=>{drag=r.id;e.dataTransfer.setData('text/plain',r.id);};c.ondragover=e=>e.preventDefault();c.ondrop=e=>{e.preventDefault();if(drag)move(drag,i);drag=null;};head.append(sw,choose,grip,btn('↑',()=>move(r.id,i-1)),btn('↓',()=>move(r.id,i+1)),btn('×',()=>{if(preset()||flowerRoles.length===1)return;flowerRoles.splice(i,1);selectRole(flowerRoles[Math.min(i,flowerRoles.length-1)].id);}));c.append(head);
- function multi(title,opts,key){const d=el('details'),sum=el('summary',title+': '+(r[key]?.join(', ')||'Chưa chọn'));d.append(sum);opts.forEach(v=>{const l=el('label');l.style.cssText='display:inline-flex;gap:3px;margin:4px 8px 0 0;align-items:center';const x=el('input');x.type='checkbox';x.checked=r[key]?.includes(v);x.onchange=()=>{r[key]=x.checked?[...new Set([...(r[key]||[]),v])]:(r[key]||[]).filter(z=>z!==v);sum.textContent=title+': '+(r[key].join(', ')||'Chưa chọn');update();};l.append(x,v);d.append(l);});return d;}
- c.append(multi('Vai trò',roles,'roles'),multi('Phân bổ',places,'placements'));const input=el('input');input.type='text';input.placeholder='Vị trí khác (tùy chọn)';input.value=r.custom||'';input.style.cssText='width:100%;padding:5px;border:1px solid #cbd5e1;border-radius:5px';input.oninput=()=>r.custom=input.value;c.append(input);
- if(ratio){const l=el('label','Tỷ trọng (%) '),n=el('input');n.type='number';n.min=0;n.max=100;n.step=1;n.value=r.percent??'';n.style.width='65px';n.oninput=()=>{r.percent=n.value===''?null:Math.max(0,Math.min(100,Number(n.value)||0));update();};l.append(n);c.append(l);}
- const st=stats(r.hex),d=el('details');d.append(el('summary','Đặc tính màu'),el('div','Sáng HSL: '+Math.round(st.l)+'% · Bão hòa: '+Math.round(st.s)+'% · Sắc tướng: '+Math.round(st.h)+'°'));const w=el('select');['','Nhẹ','Trung bình','Nặng'].forEach(v=>{const o=el('option',v||'Trọng lượng: chưa xác định');o.value=v;w.append(o);});w.value=r.weight||'';w.onchange=()=>r.weight=w.value;d.append(w);const match=typeof meaningLibraryData!=='undefined'&&Array.isArray(meaningLibraryData)?meaningLibraryData.find(x=>hex(x.hex)===r.hex):null;if(match)d.append(el('div','Hồ sơ màu: '+match.name));c.append(d);box.append(c);});
- const det=el('details');det.append(el('summary','Phân tích bộ màu'));const a=el('div');a.id='kfFlexAnalysis';a.style.cssText='font-size:12px;line-height:1.55';det.append(a);box.append(det);update();};
- selectRole=function(id){const r=flowerRoles.find(x=>x.id===id)||flowerRoles[0];if(!r)return;selectedRoleId=r.id;activeRoleNotice.textContent='Đang chọn: Màu '+(flowerRoles.indexOf(r)+1);document.getElementById('hexTextInput').value=r.hex;document.getElementById('hexPicker').value=r.hex;renderRolesList();};
- applyHexColor=function(h){if(/^#[0-9a-f]{3}$/i.test(h))h='#'+h.slice(1).split('').map(x=>x+x).join('');if(!/^#[0-9a-f]{6}$/i.test(h))return;const r=flowerRoles.find(x=>x.id===selectedRoleId);if(!r)return;r.hex=hex(h);if(typeof kfAdobeSyncFromExistingHex==='function')kfAdobeSyncFromExistingHex(r.hex);selectRole(r.id);};
+ const locked = new Set();
+ let openColorDetails = null;
+ function addColor(value) {
+     if (preset()) return alert('Lưu thành bộ mới để thay đổi số màu của công thức gốc.');
+     const color = row(value);
+     flowerRoles.push(color);
+     selectRole(color.id);
+ }
+ function distributeRatios() {
+     const editable = flowerRoles.filter(color => !locked.has(color.id));
+     if (!editable.length) return;
+     const fixed = flowerRoles.filter(color => locked.has(color.id));
+     const remaining = 100 - fixed.reduce((total, color) => total + (color.percent ?? 0), 0);
+     if (remaining < 0) return alert('Tỷ lệ của các màu đã khóa vượt 100%.');
+     let assigned = 0;
+     editable.forEach((color, index) => {
+         const next = Math.round(remaining * (index + 1) / editable.length);
+         color.percent = next - assigned;
+         assigned = next;
+     });
+     ratio = true;
+     renderRolesList();
+ }
+ function syncWheelColors() {
+     const colors = kfAdobeHarmonyCurrent.map(color => color.hex);
+     if (!colors.length) return;
+     const start = colors.length === 1 || preset() ? Math.max(0, flowerRoles.findIndex(color => color.id === selectedRoleId)) : 0;
+     const editable = flowerRoles.slice(start).filter(color => !locked.has(color.id));
+     colors.forEach((value, index) => {
+         if (editable[index]) editable[index].hex = value;
+         else if (!preset()) flowerRoles.push(row(value));
+     });
+     renderRolesList();
+     activeRoleNotice.textContent = 'Đã đồng bộ từ vòng màu';
+ }
+ document.getElementById('kfAddWheelColor').onclick = () => {
+     const value = kfAdobeNormalizeHex(kfAdobeBaseInput.value);
+     if (value) addColor(value);
+     else alert('Mã HEX không hợp lệ!');
+ };
+ renderRolesList = function() {
+     box.replaceChildren();
+     const toolbar = el('div');
+     toolbar.className = 'kf-flex-tools';
+     toolbar.append(
+         btn('+ Thêm màu', () => addColor()),
+         btn('Bộ màu mới', () => { cancelPaletteEdit(false); load([row()]); }),
+         btn('Đồng bộ từ vòng màu', syncWheelColors),
+         btn('Tự phân bổ tỷ lệ', distributeRatios)
+     );
+     const check = el('input');
+     check.type = 'checkbox';
+     check.checked = ratio;
+     check.onchange = () => { ratio = check.checked; renderRolesList(); };
+     const label = el('label');
+     label.append(check, ' Dùng tỷ trọng');
+     toolbar.append(label);
+     const strip = el('div');
+     strip.id = 'kfFlexStrip';
+     const status = el('div');
+     status.id = 'kfFlexStatus';
+     box.append(toolbar, strip, status);
+
+     flowerRoles.forEach((r, i) => {
+         const card = el('div');
+         card.className = 'role-card kf-color-row' + (r.id === selectedRoleId ? ' active' : '');
+         const head = el('div');
+         head.className = 'kf-color-row-head';
+         const choose = btn('', () => selectRole(r.id));
+         choose.classList.add('kf-color-select');
+         choose.setAttribute('aria-pressed', String(r.id === selectedRoleId));
+         const swatch = el('span');
+         swatch.style.background = r.hex;
+         choose.append(swatch, el('span', 'Màu ' + (i + 1) + ' · ' + r.hex));
+         const role = el('span', r.roles?.join(', ') || 'Chưa chọn vai trò');
+         role.className = 'kf-row-role';
+         role.title = role.textContent;
+         const percent = el('input');
+         percent.type = 'number';
+         percent.min = 0;
+         percent.max = 100;
+         percent.step = 1;
+         percent.placeholder = '%';
+         percent.setAttribute('aria-label', 'Tỷ lệ màu ' + (i + 1) + ' (%)');
+         percent.value = ratio ? (r.percent ?? (locked.has(r.id) ? 0 : '')) : '';
+         percent.disabled = locked.has(r.id);
+         percent.oninput = () => {
+             r.percent = percent.value === '' ? null : Math.max(0, Math.min(100, Number(percent.value) || 0));
+             ratio = true;
+             check.checked = true;
+             update();
+         };
+         const lock = btn(locked.has(r.id) ? '🔒' : '🔓', () => {
+             if (locked.has(r.id)) locked.delete(r.id);
+             else locked.add(r.id);
+             renderRolesList();
+         });
+         lock.setAttribute('aria-label', 'Khóa màu ' + (i + 1));
+         lock.setAttribute('aria-pressed', String(locked.has(r.id)));
+         lock.title = locked.has(r.id) ? 'Mở khóa màu' : 'Khóa màu';
+         const details = el('div');
+         details.className = 'kf-color-details';
+         details.id = 'kfColorDetails-' + i;
+         details.hidden = openColorDetails !== r.id;
+         const more = btn('⋯', () => {
+             openColorDetails = details.hidden ? r.id : null;
+             for (const panel of box.querySelectorAll('.kf-color-details')) panel.hidden = panel !== details || openColorDetails === null;
+             for (const button of box.querySelectorAll('[aria-controls^="kfColorDetails-"]')) {
+                 button.setAttribute('aria-expanded', String(button === more && openColorDetails !== null));
+             }
+         });
+         more.setAttribute('aria-label', 'Chi tiết màu ' + (i + 1));
+         more.setAttribute('aria-controls', details.id);
+         more.setAttribute('aria-expanded', String(!details.hidden));
+         const up = btn('↑', () => move(r.id, i - 1));
+         up.title = 'Đưa màu lên';
+         up.disabled = preset() || i === 0;
+         const down = btn('↓', () => move(r.id, i + 1));
+         down.title = 'Đưa màu xuống';
+         down.disabled = preset() || i === flowerRoles.length - 1;
+         const remove = btn('×', () => {
+             flowerRoles.splice(i, 1);
+             selectRole(flowerRoles[Math.min(i, flowerRoles.length - 1)].id);
+         });
+         remove.title = 'Xóa màu';
+         remove.className = 'palette-action-btn danger';
+         remove.disabled = preset() || flowerRoles.length === 1 || locked.has(r.id);
+         head.append(choose, role, percent, more, lock, up, down, remove);
+         choose.draggable = !preset();
+         choose.ondragstart = event => { drag = r.id; event.dataTransfer.setData('text/plain', r.id); };
+         choose.ondragend = () => { drag = null; };
+         card.ondragover = event => { if (drag) event.preventDefault(); };
+         card.ondrop = event => { if (drag) { event.preventDefault(); move(drag, i); drag = null; } };
+
+         function options(title, values, key) {
+             const field = el('fieldset');
+             field.append(el('legend', title));
+             values.forEach(value => {
+                 const label = el('label');
+                 const checkbox = el('input');
+                 checkbox.type = 'checkbox';
+                 checkbox.checked = r[key]?.includes(value);
+                 checkbox.onchange = () => {
+                     const current = r[key] || [];
+                     r[key] = checkbox.checked ? [...current, value] : current.filter(entry => entry !== value);
+                     role.title = role.textContent = r.roles?.join(', ') || 'Chưa chọn vai trò';
+                     update();
+                 };
+                 label.append(checkbox, value);
+                 field.append(label);
+             });
+             return field;
+         }
+         details.append(options('Vai trò', roles, 'roles'), options('Phân bổ', places, 'placements'));
+         const custom = el('input');
+         custom.type = 'text';
+         custom.placeholder = 'Vị trí khác (tùy chọn)';
+         custom.setAttribute('aria-label', 'Vị trí khác');
+         custom.value = r.custom || '';
+         custom.oninput = () => { r.custom = custom.value; };
+         const st = stats(r.hex);
+         const weight = el('select');
+         weight.setAttribute('aria-label', 'Trọng lượng thị giác');
+         ['', 'Nhẹ', 'Trung bình', 'Nặng'].forEach(value => {
+             const option = el('option', value || 'Trọng lượng: chưa xác định');
+             option.value = value;
+             weight.append(option);
+         });
+         weight.value = r.weight || '';
+         weight.onchange = () => { r.weight = weight.value; };
+         details.append(custom, el('div', 'Sáng HSL: ' + Math.round(st.l) + '% · Bão hòa: ' + Math.round(st.s) + '% · Sắc tướng: ' + Math.round(st.h) + '°'), weight);
+         const profile = Array.isArray(meaningLibraryData) ? meaningLibraryData.find(item => item.hex?.toUpperCase() === r.hex) : null;
+         if (profile) details.append(el('div', 'Hồ sơ màu: ' + profile.name));
+         card.append(head, details);
+         box.append(card);
+     });
+     const analysis = el('details');
+     const output = el('div');
+     output.id = 'kfFlexAnalysis';
+     analysis.append(el('summary', 'Phân tích bộ màu'), output);
+     box.append(analysis);
+     update();
+ };
+ selectRole = function(id) {
+     const color = flowerRoles.find(entry => entry.id === id) || flowerRoles[0];
+     if (!color) return;
+     selectedRoleId = color.id;
+     activeRoleNotice.textContent = 'Đang chọn: Màu ' + (flowerRoles.indexOf(color) + 1);
+     kfAdobeSetBase(color.hex);
+     renderRolesList();
+ };
+ applyHexColor = function(value) {
+     const color = flowerRoles.find(entry => entry.id === selectedRoleId);
+     const normalized = kfAdobeNormalizeHex(value);
+     if (!color || !normalized) return;
+     if (locked.has(color.id)) return alert('Màu này đang khóa.');
+     color.hex = normalized;
+     renderRolesList();
+ };
+ const cancelEdit=cancelPaletteEdit;
+ cancelPaletteEdit=function(updateNotice=true){cancelEdit(updateNotice);if(updateNotice)renderRolesList();};
  const oldCommit=commitPaletteEdit,oldStartPreset=startEditPresetPalette,oldCustom=typeof applyAgeCustomPalette==='function'?applyAgeCustomPalette:null;
  function packed(){return {colors:Object.fromEntries(flowerRoles.map(r=>[r.id,r.hex])),flexColors:data(),flexRatio:ratio};}
  saveCurrentPaletteAsNew=function(){const items=getSavedPalettes();const seq='kimflora_saved_palette_sequence_v2';const n=Math.max(Number(kfReadLocal(seq,0))||0,...items.map(x=>Number(String(x.id).replace(/^KM/i,''))||0))+1,id='KM'+String(n).padStart(2,'0');const name=prompt('Đặt tên cho nhóm màu:', 'Bảng màu '+id);if(name===null)return;kfWriteLocal(seq,n);items.unshift({id,name:name.trim()||id,...packed(),created_at:new Date().toISOString()});setSavedPalettes(items);renderSavedPalettes();activeRoleNotice.textContent='Đã lưu bộ màu: '+id;openSavedPaletteArea(false);};
@@ -12956,7 +13089,7 @@ else insert();
  startEditPresetPalette=function(id){oldStartPreset(id);showPaletteEditStatus('Đang sửa bộ '+escapeHtmlSafe(id)+' · Cập nhật để lưu thay đổi.');renderRolesList();};
  if(oldCustom)applyAgeCustomPalette=function(id){const item=getAgeCustomPalettes().find(x=>x.id===id);if(!item)return;cancelPaletteEdit(false);load(item.colors.map(c=>row(c.hex)));activeRoleNotice.textContent='Đã nạp: '+id;};
  const oldRestore=typeof restorePresetPalettes==='function'?restorePresetPalettes:null;if(oldRestore)restorePresetPalettes=function(){if(!confirm('Khôi phục các bộ phối gốc?'))return;try{localStorage.removeItem(KF_PRESET_OVERRIDES_KEY);localStorage.removeItem(KF_PRESET_DELETED_KEY);localStorage.removeItem('kimflora_preset_flexible_v2');}catch(e){}cancelPaletteEdit(false);renderAgeFormulas();};
- renderSavedPalettes=function(){const target=document.getElementById('savedPalettesContainer');if(!target)return;target.replaceChildren();getSavedPalettes().forEach(item=>{const card=el('div');card.className='saved-palette-card';card.append(el('b',item.id+' · '+item.name));const strip=el('div');strip.className='saved-color-strip';(item.flexColors||legacy(item.colors)).forEach(r=>{const chip=el('div');chip.className='saved-color-chip';const sw=el('div');sw.className='saved-color-swatch';sw.style.background=hex(r.hex);chip.append(sw,el('span',r.hex),el('small',(r.roles||[]).join(', ')));strip.append(chip);});card.append(strip,btn('Nạp lại',()=>applySavedPalette(item.id)));const actions=el('div');actions.className='saved-palette-actions';actions.append(btn('Sửa màu',()=>startEditSavedPalette(item.id)),btn('Nhân bản',()=>{applySavedPalette(item.id);saveCurrentPaletteAsNew();}),btn('Xóa',()=>deleteSavedPalette(item.id)));card.append(actions);target.append(card);});};
+ renderSavedPalettes=function(){const target=document.getElementById('savedPalettesContainer');if(!target)return;target.replaceChildren();getSavedPalettes().forEach(item=>{const card=el('div');card.className='saved-palette-card';card.append(el('b',item.id+' · '+item.name));const strip=el('div');strip.className='saved-color-strip';(item.flexColors||legacy(item.colors)).forEach(r=>{const chip=el('div');chip.className='saved-color-chip';const sw=el('div');sw.className='saved-color-swatch';sw.style.background=hex(r.hex);chip.append(sw,el('span',r.hex),el('small',(r.roles||[]).join(', ')));strip.append(chip);});card.append(strip,btn('Nạp lại',()=>applySavedPalette(item.id)));const actions=el('div');actions.className='saved-palette-actions';const remove=btn('Xóa',()=>deleteSavedPalette(item.id));remove.className='palette-action-btn danger';actions.append(btn('Sửa màu',()=>startEditSavedPalette(item.id)),btn('Nhân bản',()=>{applySavedPalette(item.id);saveCurrentPaletteAsNew();}),remove);card.append(actions);target.append(card);});};
  const themes=[
  ['Hồng','Rose Milk','#F7E8E9 #EABAC7 #C887A0 #9B526E #F7F2E9'],['Hồng','Dusty Ballet','#ECD7D8 #CDA2A8 #B77C87 #79545F #D6D0BE'],['Hồng','Raspberry Veil','#F6DFE6 #E6A5B8 #C9577F #812B54 #BABCA6'],['Hồng','Peony & Peach','#F8D9D4 #EBA3AA #D8798C #F3BF9E #F8F1E4'],
  ['Tím','Lilac Mist','#EFE9F5 #CFC1E0 #A396C4 #74658F #DADDCB'],['Tím','Plum Velvet','#E3CCD9 #B892B2 #875879 #512C4C #F3E5D7'],['Tím','Iris & Ink','#DDD9EE #A2A0D3 #6B6CA6 #34385C #E8E4D8'],['Tím','Orchid Smoke','#E8D9E5 #BD9CBF #957897 #6B596D #B7C2BB'],
@@ -12965,10 +13098,36 @@ else insert();
  ['Vàng','Butter & Cream','#FFF5CB #F3D36A #DBAE42 #C8BF92 #F9F4E6'],['Vàng','Honey Harvest','#F7E5AA #E8C15F #C78E36 #906B37 #C7C6A5'],['Vàng','Lemon Sorbet','#FFF8D6 #F0E578 #C5CE76 #A4B49A #F6F5EB'],['Vàng','Golden Ochre','#F4E6C4 #D7B35D #B58A42 #795B36 #E4D0BA'],
  ['Đen','Noir & Pearl','#F4EFE7 #C9C4BB #888985 #383B3C #17191B'],['Đen','Black Cherry','#E5CCD1 #A46C7D #633647 #32232E #18171B'],['Đen','Obsidian & Moss','#D5D8C8 #9DAB90 #586A58 #303B34 #161D1A'],['Đen','Midnight Gold','#E9D9B5 #B59B67 #77706A #353334 #171719'],
  ['Nâu đỏ','Terracotta Rose','#F2D6C5 #D8A18B #B86D58 #844B40 #C1AC91'],['Nâu đỏ','Oxblood & Linen','#EAD7CA #CB9A89 #9B4D48 #632F32 #382627'],['Nâu đỏ','Burnt Cinnamon','#F0DBC1 #D19C68 #AE6A43 #80452F #563D30'],['Nâu đỏ','Mahogany Blush','#EAD0C9 #C68F86 #A25C54 #733A36 #49302F']];
- const library=el('details');library.style.cssText='margin-top:10px;padding:8px;border:1px solid #dbe3ee;border-radius:8px';library.append(el('summary','Bộ phối mới theo tone · '+themes.length+' bộ'));const filter=el('select');['Tất cả','Hồng','Tím','Xanh','Trắng','Vàng','Đen','Nâu đỏ'].forEach(v=>filter.append(el('option',v)));library.append(filter);const list=el('div');library.append(list);function showThemes(){list.replaceChildren();themes.filter(t=>filter.value==='Tất cả'||t[0]===filter.value).forEach(([tone,name,colors])=>{const c=el('div');c.style.cssText='margin:8px 0;padding:6px;border-bottom:1px solid #dbe3ee';c.append(el('b',tone+' · '+name));const band=el('div');band.style.cssText='display:flex;height:30px;margin:5px 0;border-radius:5px;overflow:hidden';const values=colors.split(' ');values.forEach(h=>{const x=el('div');x.style.cssText='flex:1;background:'+h;x.title=h;band.append(x);});c.append(band,el('small',colors),el('br'),btn('Nạp bộ màu',()=>{cancelPaletteEdit(false);load(values.map(h=>row(h)));activeRoleNotice.textContent='Đã nạp: '+name;}));list.append(c);});}filter.onchange=showThemes;showThemes();box.parentElement.append(library);
+ const library=el('details');library.style.cssText='margin-top:10px;padding:8px;border:1px solid #dbe3ee;border-radius:8px';library.append(el('summary','Bộ phối mới theo tone · '+themes.length+' bộ'));const filter=el('select');['Tất cả','Hồng','Tím','Xanh','Trắng','Vàng','Đen','Nâu đỏ'].forEach(v=>filter.append(el('option',v)));library.append(filter);const list=el('div');library.append(list);function showThemes(){list.replaceChildren();themes.filter(t=>filter.value==='Tất cả'||t[0]===filter.value).forEach(([tone,name,colors])=>{const c=el('div');c.style.cssText='margin:8px 0;padding:6px;border-bottom:1px solid #dbe3ee';c.append(el('b',tone+' · '+name));const band=el('div');band.style.cssText='display:flex;height:30px;margin:5px 0;border-radius:5px;overflow:hidden';const values=colors.split(' ');values.forEach(h=>{const x=el('div');x.style.cssText='flex:1;background:'+h;x.title=h;band.append(x);});c.append(band,el('small',colors),el('br'),btn('Nạp bộ màu',()=>{cancelPaletteEdit(false);load(values.map(h=>row(h)));activeRoleNotice.textContent='Đã nạp: '+name;}));list.append(c);});}filter.onchange=showThemes;showThemes();document.getElementById('ageFormulasContainer').before(library);
  load(initial);renderSavedPalettes();
 };if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();})();</script>
 <style>
+.kf-adobe-wheel-panel{padding:0;border:0;background:transparent}
+.kf-adobe-wheel-stage{max-width:250px;margin:0 auto}
+#kfAdobeWheel{touch-action:none}
+.kf-wheel-options{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:12px}
+.kf-wheel-options select{min-width:0;max-width:100%}
+.kf-adobe-wheel-panel > label{font-size:12px;font-weight:700}
+.kf-adobe-wheel-panel .input-row{width:100%}
+.kf-adobe-wheel-panel .input-row input[type=text]{min-width:0;flex:1}
+.kf-flex-tools,.kf-color-row-head{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+#kfFlexStrip{display:flex;height:20px;border-radius:6px;overflow:hidden}
+#kfFlexStatus,#kfFlexAnalysis,.kf-color-details{font-size:12px}
+.kf-color-row.role-card{display:block;cursor:default;padding:5px}
+.kf-color-row-head .palette-action-btn{padding:5px 6px}
+.kf-color-row-head button:disabled{opacity:.38;cursor:default}
+.kf-color-select{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.kf-color-select span:first-child{width:16px;height:16px;border:1px solid #17255424;border-radius:5px}
+.kf-row-role{flex:1;min-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.kf-color-row-head input{width:42px;font-size:12px}
+.kf-color-details{margin-top:8px}
+.kf-color-details fieldset{margin:5px 0;padding:5px;border:1px solid #dbe3ee;border-radius:6px;min-width:0}
+.kf-color-details label{display:inline-flex;align-items:center;gap:3px;margin:2px 6px 2px 0}
+.kf-color-details input[type=text]{width:100%}
+.palette-details summary,#savedPalettesArea summary{cursor:pointer;font-weight:700}
+.palette-details:not([open]){padding-block:4px;background:transparent;border:0}
+#savedPalettesArea:not([open]) .saved-palettes-head{display:none}
+#savedPalettesArea:not([open]) .saved-palettes-list{display:none}
 .kf-dropdown-nav{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:6px}
 .header > .header-actions[hidden]{display:none!important}
 .kf-dropdown{position:relative}
