@@ -642,6 +642,7 @@ new MutationObserver(()=>{if(editor&&(!editor.isConnected||!editor.isContentEdit
       nav.append(menu);
       return menu;
     });
+    const rendered = new WeakMap();
     function render() {
       const buttons = [...original.querySelectorAll(':scope > button, :scope > a[href]')];
       const known = groups.flatMap(([, , selectors]) => selectors);
@@ -650,12 +651,22 @@ new MutationObserver(()=>{if(editor&&(!editor.isConnected||!editor.isContentEdit
         const candidates = selectors.flatMap(selector => buttons.filter(node => node.matches(selector)));
         if (group === groups.length - 1) candidates.push(...buttons.filter(node => !node.matches(known.join(','))));
         const actions = candidates.filter(node => !node.hidden && getComputedStyle(node).display !== 'none');
-        panel.replaceChildren(...[...ids.map(tabFor).filter(Boolean), ...actions].map(action => {
+        const entries = [...ids.map(tabFor).filter(Boolean), ...actions].map(action => ({
+          action, label:action.textContent.trim(), title:action.title, disabled:action.disabled
+        }));
+        const previous = rendered.get(panel);
+        if (previous?.length === entries.length && entries.every((entry,index) => {
+          const old = previous[index];
+          return entry.action === old.action && entry.label === old.label &&
+            entry.title === old.title && entry.disabled === old.disabled;
+        })) return;
+        rendered.set(panel, entries);
+        panel.replaceChildren(...entries.map(({action,label,title,disabled}) => {
           const item = document.createElement('button');
           item.type = 'button';
-          item.textContent = action.textContent.trim();
-          item.title = action.title;
-          if (action.disabled) item.disabled = true;
+          item.textContent = label;
+          item.title = title;
+          if (disabled) item.disabled = true;
           item.addEventListener('click', () => {
             menus[group].open = false;
             menus[group].firstElementChild.focus();
@@ -746,6 +757,36 @@ function showContent(value,{readOnly=true,snapshot=null}={}){
  $("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");
  $("viewer").replaceChildren(secureHTML(value||"<p>Chưa có nội dung được xuất bản trên máy chủ.</p>",{readOnly,snapshot}));
 }
+async function loadAdminStudio(session){
+ say("Đang tải tài liệu và dữ liệu chỉnh sửa…");
+ const [content,snapshot]=await Promise.allSettled([
+  api("admin-read",{key:"published/main"},session.access_token),
+  initializeAdminSnapshot(session.access_token)
+ ]);
+ if(content.status==="rejected"){
+  throw new Error("Không tải được tài liệu từ máy chủ. "+content.reason.message);
+ }
+ const html=content.value?.value?.html;
+ if(typeof html!=="string"||!html.trim()){
+  throw new Error("Máy chủ chưa trả về nội dung tài liệu đã xuất bản.");
+ }
+ if(snapshot.status==="rejected"){
+  console.warn("Restore admin editing data",snapshot.reason);
+  showContent(html,{readOnly:true});
+  $("openAccountSettings").classList.add("hidden");
+  $("kfQuickBackup").classList.add("hidden");
+  say("Đang mở tài liệu ở chế độ xem vì chưa tải được dữ liệu chỉnh sửa. Tải lại trang để thử bật chỉnh sửa.");
+  return;
+ }
+ try{await loadDrafts();}catch(error){console.warn("Optional drafts unavailable",error);}
+ editorSnapshot=snapshot.value;
+ showContent(html,{readOnly:false,snapshot:editorSnapshot});
+ $("openAccountSettings").classList.remove("hidden");
+ $("kfQuickBackup").classList.remove("hidden");
+ say("");
+ void listGuests().catch(err=>console.warn("Tải danh sách Guest:",err));
+ void flushPending();
+}
 $("adminLogin").onsubmit=async e=>{
  e.preventDefault();if(loginInProgress||restoring)return;loginInProgress=true;say("Đang đăng nhập...");
  try{
@@ -757,26 +798,7 @@ $("adminLogin").onsubmit=async e=>{
   adminSession=data.session;
   localStorage.setItem(KF_IDLE_KEY,String(Date.now()));
   $("adminPassword").value="";
-  // Mở nội dung chính ngay sau khi xác thực; không chờ snapshot nhiều MB.
-  // Authentication is complete here. Do not leave the login screen visible
-  // while the large lesson snapshot is loading.
-  $("loginPanel").classList.add("hidden");
-  $("contentPanel").classList.remove("hidden");
-  $("openAccountSettings").classList.remove("hidden");
-  $("kfQuickBackup").classList.remove("hidden");
-  say("Đã đăng nhập. Đang tải dữ liệu bài học, vui lòng chờ…");
-  const result=await api("admin-read",{key:"published/main"},data.session.access_token);
-  // Snapshot may be tens of MB. Keep the portal responsive and show progress.
-  say("Đang khôi phục nội dung chỉnh sửa từ máy chủ…");
-  const snapshot=await initializeAdminSnapshot(data.session.access_token);
-  editorSnapshot=snapshot;
-  showContent(result.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
-  say("");
-  void loadDrafts().catch(err=>console.warn("Tải bản nháp:",err));
-  // Nạp dữ liệu chỉnh sửa và danh sách khách ở nền, không chặn đăng nhập.
-
-  void listGuests().catch(err=>console.warn("Tải danh sách Guest:",err));
-  void flushPending();
+  await loadAdminStudio(data.session);
  }catch(err){if(!currentFrame){$("contentPanel").classList.add("hidden");$("loginPanel").classList.remove("hidden");}say(err.message)}finally{loginInProgress=false;}
 };
 
@@ -935,22 +957,10 @@ async function restoreAdminSession(){
   if(error||allowed!==true)return;
   adminSession=session;
   if(currentFrame){$("loginPanel").classList.add("hidden");$("contentPanel").classList.remove("hidden");return;}
-  const [content,snapshot]=await Promise.all([
-   api("admin-read",{key:"published/main"},session.access_token),
-   initializeAdminSnapshot(session.access_token)
-  ]);
-  try{await loadDrafts();}catch(error){console.warn("Optional drafts unavailable",error);}
-  editorSnapshot=snapshot;
-  showContent(content.value?.html||"",{readOnly:false,snapshot:editorSnapshot});
-  $("openAccountSettings").classList.remove("hidden");
-  $("kfQuickBackup").classList.remove("hidden");
-  say("");
-
-  void listGuests().catch(err=>console.warn("Guest list",err));
-  void flushPending();
+  await loadAdminStudio(session);
  }catch(err){
   console.warn("Restore admin session",err);
-  say("Không tải được tài liệu. Phiên đăng nhập vẫn được giữ; vui lòng tải lại trang.");
+  say((err.message||"Không tải được tài liệu.")+" Phiên đăng nhập vẫn được giữ. Vui lòng tải lại trang.");
  }finally{restoring=false;}
 }
 if(adminMode){
