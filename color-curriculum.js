@@ -3,24 +3,24 @@ function formatColorCurriculum() {
     const list = document.getElementById("colorKnowledgeList");
     if (!list) return;
 
-    function hideHeadingNumbers() {
+    const tens = ["", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"];
+    const ones = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
+
+    function formatHeadingNumbers() {
       for (const heading of list.querySelectorAll(":scope > h2.kf-curriculum-part")) {
         const text = heading.firstChild;
         if (heading.isContentEditable || text?.nodeType !== Node.TEXT_NODE) continue;
 
-        const prefix = text.data.match(/^\s*\d{2}\.\s+/u);
-        if (!prefix) continue;
+        const prefix = text.data.match(/^\s*(\d)(\d)\.\s+/u);
+        if (!prefix || prefix[1] + prefix[2] === "00") continue;
 
-        const number = document.createElement("span");
-        number.hidden = true;
-        number.textContent = prefix[0];
-        text.deleteData(0, prefix[0].length);
-        heading.prepend(number);
+        const roman = tens[Number(prefix[1])] + ones[Number(prefix[2])];
+        text.replaceData(0, prefix[0].length, roman + ". ");
       }
     }
 
-    hideHeadingNumbers();
-    new MutationObserver(hideHeadingNumbers).observe(list, {
+    formatHeadingNumbers();
+    new MutationObserver(formatHeadingNumbers).observe(list, {
       childList: true,
       characterData: true,
       subtree: true,
